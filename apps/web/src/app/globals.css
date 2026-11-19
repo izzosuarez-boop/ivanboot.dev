@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+/* Portfolio palette (dark, technical) */
+:root {
+  --ink: #0b0d10;
+  --ink-2: #12161b;
+  --line: #222a33;
+  --text: #e6e9ed;
+  --muted: #8b95a1;
+  --accent: #5eead4;
+  --accent-2: #a78bfa;
+
+  /* Ardea Skin palette (light, calm) */
+  --sand: #f5f0e8;
+  --sand-2: #ebe3d6;
+  --clay: #2f2a24;
+  --clay-muted: #7a7064;
+  --sage: #8a9a7b;
+  --sage-dark: #5d6b52;
+  --blush: #d9b8a3;
+}
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-line: var(--line);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-sand: var(--sand);
+  --color-sand-2: var(--sand-2);
+  --color-clay: var(--clay);
+  --color-clay-muted: var(--clay-muted);
+  --color-sage: var(--sage);
+  --color-sage-dark: var(--sage-dark);
+  --color-blush: var(--blush);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-fraunces);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* Gentle reveal used by both sites; disabled for people who ask for less motion */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+.rise { animation: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.rise-1 { animation-delay: 0.08s; }
+.rise-2 { animation-delay: 0.16s; }
+.rise-3 { animation-delay: 0.24s; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .rise { animation: none; }
+}

@@ -1,0 +1,47 @@
+# ivanboot.dev stack. On the VPS it lives at /opt/ivanboot (see infra/deploy.sh).
+#   docker compose -p ivanboot -f infra/docker-compose.yml up -d --build
+name: ivanboot
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # HTTP/3
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data # TLS certificates: keep across rebuilds (Let's Encrypt rate limits)
+      - caddy_config:/config
+    depends_on:
+      - web
+      - api
+
+  web:
+    build:
+      context: ../apps/web
+      args:
+        NEXT_PUBLIC_STORE_BASE: ""
+        NEXT_PUBLIC_STORE_URL: "https://tienda.ivanboot.dev"
+        NEXT_PUBLIC_UPWORK_URL: "https://www.upwork.com/freelancers/~01d5ad771e5c598546"
+        NEXT_PUBLIC_WORKANA_URL: "" # pending profile approval
+    restart: unless-stopped
+    env_file: ../.env # Shopify server-side tokens; read at runtime, never baked into the image
+    environment:
+      STORE_HOST: tienda.ivanboot.dev
+    expose:
+      - "3000"
+
+  api:
+    build: ../apps/api
+    restart: unless-stopped
+    env_file: ../.env
+    environment:
+      APP_VERSION: ${APP_VERSION:-dev}
+    expose:
+      - "8000"
+
+volumes:
+  caddy_data:
+  caddy_config:
