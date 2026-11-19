@@ -81,12 +81,47 @@ def load_key() -> str:
     raise SystemExit("GEMINI_API_KEY not found in .env")
 
 
+# v3 (2026-11-18): the brand is shared, the set is not. Each category gets its own scene so the
+# shop grid doesn't look like 13 copies; serums share one bottle and differ by liquid tint.
+SCENES = {
+    "Serum": None,  # the approved concept A set (ART_DIRECTION as written)
+    "Cleanser": "Set: the product stands on wet, honed travertine with fresh water droplets beading on the "
+                "packaging and a few small, crisp water splashes frozen mid-air beside it; a shallow pool of water "
+                "reflects the product; clean, fresh, invigorating morning light.",
+    "Toner": "Set: the product stands at the edge of a still, shallow basin of water on travertine; dappled "
+             "sunlight refracts through the water and glass, casting delicate caustic light patterns on the stone; "
+             "crystal-clear, airy, serene.",
+    "Exfoliant": "Set: the product stands at the edge of a still, shallow basin of water on travertine; dappled "
+                 "sunlight refracts through the water and glass, casting delicate caustic light patterns; serene.",
+    "Moisturizer": "Set: the jar stands open-lidded on travertine with the champagne-gold lid resting beside it; "
+                   "a single, elegant swirl swatch of the rich cream is smeared on the stone in front, showing its "
+                   "velvety texture; a fold of soft cream linen behind; cosy, nourishing, tactile.",
+    "Sunscreen": "Set: bright, warm summer sunlight with crisp, graphic shadows of palm leaves falling across the "
+                 "product and a sun-bleached travertine block; a hint of soft blush sky tone in the backdrop; "
+                 "radiant, summery, protective.",
+    "Mask": "Set: an evening self-care ritual: the sachets rest on a folded, waffle-weave linen towel in pale "
+            "lilac-grey on travertine, a lit cream-colored candle softly out of focus, a small dish of dried "
+            "chamomile flowers; dimmer, golden, intimate candlelight mood with soft lilac undertones.",
+}
+SERUM_TINTS = {
+    "niacinamide-zinc-serum": "The serum inside is pale and milky-clear.",
+    "vitamin-c-brightening-serum": "The glass is tinted a soft warm amber-gold and the serum glows golden in the light.",
+    "hyaluronic-hydration-serum": "The glass is crystal-clear frosted and the serum is perfectly clear and water-like, with tiny suspended bubbles.",
+    "retinal-night-serum": "The glass is tinted a deep, rich amber (light-protective) and the serum is warm golden; slightly moodier dusk light.",
+    "centella-calming-serum": "The serum inside is a soft, pale blush pink; the glass frosted.",
+}
+
+
 def build_prompt(p: dict, extra: str = "") -> str:
     size = p["variants"][0]["size"]
     label = f"{p['title'].upper()} — {size.upper()}" if p["type"] != "Mask" else f"{p['title'].upper()}"
+    scene = SCENES.get(p["type"])
+    scene_line = (f"\n\nOVERRIDE THE SETTING ABOVE (keep brand, palette, lettering and photographic quality): {scene}"
+                  if scene else "")
+    tint = SERUM_TINTS.get(p["handle"], "")
     return (
-        f"{ART_DIRECTION}\n\nProduct: {p['title']} ({p['type'].lower()}, {p['texture'].lower()} texture). "
-        f"Packaging: {PACKAGING.get(p['type'], PACKAGING['Serum'])}. {extra} "
+        f"{ART_DIRECTION}{scene_line}\n\nProduct: {p['title']} ({p['type'].lower()}, {p['texture'].lower()} texture). "
+        f"Packaging: {PACKAGING.get(p['type'], PACKAGING['Serum'])}. {tint} {extra} "
         f"Printed text, exactly: 'ARDEA' and below it '{label}'."
     )
 
@@ -95,7 +130,9 @@ def generate(model: str, prompt: str, key: str, ref: Path | None, image_size: st
     parts: list[dict] = [{"text": prompt}]
     if ref:
         parts.insert(0, {"inline_data": {"mime_type": "image/png", "data": base64.b64encode(ref.read_bytes()).decode()}})
-        parts.append({"text": "Use the reference image only for the brand look: same lighting, stone, props, palette and label typography."})
+        parts.append({"text": "The reference image is the approved ARDEA brand look. Match its lettering style and "
+                              "placement, champagne-gold metal finish, color grading and photographic quality. Do NOT "
+                              "copy its packaging shape or its set: use the packaging and setting described above."})
     body = {
         "contents": [{"role": "user", "parts": parts}],
         "generationConfig": {"responseModalities": ["IMAGE"], "imageConfig": {"aspectRatio": "1:1", "imageSize": image_size}},
