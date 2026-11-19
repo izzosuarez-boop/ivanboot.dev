@@ -1,0 +1,29 @@
+# Caddy obtains and renews HTTPS certificates automatically for every site below.
+(common) {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}
+
+ivanboot.dev {
+	import common
+	reverse_proxy web:3000
+}
+
+www.ivanboot.dev {
+	redir https://ivanboot.dev{uri} permanent
+}
+
+tienda.ivanboot.dev {
+	import common
+	reverse_proxy web:3000
+}
+
+api.ivanboot.dev {
+	import common
+	reverse_proxy api:8000
+}
