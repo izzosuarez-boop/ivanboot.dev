@@ -26,6 +26,9 @@ services:
         NEXT_PUBLIC_STORE_URL: "https://tienda.ivanboot.dev"
         NEXT_PUBLIC_UPWORK_URL: "https://www.upwork.com/freelancers/~01d5ad771e5c598546"
         NEXT_PUBLIC_WORKANA_URL: "" # pending profile approval
+        # Dev-store password page sits in front of Shopify checkout; it is shown to visitors
+        # in the cart on purpose (it protects nothing but the dev storefront). Empty = hidden.
+        NEXT_PUBLIC_STORE_PASSWORD: ""
     restart: unless-stopped
     env_file: ../.env # Shopify server-side tokens; read at runtime, never baked into the image
     environment:

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
 import { site, storeHref } from "@/lib/site";
+import { BagLink, BagLinkFallback } from "./_components/bag-link";
 
 export const metadata: Metadata = {
   title: { default: "Ardea Skin — Skincare that explains itself", template: "%s · Ardea Skin" },
@@ -20,7 +22,9 @@ export default function StoreLayout({ children }: LayoutProps<"/store">) {
           <nav className="flex items-center gap-5 text-sm text-clay-muted">
             <Link href={storeHref("/#shop")} className="hover:text-clay">Shop</Link>
             <Link href={storeHref("/#routine")} className="hover:text-clay">Routine</Link>
-            <span className="hidden rounded-full border border-sage px-3 py-1 text-xs text-sage-dark sm:inline">AI advisor · soon</span>
+            <Suspense fallback={<BagLinkFallback />}>
+              <BagLink />
+            </Suspense>
           </nav>
         </div>
       </header>
