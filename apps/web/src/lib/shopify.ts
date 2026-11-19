@@ -64,13 +64,21 @@ const PRODUCT_FIELDS = `
   metafields(identifiers: [${METAFIELDS.map((k) => `{namespace: "${NS}", key: "${k}"}`).join(", ")}]) { key value }
 `;
 
-class StorefrontError extends Error {}
+export class StorefrontError extends Error {}
 
-async function storefront<T>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
+export async function storefront<T>(
+  query: string,
+  variables: Record<string, unknown> = {},
+  opts: { buyerIp?: string | null } = {},
+): Promise<T> {
   if (!SHOP || !TOKEN) throw new StorefrontError("Shopify env vars are not configured");
+  const headers: Record<string, string> = { "Content-Type": "application/json", "Shopify-Storefront-Private-Token": TOKEN };
+  // With the private token Shopify asks for the shopper's IP on buyer actions (cart/checkout)
+  // so its bot protection and rate limits apply per shopper, not per server.
+  if (opts.buyerIp) headers["Shopify-Storefront-Buyer-IP"] = opts.buyerIp;
   const res = await fetch(`https://${SHOP}.myshopify.com/api/${VERSION}/graphql.json`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "Shopify-Storefront-Private-Token": TOKEN },
+    headers,
     body: JSON.stringify({ query, variables }),
   });
   if (!res.ok) throw new StorefrontError(`Storefront HTTP ${res.status}`);
