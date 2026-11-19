@@ -1,0 +1,18 @@
+{
+  "_note": "Approved product images (files live in out/, gitignored; Shopify is the published copy). Reviewed by hand: label text checked letter by letter.",
+  "images": {
+    "gentle-cream-cleanser": "gentle-cream-cleanser--v3--gemini-3-pro-image--20261118-233850.jpg",
+    "clarifying-gel-cleanser": "clarifying-gel-cleanser--v3--gemini-3-pro-image--20261118-234312.jpg",
+    "balancing-daily-toner": "balancing-daily-toner--v3--gemini-3-pro-image--20261118-233913.jpg",
+    "gentle-exfoliating-lotion": "gentle-exfoliating-lotion--v3--gemini-3-pro-image--20261118-234336.jpg",
+    "niacinamide-zinc-serum": "niacinamide-zinc-serum--conceptA--gemini-3-pro-image--20261118-231555.jpg",
+    "vitamin-c-brightening-serum": "vitamin-c-brightening-serum--v3--gemini-3-pro-image--20261118-234400.jpg",
+    "hyaluronic-hydration-serum": "hyaluronic-hydration-serum--v3--gemini-3-pro-image--20261118-234424.jpg",
+    "retinal-night-serum": "retinal-night-serum--v3b--gemini-3-pro-image--20261118-235033.jpg",
+    "centella-calming-serum": "centella-calming-serum--v3--gemini-3-pro-image--20261118-234512.jpg",
+    "oil-free-gel-moisturizer": "oil-free-gel-moisturizer--v3--gemini-3-pro-image--20261118-234539.jpg",
+    "barrier-repair-cream": "barrier-repair-cream--v3--gemini-3-pro-image--20261118-233938.jpg",
+    "daily-mineral-sunscreen-spf50": "daily-mineral-sunscreen-spf50--v3--gemini-3-pro-image--20261118-234001.jpg",
+    "relaxing-sheet-masks": "relaxing-sheet-masks--v3--gemini-3-pro-image--20261118-234026.jpg"
+  }
+}
