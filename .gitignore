@@ -16,3 +16,6 @@ __pycache__/
 Thumbs.db
 .vscode/
 *.log
+
+# Generated images under review (approved ones get uploaded to Shopify)
+scripts/images/out/
