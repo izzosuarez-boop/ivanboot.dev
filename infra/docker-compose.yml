@@ -28,7 +28,7 @@ services:
         NEXT_PUBLIC_WORKANA_URL: "" # pending profile approval
         # Dev-store password page sits in front of Shopify checkout; it is shown to visitors
         # in the cart on purpose (it protects nothing but the dev storefront). Empty = hidden.
-        NEXT_PUBLIC_STORE_PASSWORD: ""
+        NEXT_PUBLIC_STORE_PASSWORD: "ardea"
     restart: unless-stopped
     env_file: ../.env # Shopify server-side tokens; read at runtime, never baked into the image
     environment:
