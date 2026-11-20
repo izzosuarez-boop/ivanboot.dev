@@ -6,6 +6,7 @@ import { getCart } from "@/lib/cart";
 import { formatMoney } from "@/lib/shopify";
 import { storeHref } from "@/lib/site";
 import { LineControls } from "./line-controls";
+import { CheckoutButton } from "./checkout-button";
 
 export const metadata: Metadata = { title: "Your bag", robots: { index: false } };
 
@@ -60,14 +61,12 @@ async function CartContents() {
           <div className="flex justify-between"><dt className="text-clay-muted">Subtotal ({cart.totalQuantity} items)</dt><dd>{formatMoney(cart.cost.subtotalAmount)}</dd></div>
           <div className="flex justify-between"><dt className="text-clay-muted">Shipping & taxes</dt><dd className="text-clay-muted">at checkout</dd></div>
         </dl>
-        <a href={cart.checkoutUrl} className="mt-6 block rounded-full bg-clay px-6 py-3.5 text-center text-sm text-sand transition hover:bg-sage-dark">
-          Checkout
-        </a>
+        <CheckoutButton checkoutUrl={cart.checkoutUrl} password={STORE_PASSWORD} />
         <div className="mt-5 rounded-2xl border border-dashed border-sage/60 p-4 text-xs leading-relaxed text-clay-muted">
           <p className="font-medium text-clay">Try the full checkout — it&apos;s a test store.</p>
           <p className="mt-1">No real payment is taken. Use any name and address, and card number <b className="text-clay">1</b> with any future date and CVV.</p>
           {STORE_PASSWORD && (
-            <p className="mt-1">If Shopify asks for the store password, enter <b className="text-clay">{STORE_PASSWORD}</b>.</p>
+            <p className="mt-1">Store password: <b className="text-clay">{STORE_PASSWORD}</b></p>
           )}
         </div>
       </aside>
