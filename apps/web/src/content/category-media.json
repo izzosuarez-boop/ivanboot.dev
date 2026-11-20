@@ -35,5 +35,79 @@
         }
       ]
     }
+  },
+  "cleansers": {
+    "hero": {
+      "id": "gid://shopify/MediaImage/46858441359612",
+      "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/hero-173553-fixed_29432f37-edf1-44d9-a09a-d5533393433c.jpg?v=1795214400",
+      "width": 2752,
+      "height": 1536,
+      "alt": "Ardea Skin cleansers in use"
+    },
+    "poster": {
+      "id": "gid://shopify/MediaImage/46858441687292",
+      "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/cleansers-howto-poster_78a574ca-cfdd-4597-966e-8cf8f83ea6b9.jpg?v=1795214405",
+      "width": 1920,
+      "height": 1080,
+      "alt": "Ardea Skin cleansers how-to video"
+    },
+    "video": {
+      "id": "gid://shopify/Video/46858460299516",
+      "duration_ms": 15000,
+      "sources": [
+        {
+          "url": "https://cdn.shopify.com/videos/c/vp/ec98e3eae8f540518a961f4534e190ff/ec98e3eae8f540518a961f4534e190ff.HD-1080p-3.3Mbps-102175512.mp4",
+          "height": 1080,
+          "width": 1920
+        },
+        {
+          "url": "https://cdn.shopify.com/videos/c/vp/ec98e3eae8f540518a961f4534e190ff/ec98e3eae8f540518a961f4534e190ff.HD-720p-2.1Mbps-102175512.mp4",
+          "height": 720,
+          "width": 1280
+        },
+        {
+          "url": "https://cdn.shopify.com/videos/c/vp/ec98e3eae8f540518a961f4534e190ff/ec98e3eae8f540518a961f4534e190ff.SD-480p-1.0Mbps-102175512.mp4",
+          "height": 480,
+          "width": 852
+        }
+      ]
+    }
+  },
+  "masks": {
+    "hero": {
+      "id": "gid://shopify/MediaImage/46858463412476",
+      "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/hero-173457.jpg?v=1795214681",
+      "width": 2752,
+      "height": 1536,
+      "alt": "Ardea Skin masks in use"
+    },
+    "poster": {
+      "id": "gid://shopify/MediaImage/46858463969532",
+      "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/masks-howto-poster.jpg?v=1795214687",
+      "width": 1920,
+      "height": 1080,
+      "alt": "Ardea Skin masks how-to video"
+    },
+    "video": {
+      "id": "gid://shopify/Video/46858466590972",
+      "duration_ms": 15000,
+      "sources": [
+        {
+          "url": "https://cdn.shopify.com/videos/c/vp/3fd6695ad9be4e7aacc983bb8737166c/3fd6695ad9be4e7aacc983bb8737166c.HD-1080p-3.3Mbps-102175892.mp4",
+          "height": 1080,
+          "width": 1920
+        },
+        {
+          "url": "https://cdn.shopify.com/videos/c/vp/3fd6695ad9be4e7aacc983bb8737166c/3fd6695ad9be4e7aacc983bb8737166c.HD-720p-2.1Mbps-102175892.mp4",
+          "height": 720,
+          "width": 1280
+        },
+        {
+          "url": "https://cdn.shopify.com/videos/c/vp/3fd6695ad9be4e7aacc983bb8737166c/3fd6695ad9be4e7aacc983bb8737166c.SD-480p-1.0Mbps-102175892.mp4",
+          "height": 480,
+          "width": 852
+        }
+      ]
+    }
   }
 }

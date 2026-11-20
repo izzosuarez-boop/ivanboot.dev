@@ -50,7 +50,7 @@ def validate() -> list[str]:
         for c in p["concerns"]:
             if c not in allowed["concerns"]:
                 problems.append(f"{h}: unknown concern {c}")
-        if not 1 <= p["routine_step"] <= 6:
+        if not p.get("retired") and not 1 <= p["routine_step"] <= 3:
             problems.append(f"{h}: routine_step out of range")
         if p["usage_time"] not in ("AM", "PM", "AM & PM"):
             problems.append(f"{h}: bad usage_time")
@@ -151,8 +151,8 @@ def primary_location(s: ShopifyAdmin) -> str:
     return active[0]["id"]
 
 
-def upsert_products(s: ShopifyAdmin, location_id: str) -> list[str]:
-    ids = []
+def upsert_products(s: ShopifyAdmin, location_id: str) -> list[tuple[str, bool]]:
+    ids = []  # (gid, retired)
     for p in CATALOG["products"]:
         exists = s.gql('query($h:String!){ productByIdentifier(identifier:{handle:$h}){ id } }', {"h": p["handle"]})["productByIdentifier"]
         r = s.gql(
@@ -163,14 +163,14 @@ def upsert_products(s: ShopifyAdmin, location_id: str) -> list[str]:
             {"id": {"handle": p["handle"]}, "input": product_input(p, None if exists else location_id)})
         raise_user_errors(r["productSet"], p["handle"])
         prod = r["productSet"]["product"]
-        ids.append(prod["id"])
+        ids.append((prod["id"], bool(p.get("retired"))))
         stock = ", ".join(f"{v['sku']}={v['inventoryQuantity']}" for v in prod["variants"]["nodes"])
-        print(f"  {'~' if exists else '+'} {p['handle']}  [{stock}]")
+        print(f"  {'~' if exists else '+'} {p['handle']}  [{stock}]{'  (retired)' if p.get('retired') else ''}")
     return ids
 
 
-def upsert_collections(s: ShopifyAdmin) -> list[str]:
-    ids = []
+def upsert_collections(s: ShopifyAdmin) -> list[tuple[str, bool]]:
+    ids = []  # (gid, retired)
     for c in CATALOG["collections"]:
         column, *conditions = c["rule"]
         coll = {
@@ -183,27 +183,30 @@ def upsert_collections(s: ShopifyAdmin) -> list[str]:
             coll["id"] = found["id"]
             r = s.gql('mutation($c:CollectionInput!){ collectionUpdate(input:$c){ collection { id } userErrors { field message } } }', {"c": coll})
             raise_user_errors(r["collectionUpdate"], c["handle"])
-            ids.append(r["collectionUpdate"]["collection"]["id"])
-            print(f"  ~ collection {c['handle']}")
+            ids.append((r["collectionUpdate"]["collection"]["id"], bool(c.get("retired"))))
+            print(f"  ~ collection {c['handle']}{'  (retired)' if c.get('retired') else ''}")
         else:
             r = s.gql('mutation($c:CollectionInput!){ collectionCreate(input:$c){ collection { id } userErrors { field message } } }', {"c": coll})
             raise_user_errors(r["collectionCreate"], c["handle"])
-            ids.append(r["collectionCreate"]["collection"]["id"])
+            ids.append((r["collectionCreate"]["collection"]["id"], bool(c.get("retired"))))
             print(f"  + collection {c['handle']}")
     return ids
 
 
-def publish(s: ShopifyAdmin, ids: list[str]) -> None:
+def publish(s: ShopifyAdmin, items: list[tuple[str, bool]]) -> None:
+    """Active items are published to the Headless channel; retired ones are unpublished (kept in Shopify)."""
     pubs = s.gql("{ publications(first:20){ nodes { id name } } }")["publications"]["nodes"]
     targets = [p for p in pubs if "headless" in p["name"].lower()]
     if not targets:
         raise ShopifyError(f"No Headless publication found among: {[p['name'] for p in pubs]}")
     for pub in targets:
-        for gid in ids:
-            r = s.gql('mutation($id:ID!, $p:[PublicationInput!]!){ publishablePublish(id:$id, input:$p){ userErrors { field message } } }',
+        for gid, retired in items:
+            op = "publishableUnpublish" if retired else "publishablePublish"
+            r = s.gql(f'mutation($id:ID!, $p:[PublicationInput!]!){{ {op}(id:$id, input:$p){{ userErrors {{ field message }} }} }}',
                       {"id": gid, "p": [{"publicationId": pub["id"]}]})
-            raise_user_errors(r["publishablePublish"], f"publish {gid}")
-        print(f"  published {len(ids)} items to '{pub['name']}'")
+            raise_user_errors(r[op], f"{op} {gid}")
+        n_off = sum(1 for _, r_ in items if r_)
+        print(f"  '{pub['name']}': published {len(items) - n_off}, unpublished {n_off} (retired)")
 
 
 def verify_storefront() -> None:
@@ -222,10 +225,12 @@ def verify_storefront() -> None:
     with urllib.request.urlopen(req, timeout=30) as r:
         data = json.loads(r.read())["data"]
     prods = data["products"]["nodes"]
-    expected = {p["handle"] for p in CATALOG["products"]}
+    expected = {p["handle"] for p in CATALOG["products"] if not p.get("retired")}
+    retired = {p["handle"] for p in CATALOG["products"] if p.get("retired")}
     visible = {p["handle"] for p in prods}
-    print(f"  storefront sees {len(visible & expected)}/{len(expected)} products"
-          + (f"  MISSING: {sorted(expected - visible)}" if expected - visible else ""))
+    print(f"  storefront sees {len(visible & expected)}/{len(expected)} active products"
+          + (f"  MISSING: {sorted(expected - visible)}" if expected - visible else "")
+          + (f"  RETIRED BUT VISIBLE: {sorted(visible & retired)}" if visible & retired else "  (no retired product visible)"))
     no_mf = [p["handle"] for p in prods if p["handle"] in expected and not p["skin"]]
     print(f"  metafields readable: {'yes' if not no_mf else 'NO for ' + ', '.join(no_mf)}")
     sold_out = [p["handle"] for p in prods if not p["availableForSale"]]

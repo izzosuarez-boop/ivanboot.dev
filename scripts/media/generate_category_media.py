@@ -37,15 +37,29 @@ BRAND = (
     "soft blush terracotta and deep clay brown. Quiet luxury, calm, unhurried, photorealistic, natural skin texture."
 )
 
+# v3 (2026-11-20): "left third ..." phrasing produced diptychs (two photos side by side) in 3 of 4 heroes.
+# Never describe the frame in parts; ask for ONE photograph and let CSS handle the text area.
+ONE_FRAME_TEXT = ("This is ONE single continuous photograph taken with one camera — not a collage, diptych, triptych or "
+                  "split-screen, no vertical dividing lines. Wide 16:9 framing with the main subject slightly right of "
+                  "center and soft, out-of-focus background around it.")
+
 HERO_SCENES = {
     # v2: v1 showed TWO droppers (one still on the bottle) and a flat blank panel as "negative space"
     "serums": "Close-up editorial lifestyle photograph in one continuous scene: a woman's hand holds the champagne-gold "
               "dropper of the ARDEA serum above her other open palm, a single clear drop just falling. The ARDEA bottle "
               "from the reference image stands OPEN on the travertine bathroom counter beside her — its dropper is the "
               "one in her hand, so the bottle has no dropper and no cap on it (there is only ONE dropper in the image). "
-              "Late-afternoon window light, softly blurred linen and eucalyptus behind. Wide 16:9 framing with the "
-              "subject in the right two thirds; the left third is the same softly out-of-focus bathroom background "
-              "continuing naturally (no flat panels, borders, frames or split layout).",
+              "Late-afternoon window light, softly blurred linen and eucalyptus behind. " + ONE_FRAME_TEXT,
+    "cleansers": "Fresh morning editorial lifestyle photograph in one continuous scene: a woman's cupped hands lift lukewarm "
+                 "water from a honed travertine basin, a few droplets frozen mid-air catching the light. ONE ARDEA cleanser "
+                 "tube from the reference image stands upright on its champagne-gold cap on the wet travertine edge of the "
+                 "basin, fresh water droplets beading on it (there is only one tube in the image). Bright, airy, clean "
+                 "light. " + ONE_FRAME_TEXT,
+    "masks": "Intimate evening editorial lifestyle photograph in one continuous scene: a woman reclines on a soft sofa "
+             "wrapped in a lilac-grey waffle-weave linen towel, wearing a white biocellulose sheet mask, eyes closed, "
+             "completely relaxed. On a small travertine side table in sharp focus beside her: the ARDEA sheet-mask "
+             "sachets from the reference image, one lit cream-colored candle and a small dish of dried chamomile. Warm "
+             "golden candlelight with soft lilac undertones. " + ONE_FRAME_TEXT,
 }
 
 PRICES = {"gemini-3-pro-image": (2.0, 12.0, 120.0)}  # $/M tokens: input, text+thinking, image (2026-11-18)
@@ -82,6 +96,17 @@ def out_dir(slug: str) -> Path:
 
 
 # -- 1. hero image ------------------------------------------------------------------------
+def seam_score(path: Path) -> tuple[float, int]:
+    """Fraction of rows with a strong edge at the same x. Calibrated 2026-11-20 on 4 heroes:
+    diptychs scored 0.89-1.0, a good single photo 0.25 -> warn above 0.6."""
+    import numpy as np
+    from PIL import Image
+    a = np.asarray(Image.open(path).convert("L").resize((800, 450)), dtype=np.float32)
+    strong = (np.abs(np.diff(a, axis=1)) > 18).mean(axis=0)
+    x = int(strong[40:-40].argmax()) + 40
+    return round(float(strong[x]), 3), x
+
+
 def hero(slug: str) -> None:
     cat = CATEGORIES[slug]
     scene = HERO_SCENES.get(slug) or f"Editorial lifestyle photograph of the ARDEA {cat['title'].lower()} from the reference image in use."
@@ -99,6 +124,9 @@ def hero(slug: str) -> None:
     data = part.get("inlineData") or part.get("inline_data")
     path = out_dir(slug) / f"hero-{time.strftime('%H%M%S')}.jpg"
     path.write_bytes(base64.b64decode(data["data"]))
+    score, x = seam_score(path)
+    if score > 0.6:
+        print(f"  WARNING: looks like a collage/diptych (vertical seam at x≈{x / 800:.0%}, score {score}). Don't use it.")
     u = res.get("usageMetadata", {})
     img = sum(d["tokenCount"] for d in u.get("candidatesTokensDetails", []) if d.get("modality") == "IMAGE")
     txt = u.get("candidatesTokenCount", 0) - img + u.get("thoughtsTokenCount", 0)

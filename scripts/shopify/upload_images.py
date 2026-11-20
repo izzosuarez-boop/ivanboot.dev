@@ -24,7 +24,7 @@ IMAGES = ROOT / "scripts/images"
 CATALOG = {p["handle"]: p for p in json.loads((ROOT / "scripts/shopify/catalog.json").read_text(encoding="utf-8"))["products"]}
 
 
-def multipart_post(url: str, fields: list[tuple[str, str]], file_name: str, data: bytes, mime: str) -> int:
+def multipart_post(url: str, fields: list[tuple[str, str]], file_name: str, data: bytes, mime: str, timeout: int = 120) -> int:
     boundary = uuid.uuid4().hex
     body = bytearray()
     for name, value in fields:  # parameters must come before the file
@@ -33,7 +33,7 @@ def multipart_post(url: str, fields: list[tuple[str, str]], file_name: str, data
              f"Content-Type: {mime}\r\n\r\n").encode() + data + f"\r\n--{boundary}--\r\n".encode()
     req = urllib.request.Request(url, data=bytes(body), method="POST",
                                  headers={"Content-Type": f"multipart/form-data; boundary={boundary}"})
-    with urllib.request.urlopen(req, timeout=120) as r:
+    with urllib.request.urlopen(req, timeout=timeout) as r:
         return r.status
 
 

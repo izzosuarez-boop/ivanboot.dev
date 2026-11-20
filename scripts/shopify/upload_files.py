@@ -30,7 +30,16 @@ def upload(s: ShopifyAdmin, path: Path, kind: str, alt: str) -> dict:
                    {"i": [{"resource": kind, "filename": path.name, "mimeType": mime, "httpMethod": "POST", "fileSize": str(len(data))}]})["stagedUploadsCreate"]
     raise_user_errors(staged, f"stage {path.name}")
     t = staged["stagedTargets"][0]
-    multipart_post(t["url"], [(p["name"], p["value"]) for p in t["parameters"]], path.name, data, mime)
+    # videos are several MB: a 120 s write timeout failed on a slow uplink (2026-11-20); retry once
+    for attempt in range(2):
+        try:
+            multipart_post(t["url"], [(p["name"], p["value"]) for p in t["parameters"]], path.name, data, mime,
+                           timeout=900 if kind == "VIDEO" else 180)
+            break
+        except OSError as e:
+            if attempt:
+                raise ShopifyError(f"upload of {path.name} failed twice: {e}") from None
+            print(f"  retrying {path.name} after: {e}")
 
     created = s.gql("""mutation($f:[FileCreateInput!]!){ fileCreate(files:$f){ files { id fileStatus } userErrors { field message } } }""",
                     {"f": [{"originalSource": t["resourceUrl"], "contentType": kind, "alt": alt}]})["fileCreate"]
@@ -66,17 +75,23 @@ def main() -> int:
     media = json.loads(MEDIA_JSON.read_text(encoding="utf-8")) if MEDIA_JSON.exists() else {}
     entry = media.get(a.slug, {})
     s = ShopifyAdmin()
+    media[a.slug] = entry
+
+    def save():  # after every file: a failed video upload once orphaned the hero + poster that had succeeded
+        MEDIA_JSON.write_text(json.dumps(media, indent=2) + "\n", encoding="utf-8", newline="\n")
+
     if a.hero:
         entry["hero"] = upload(s, a.hero, "IMAGE", f"Ardea Skin {a.slug} in use")
+        save()
         print("hero  ->", entry["hero"]["url"][:90])
     if a.poster:
         entry["poster"] = upload(s, a.poster, "IMAGE", f"Ardea Skin {a.slug} how-to video")
+        save()
         print("poster->", entry["poster"]["url"][:90])
     if a.video:
         entry["video"] = upload(s, a.video, "VIDEO", f"How to use Ardea Skin {a.slug}")
+        save()
         print("video ->", [(x["height"], x["url"][:70]) for x in entry["video"]["sources"]])
-    media[a.slug] = entry
-    MEDIA_JSON.write_text(json.dumps(media, indent=2) + "\n", encoding="utf-8", newline="\n")
     return 0
 
 
