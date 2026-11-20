@@ -4,7 +4,8 @@ Guía práctica para generar las fotos de producto, las imágenes de categoría 
 de la tienda, con los errores que ya encontramos y cómo se resolvieron. Si vas a crear medios
 nuevos, lee primero la sección de errores conocidos.
 
-Última actualización: 2026-11-20 (categoría Sérums terminada y aprobada como muestra).
+Última actualización: 2026-11-20. Las 3 categorías de la demo (limpiadores, sérums y mascarillas)
+tienen portada y video.
 
 ---
 
@@ -124,10 +125,17 @@ mensaje de error, el resultado simplemente salía mal.
   dropper is the one in her hand … there is only ONE dropper in the image"*.
 - **Regla:** cuando una escena tiene un objeto en uso (gotero, tapa, tarro abierto), di dónde está cada pieza.
 
-**I2. "Espacio libre para el título" se convierte en un panel liso.**
-- **Síntoma:** un rectángulo color arena pegado a la izquierda, con un corte visible.
-- **Solución:** *"the left third is the same softly out-of-focus background continuing naturally
-  (no flat panels, borders, frames or split layout)"*. El espacio para el texto se consigue con desenfoque, no con un bloque vacío.
+**I2. Describir el encuadre "por partes" produce collages.**
+- **Síntoma 1:** pedir "espacio libre a la izquierda para el título" dio un rectángulo liso pegado a la izquierda.
+- **Síntoma 2, peor:** corregirlo con *"the left third is the same out-of-focus background…"* dio
+  **dípticos** (dos fotos pegadas con un corte vertical) en 3 de 4 portadas. Mencionar "el tercio izquierdo"
+  hace que el modelo piense la imagen en partes.
+- **Solución:** nunca describir el encuadre por zonas. Pedir **una sola fotografía**
+  (`ONE_FRAME_TEXT` en el script: *"ONE single continuous photograph … not a collage, diptych … no vertical
+  dividing lines … main subject slightly right of center"*) y resolver el área del texto con CSS (degradado).
+- **Detector automático:** `seam_score()` mide en qué fracción de filas hay un borde fuerte en la misma
+  columna. Calibrado con imágenes reales: dípticos 0,89–1,0, foto buena 0,24–0,34. Por encima de 0,6 el
+  script imprime `WARNING` y la imagen no se usa.
 
 **I3. Letras de dos colores en vidrio oscuro.**
 - **Síntoma:** en el sérum de retinal (vidrio ámbar), "ARD" salió blanco y "EA" marrón.
@@ -150,9 +158,26 @@ mensaje de error, el resultado simplemente salía mal.
 - Al pasar la foto aprobada como referencia, aclarar: *"match its lettering style, champagne-gold
   finish, color grading … Do NOT copy its packaging shape or its set"*.
 
-**I7. Revisar el texto letra por letra.**
-- El modelo escribe bien las etiquetas casi siempre, pero no siempre. Ninguna imagen se sube sin
-  revisar el texto a mano. Así se detectó I3.
+**I7. Revisar el texto letra por letra, recortando y ampliando la etiqueta.**
+- El modelo escribe bien las etiquetas casi siempre, pero no siempre. Así se detectaron I3 y un
+  "130 ML" en un tubo de 150 ml (portada de limpiadores). En la vista reducida no se distingue:
+  **recorta la zona de la etiqueta, gírala si va en vertical y amplíala** antes de aprobar.
+
+**I8. Un error de texto se corrige editando, no regenerando.**
+- Se le pasa la imagen buena a Nano Banana Pro con *"Change only '130 ML' to '150 ML', in exactly the
+  same font, size, color and position. Keep everything else in the image exactly the same."*
+- Cuesta lo mismo (0,14 USD) pero conserva la composición aprobada.
+- **Verificación:** diferencia píxel a píxel con la original. Salió una media de 1,4/255, solo en la zona de la etiqueta.
+
+### Subida a Shopify Files
+
+**S1. Los videos se cortan al subir.** Un MP4 de 6 MB falló con un tiempo de espera de 120 s y luego
+con un corte SSL. Ahora: 900 s de espera para videos y un reintento automático.
+
+**S2. Archivos huérfanos.** El script guardaba las URLs solo al final, así que cuando falló el video, la
+portada y la miniatura ya subidas quedaron sin registrar y se duplicaron al reintentar. Ahora guarda
+`category-media.json` después de cada archivo. Si vuelve a pasar, busca con
+`files(query:"filename:<nombre>*")` y borra con `fileDelete` los que no estén en el JSON.
 
 ### Cuentas y facturación
 

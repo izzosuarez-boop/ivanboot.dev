@@ -2,11 +2,93 @@
   "_note": "Category pages content. 'collection' is the Shopify collection handle that supplies the products. 'video' holds the how-to video plan: shots are a Gemini Omni prompt (timecoded), captions are burned in by ffmpeg, each caption's 'say' line is voiced with Gemini TTS and starts exactly when its caption appears. Copy avoids medical claims on purpose.",
   "categories": [
     {
+      "slug": "cleansers",
+      "collection": "cleansers",
+      "step": 1,
+      "title": "Cleansers",
+      "kicker": "Step 1 · Cleanse",
+      "tagline": "Every good routine starts with clean skin.",
+      "intro": "Cleansing removes sunscreen, makeup, oil and the day's pollution so everything you apply next can actually reach your skin. The right cleanser leaves skin fresh and comfortable — never tight.",
+      "benefits": [
+        {
+          "title": "A clean base",
+          "text": "Removes what sits on the surface so serums and creams absorb better."
+        },
+        {
+          "title": "Balanced",
+          "text": "pH-balanced formulas that respect your skin barrier."
+        },
+        {
+          "title": "For your skin type",
+          "text": "A cream for dry or sensitive skin, a gel with salicylic acid for oily skin."
+        }
+      ],
+      "howTo": [
+        {
+          "title": "Wet your face",
+          "text": "Use lukewarm water — hot water can dry the skin."
+        },
+        {
+          "title": "A pea-sized amount",
+          "text": "Massage gently for 30–60 seconds, including the hairline and jaw."
+        },
+        {
+          "title": "Rinse and pat dry",
+          "text": "Rinse well and pat, don't rub, with a soft towel."
+        },
+        {
+          "title": "Morning and night",
+          "text": "At night, cleanse twice if you wore sunscreen or makeup."
+        }
+      ],
+      "chooser": [
+        {
+          "need": "Dry, normal or sensitive skin",
+          "handle": "gentle-cream-cleanser"
+        },
+        {
+          "need": "Oily skin & blemishes",
+          "handle": "clarifying-gel-cleanser"
+        }
+      ],
+      "tip": "If your skin feels tight after cleansing, your cleanser is too strong.",
+      "video": {
+        "reference": "gentle-cream-cleanser",
+        "captions": [
+          {
+            "from": 0.3,
+            "to": 3.8,
+            "text": "1  Wet your face with lukewarm water",
+            "say": "Splash your face with lukewarm water."
+          },
+          {
+            "from": 3.9,
+            "to": 7.6,
+            "text": "2  A pea-sized amount",
+            "say": "A pea-sized amount is enough."
+          },
+          {
+            "from": 7.7,
+            "to": 11.4,
+            "text": "3  Massage gently, then rinse",
+            "say": "Massage gently, then rinse."
+          },
+          {
+            "from": 11.5,
+            "to": 14.8,
+            "text": "4  Morning and night",
+            "say": "Use it morning and night."
+          }
+        ],
+        "shots": "[0-4s] A woman leans over a honed travertine basin in fresh morning light and gently splashes lukewarm water onto her face with cupped hands, water droplets catching the light. [4-8s] Macro close-up: she squeezes a small pea-sized amount of soft cream cleanser from the ARDEA tube shown in the reference image onto her fingertips. [8-12s] Close-up of her cheek as she massages the cleanser in slow gentle circles into a soft creamy lather, then rinses with a splash of water. [12-15s] The ARDEA cleanser tube stands upright on its champagne-gold cap on wet travertine beside the basin, fresh water droplets beading on it, a small splash nearby, slow gentle push-in, ARDEA lettering crisp."
+      }
+    },
+    {
       "slug": "serums",
       "collection": "serums",
-      "step": 3,
+      "step": 2,
       "title": "Serums",
-      "kicker": "Step 3 · Treat",
+      "kicker": "Step 2 · Treat",
       "tagline": "Concentrated care for what your skin needs right now.",
       "intro": "A serum is the most targeted step of a routine: a lightweight formula with a high concentration of one or two key ingredients, made to absorb fast and work under your moisturizer. Pick it by what you want to see change.",
       "benefits": [
@@ -38,7 +120,7 @@
         },
         {
           "title": "Seal it in",
-          "text": "Follow with moisturizer, and with sunscreen in the morning."
+          "text": "Follow with your moisturizer — and sunscreen in the morning."
         }
       ],
       "chooser": [
@@ -96,219 +178,11 @@
       }
     },
     {
-      "slug": "cleansers",
-      "collection": "cleansers",
-      "step": 1,
-      "title": "Cleansers",
-      "kicker": "Step 1 · Cleanse",
-      "tagline": "Every good routine starts with clean skin.",
-      "intro": "Cleansing removes sunscreen, makeup, oil and the day's pollution so everything you apply next can actually reach your skin. The right cleanser leaves skin fresh and comfortable — never tight.",
-      "benefits": [
-        {
-          "title": "A clean base",
-          "text": "Removes what sits on the surface so serums and creams absorb better."
-        },
-        {
-          "title": "Balanced",
-          "text": "pH-balanced formulas that respect your skin barrier."
-        },
-        {
-          "title": "For your skin type",
-          "text": "A cream for dry or sensitive skin, a gel with salicylic acid for oily skin."
-        }
-      ],
-      "howTo": [
-        {
-          "title": "Wet your face",
-          "text": "Use lukewarm water — hot water can dry the skin."
-        },
-        {
-          "title": "A pea-sized amount",
-          "text": "Massage gently for 30–60 seconds, including the hairline and jaw."
-        },
-        {
-          "title": "Rinse and pat dry",
-          "text": "Rinse well and pat, don't rub, with a soft towel."
-        },
-        {
-          "title": "Morning and night",
-          "text": "At night, cleanse twice if you wore sunscreen or makeup."
-        }
-      ],
-      "chooser": [
-        {
-          "need": "Dry, normal or sensitive skin",
-          "handle": "gentle-cream-cleanser"
-        },
-        {
-          "need": "Oily skin & blemishes",
-          "handle": "clarifying-gel-cleanser"
-        }
-      ],
-      "tip": "If your skin feels tight after cleansing, your cleanser is too strong.",
-      "video": null
-    },
-    {
-      "slug": "toners-exfoliants",
-      "collection": "toners-exfoliants",
-      "step": 2,
-      "title": "Toners & Exfoliants",
-      "kicker": "Step 2 · Tone & Exfoliate",
-      "tagline": "Rebalance every day, smooth a few nights a week.",
-      "intro": "A toner rehydrates and preps skin in seconds after cleansing. An exfoliant gently dissolves the dull surface layer so skin looks smoother and more even. Use the toner daily and the exfoliant two or three evenings a week.",
-      "benefits": [
-        {
-          "title": "Prepped skin",
-          "text": "A light layer of hydration that helps the next steps spread and absorb."
-        },
-        {
-          "title": "Smoother texture",
-          "text": "Gentle acids lift dullness and roughness without scrubbing."
-        },
-        {
-          "title": "More even tone",
-          "text": "Regular, gentle exfoliation helps skin look brighter over time."
-        }
-      ],
-      "howTo": [
-        {
-          "title": "After cleansing",
-          "text": "Pat the toner in with your hands or a cotton pad."
-        },
-        {
-          "title": "Exfoliate at night",
-          "text": "Apply a thin layer of exfoliant to dry skin, 2–3 nights a week."
-        },
-        {
-          "title": "Don't mix strong actives",
-          "text": "Skip retinal on the nights you exfoliate."
-        },
-        {
-          "title": "Sunscreen next day",
-          "text": "Acids make skin more sun-sensitive — SPF every morning."
-        }
-      ],
-      "chooser": [
-        {
-          "need": "Daily hydration & prep",
-          "handle": "balancing-daily-toner"
-        },
-        {
-          "need": "Rough texture & dullness",
-          "handle": "gentle-exfoliating-lotion"
-        }
-      ],
-      "tip": "Start exfoliating twice a week and only increase if your skin feels comfortable.",
-      "video": null
-    },
-    {
-      "slug": "moisturizers",
-      "collection": "moisturizers",
-      "step": 4,
-      "title": "Moisturizers",
-      "kicker": "Step 4 · Moisturize",
-      "tagline": "Lock in hydration and support your skin barrier.",
-      "intro": "A moisturizer seals in everything you applied before and keeps water in your skin for hours. Even oily skin needs one — the difference is the texture: a light gel-cream or a rich, cushioning cream.",
-      "benefits": [
-        {
-          "title": "Lasting hydration",
-          "text": "Keeps skin comfortable and supple all day or all night."
-        },
-        {
-          "title": "Barrier support",
-          "text": "Ceramides and humectants help the skin hold on to moisture."
-        },
-        {
-          "title": "Seals your routine",
-          "text": "Locks serums in so they keep working."
-        }
-      ],
-      "howTo": [
-        {
-          "title": "Last step at night",
-          "text": "Apply after your serum, as the final step of the evening."
-        },
-        {
-          "title": "Before SPF in the morning",
-          "text": "Let it settle for a minute before sunscreen."
-        },
-        {
-          "title": "Warm and press",
-          "text": "Warm a small amount between your fingers and press it in."
-        },
-        {
-          "title": "Don't forget the neck",
-          "text": "Extend down the neck and décolletage."
-        }
-      ],
-      "chooser": [
-        {
-          "need": "Oily or combination skin",
-          "handle": "oil-free-gel-moisturizer"
-        },
-        {
-          "need": "Dry, tight or sensitive skin",
-          "handle": "barrier-repair-cream"
-        }
-      ],
-      "tip": "Skin feels tight by midday? Move to a richer texture.",
-      "video": null
-    },
-    {
-      "slug": "sun-protection",
-      "collection": "sun-protection",
-      "step": 5,
-      "title": "Sun Protection",
-      "kicker": "Step 5 · Protect",
-      "tagline": "The step that protects all the others.",
-      "intro": "Daily sunscreen is the most effective way to keep skin looking even and youthful. Use it every morning as the last step of your routine — cloudy days and indoors near windows included.",
-      "benefits": [
-        {
-          "title": "High protection",
-          "text": "SPF 50 with 100% mineral filters."
-        },
-        {
-          "title": "Protects your results",
-          "text": "Helps prevent new dark spots while your serums work."
-        },
-        {
-          "title": "Every skin tone",
-          "text": "A sheer fluid with no white cast."
-        }
-      ],
-      "howTo": [
-        {
-          "title": "Last step, every morning",
-          "text": "Apply after your moisturizer has settled."
-        },
-        {
-          "title": "Use enough",
-          "text": "About two finger-lengths for face and neck."
-        },
-        {
-          "title": "15 minutes before sun",
-          "text": "Give it time to form an even film."
-        },
-        {
-          "title": "Reapply",
-          "text": "Every 2 hours outdoors, and after swimming or sweating."
-        }
-      ],
-      "chooser": [
-        {
-          "need": "Daily protection for every skin type",
-          "handle": "daily-mineral-sunscreen-spf50"
-        }
-      ],
-      "tip": "Sunscreen is one part of sun protection: shade and a hat help too.",
-      "video": null
-    },
-    {
       "slug": "masks",
       "collection": "masks",
-      "step": 6,
+      "step": 3,
       "title": "Masks",
-      "kicker": "Weekly ritual",
+      "kicker": "Step 3 · Weekly ritual",
       "tagline": "Fifteen minutes to calm, hydrate and unwind.",
       "intro": "A sheet mask is an intensive boost of hydration and a moment to slow down. Use it two or three evenings a week, after toning and before moisturizer.",
       "benefits": [
@@ -350,7 +224,36 @@
         }
       ],
       "tip": "Keep a mask in the fridge for an extra-cooling effect.",
-      "video": null
+      "video": {
+        "reference": "relaxing-sheet-masks",
+        "captions": [
+          {
+            "from": 0.3,
+            "to": 3.8,
+            "text": "1  Start with clean, toned skin",
+            "say": "Start with clean, toned skin."
+          },
+          {
+            "from": 3.9,
+            "to": 7.6,
+            "text": "2  Unfold and smooth it on",
+            "say": "Unfold the mask and smooth it on."
+          },
+          {
+            "from": 7.7,
+            "to": 11.4,
+            "text": "3  Relax for 15–20 minutes",
+            "say": "Relax for fifteen to twenty minutes."
+          },
+          {
+            "from": 11.5,
+            "to": 14.8,
+            "text": "4  Two or three evenings a week",
+            "say": "Two or three evenings a week."
+          }
+        ],
+        "shots": "[0-4s] Evening, warm candlelight: a woman's hands tear open one of the ARDEA sheet-mask sachets shown in the reference image, on a folded lilac-grey waffle-weave linen towel on travertine. [4-8s] Soft close-up: she unfolds a white biocellulose sheet mask and gently smooths it over her face with her fingertips. [8-12s] She reclines on a sofa wrapped in the lilac towel, wearing the sheet mask, eyes closed, completely relaxed, candle flickering softly in the foreground. [12-15s] The ARDEA sheet-mask sachets rest on the lilac waffle towel next to a lit cream-colored candle and a small dish of dried chamomile, slow gentle push-in, ARDEA lettering crisp, intimate golden candlelight with soft lilac undertones."
+      }
     }
   ]
 }

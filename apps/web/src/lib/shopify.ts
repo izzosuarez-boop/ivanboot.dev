@@ -147,11 +147,9 @@ export function formatMoney(m: Money): string {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: m.currencyCode }).format(Number(m.amount));
 }
 
+// Demo routine reduced to three steps on 2026-11-20 (see scripts/shopify/catalog.json "retired")
 export const STEP_LABELS: Record<number, string> = {
   1: "Cleanse",
-  2: "Tone & Exfoliate",
-  3: "Treat",
-  4: "Moisturize",
-  5: "Protect",
-  6: "Weekly Mask",
+  2: "Treat",
+  3: "Weekly Mask",
 };

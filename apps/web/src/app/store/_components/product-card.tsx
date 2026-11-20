@@ -12,10 +12,13 @@ export function stockBadge(p: Pick<Product, "availableForSale" | "totalInventory
 
 export function ProductCard({ product }: { product: Product }) {
   const price = product.priceRange.minVariantPrice;
-  const compare = product.compareAtPriceRange.maxVariantPrice;
-  const onSale = Number(compare.amount) > Number(price.amount);
-  const badge = stockBadge(product);
   const multi = product.variants.length > 1;
+  // On sale = some variant's compare-at beats its OWN price. Comparing the max compare-at with the min
+  // price showed "from $30 ~~$58~~" when only the 60 ml was discounted (2026-11-20).
+  const saleVariant = product.variants.find((v) => v.compareAtPrice && Number(v.compareAtPrice.amount) > Number(v.price.amount));
+  const onSale = Boolean(saleVariant);
+  const compare = !multi && saleVariant ? saleVariant.compareAtPrice! : null; // strike-through only when unambiguous
+  const badge = stockBadge(product);
 
   return (
     <Link href={storeHref(`/products/${product.handle}`)} className="group block">
@@ -46,7 +49,7 @@ export function ProductCard({ product }: { product: Product }) {
         <p className="shrink-0 text-sm text-clay">
           {multi && <span className="text-clay-muted">from </span>}
           {formatMoney(price)}
-          {onSale && <span className="ml-1.5 text-clay-muted line-through">{formatMoney(compare)}</span>}
+          {compare && <span className="ml-1.5 text-clay-muted line-through">{formatMoney(compare)}</span>}
         </p>
       </div>
     </Link>

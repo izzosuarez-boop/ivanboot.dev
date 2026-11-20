@@ -8,11 +8,8 @@ import { storeHref } from "@/lib/site";
 
 const STEP_NOTES: Record<number, string> = {
   1: "Start clean, morning and night.",
-  2: "Rebalance and smooth.",
-  3: "Targeted serums for what your skin needs.",
-  4: "Lock in hydration.",
-  5: "Every morning, the last step.",
-  6: "A calming ritual, 2–3 evenings a week.",
+  2: "Targeted serums for what your skin needs.",
+  3: "A calming ritual, 2–3 evenings a week.",
 };
 
 async function Catalog() {
@@ -71,7 +68,7 @@ export default function StoreHome() {
           <p className="rise text-sm uppercase tracking-[0.2em] text-sage-dark">Fragrance-free skincare</p>
           <h1 className="rise rise-1 mt-4 font-serif text-5xl leading-[1.05] sm:text-6xl">Skincare that explains itself.</h1>
           <p className="rise rise-2 mt-6 max-w-lg text-lg text-clay-muted">
-            Thirteen essentials, one simple routine. Each step explains what it does, how to use it and
+            Eight essentials, three simple steps. Each one explains what it does, how to use it and
             which formula suits your skin.
           </p>
           <a href="#shop" className="rise rise-3 mt-8 inline-block rounded-full bg-clay px-6 py-3 text-sm text-sand transition hover:bg-sage-dark">
