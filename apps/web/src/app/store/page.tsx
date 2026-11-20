@@ -1,7 +1,10 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { getProducts, STEP_LABELS, type Product } from "@/lib/shopify";
+import Link from "next/link";
 import { ProductCard } from "./_components/product-card";
+import { categories, categoryForStep } from "@/lib/categories";
+import { storeHref } from "@/lib/site";
 
 const STEP_NOTES: Record<number, string> = {
   1: "Start clean, morning and night.",
@@ -32,6 +35,11 @@ async function Catalog() {
               {STEP_LABELS[step] ?? "More"}
             </h2>
             <p className="hidden text-sm text-clay-muted sm:block">{STEP_NOTES[step]}</p>
+            {categoryForStep(step) && (
+              <Link href={storeHref(`/collections/${categoryForStep(step)!.slug}`)} className="shrink-0 text-sm text-sage-dark hover:text-clay">
+                How to use →
+              </Link>
+            )}
           </div>
           <div className="mt-6 grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4">
             {products.filter((p) => p.routineStep === step).map((p) => <ProductCard key={p.id} product={p} />)}
@@ -63,18 +71,20 @@ export default function StoreHome() {
           <p className="rise text-sm uppercase tracking-[0.2em] text-sage-dark">Fragrance-free skincare</p>
           <h1 className="rise rise-1 mt-4 font-serif text-5xl leading-[1.05] sm:text-6xl">Skincare that explains itself.</h1>
           <p className="rise rise-2 mt-6 max-w-lg text-lg text-clay-muted">
-            Thirteen essentials, one simple routine. Tell our skin advisor about your skin and it will build
-            your routine — and your bag — in a minute.
+            Thirteen essentials, one simple routine. Each step explains what it does, how to use it and
+            which formula suits your skin.
           </p>
           <a href="#shop" className="rise rise-3 mt-8 inline-block rounded-full bg-clay px-6 py-3 text-sm text-sand transition hover:bg-sage-dark">
             Shop the routine
           </a>
         </div>
         <ol id="routine" className="rise rise-2 grid grid-cols-3 gap-3 text-center text-xs text-clay-muted">
-          {[1, 2, 3, 4, 5, 6].map((s) => (
-            <li key={s} className="rounded-2xl border border-sand-2 bg-sand-2/40 px-2 py-4">
-              <span className="block font-serif text-2xl text-clay">{s}</span>
-              {STEP_LABELS[s]}
+          {categories.map((c) => (
+            <li key={c.slug}>
+              <Link href={storeHref(`/collections/${c.slug}`)} className="block rounded-2xl border border-sand-2 bg-sand-2/40 px-2 py-4 transition hover:border-clay-muted hover:bg-sand-2">
+                <span className="block font-serif text-2xl text-clay">{c.step}</span>
+                {STEP_LABELS[c.step]}
+              </Link>
             </li>
           ))}
         </ol>

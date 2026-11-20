@@ -7,6 +7,7 @@ import { getProduct, STEP_LABELS } from "@/lib/shopify";
 import { storeHref } from "@/lib/site";
 import { ProductVisual } from "../../_components/product-visual";
 import { VariantPicker } from "./variant-picker";
+import { categoryForStep, categoryMedia } from "@/lib/categories";
 
 const CONCERN_LABELS: Record<string, string> = {
   acne: "Blemishes", pores: "Pores", "dark-spots": "Dark spots", dullness: "Dullness",
@@ -31,7 +32,14 @@ async function ProductDetails({ params }: { params: PageProps<"/store/products/[
 
       <div>
         <p className="text-xs uppercase tracking-[0.2em] text-sage-dark">
-          Step {p.routineStep} · {STEP_LABELS[p.routineStep]} · {p.usageTime}
+          {categoryForStep(p.routineStep) ? (
+            <Link href={storeHref(`/collections/${categoryForStep(p.routineStep)!.slug}`)} className="hover:text-clay">
+              Step {p.routineStep} · {STEP_LABELS[p.routineStep]}
+            </Link>
+          ) : (
+            <>Step {p.routineStep} · {STEP_LABELS[p.routineStep]}</>
+          )}{" "}
+          · {p.usageTime}
         </p>
         <h1 className="mt-3 font-serif text-4xl leading-tight">{p.title}</h1>
         <div className="mt-6">
@@ -70,6 +78,11 @@ async function ProductDetails({ params }: { params: PageProps<"/store/products/[
         <section className="mt-8 border-t border-sand-2 pt-6">
           <h2 className="font-serif text-xl">How to use</h2>
           <p className="mt-3 text-sm leading-relaxed text-clay-muted">{p.howToUse}</p>
+          {categoryForStep(p.routineStep) && (
+            <Link href={storeHref(`/collections/${categoryForStep(p.routineStep)!.slug}#how-to`)} className="mt-3 inline-block text-sm text-sage-dark underline underline-offset-2 hover:text-clay">
+              See the step-by-step guide{categoryMedia(categoryForStep(p.routineStep)!.slug).video ? " and video" : ""} →
+            </Link>
+          )}
         </section>
         <section className="mt-8 border-t border-sand-2 pt-6">
           <h2 className="font-serif text-xl">Good to know</h2>

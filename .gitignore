@@ -19,3 +19,4 @@ Thumbs.db
 
 # Generated images under review (approved ones get uploaded to Shopify)
 scripts/images/out/
+scripts/media/out/
