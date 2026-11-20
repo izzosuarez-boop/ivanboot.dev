@@ -1,0 +1,39 @@
+{
+  "serums": {
+    "hero": {
+      "id": "gid://shopify/MediaImage/46858072391932",
+      "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/hero-165339.jpg?v=1795211651",
+      "width": 2752,
+      "height": 1536,
+      "alt": "Ardea Skin serums in use"
+    },
+    "poster": {
+      "id": "gid://shopify/MediaImage/46858073276668",
+      "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/serums-howto-poster.jpg?v=1795211657",
+      "width": 1920,
+      "height": 1080,
+      "alt": "Ardea Skin serums how-to video"
+    },
+    "video": {
+      "id": "gid://shopify/Video/46858073768188",
+      "duration_ms": 15000,
+      "sources": [
+        {
+          "url": "https://cdn.shopify.com/videos/c/vp/fa3f485144bc4a308073af589cabc9b2/fa3f485144bc4a308073af589cabc9b2.HD-1080p-2.5Mbps-102172079.mp4",
+          "height": 1080,
+          "width": 1920
+        },
+        {
+          "url": "https://cdn.shopify.com/videos/c/vp/fa3f485144bc4a308073af589cabc9b2/fa3f485144bc4a308073af589cabc9b2.HD-720p-1.6Mbps-102172079.mp4",
+          "height": 720,
+          "width": 1280
+        },
+        {
+          "url": "https://cdn.shopify.com/videos/c/vp/fa3f485144bc4a308073af589cabc9b2/fa3f485144bc4a308073af589cabc9b2.SD-480p-0.9Mbps-102172079.mp4",
+          "height": 480,
+          "width": 852
+        }
+      ]
+    }
+  }
+}

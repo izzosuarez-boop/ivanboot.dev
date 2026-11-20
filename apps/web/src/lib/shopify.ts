@@ -132,6 +132,17 @@ export async function getProduct(handle: string): Promise<Product | null> {
   return data.product ? parse(data.product) : null;
 }
 
+export async function getCollectionProducts(handle: string): Promise<Product[]> {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("products", `collection-${handle}`);
+  const data = await storefront<{ collection: { products: { nodes: RawProduct[] } } | null }>(
+    `query($handle: String!) { collection(handle: $handle) { products(first: 50) { nodes { ${PRODUCT_FIELDS} } } } }`,
+    { handle },
+  );
+  return (data.collection?.products.nodes ?? []).map(parse).sort((a, b) => a.title.localeCompare(b.title));
+}
+
 export function formatMoney(m: Money): string {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: m.currencyCode }).format(Number(m.amount));
 }
