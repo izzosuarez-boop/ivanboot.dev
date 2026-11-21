@@ -112,7 +112,12 @@ def time_line(title: str, subtitle: str, days: list[date], values: list[float], 
     ax.yaxis.grid(True, color=GRID, linewidth=0.6)
     ax.set_axisbelow(True)
     ax.yaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: fmt(v)))
-    ax.xaxis.set_major_locator(mdates.MonthLocator())
-    ax.xaxis.set_major_formatter(mdates.DateFormatter("%b"))
+    if days and (days[-1] - days[0]).days <= 62:  # short ranges: one tick per week ("Oct 27", "Nov 3")
+        ax.xaxis.set_major_locator(mdates.WeekdayLocator(byweekday=mdates.MO))
+        ax.xaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(
+            lambda x, _: f"{mdates.num2date(x):%b} {mdates.num2date(x).day}"))
+    else:
+        ax.xaxis.set_major_locator(mdates.MonthLocator())
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%b"))
     ax.tick_params(axis="x", which="both", length=0, pad=6)
     return _png(fig)
