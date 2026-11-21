@@ -14,6 +14,8 @@ from pydantic import BaseModel, Field
 from . import agent, config, db, guard, notify, shopify_admin, webhooks
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+# httpx logs full request URLs at INFO, and Telegram puts the bot token in the URL: keep it out of the logs.
+logging.getLogger("httpx").setLevel(logging.WARNING)
 STARTED_AT = time.time()
 VERSION = os.getenv("APP_VERSION", "dev")
 

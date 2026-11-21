@@ -234,6 +234,7 @@ async def run_tool(name: str, args: dict, conv: Conversation, catalog: dict, act
         ref = _ref_code()
         row = {"ref_code": ref, "conversation_id": conv.id, "kind": args.get("kind", "other"),
                "summary": str(args.get("summary", ""))[:600], "contact": (args.get("contact_email") or None)}
+        await _save_conversation(conv)  # escalations reference the conversation row, which may not exist yet
         saved = await db.insert("escalations", row)
         actions.append({"type": "escalated", "ref": ref})
         from . import notify  # owner alert (Telegram) — best effort
@@ -365,13 +366,17 @@ async def chat(conv: Conversation, text: str, mode: str | None, ref: str | None)
                       "model": config.AGENT_MODEL, "latency_ms": latency}}
 
 
-async def _log(conv: Conversation, text: str, reply: str, actions: list, stop: str | None, latency: int, turn_cost: float) -> None:
+async def _save_conversation(conv: Conversation) -> None:
     await db.insert("conversations", {
         "id": conv.id, "mode": conv.mode, "ref": conv.ref, "visitor_hash": conv.visitor,
         "message_count": conv.user_turns, "input_tokens": conv.input_tokens, "output_tokens": conv.output_tokens,
         "cache_read_tokens": conv.cache_read, "cost_usd": round(conv.cost_usd, 6),
         "last_message_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }, upsert=True)
+
+
+async def _log(conv: Conversation, text: str, reply: str, actions: list, stop: str | None, latency: int, turn_cost: float) -> None:
+    await _save_conversation(conv)
     # PostgREST bulk inserts need identical keys in every row
     base = {"conversation_id": conv.id, "model": None, "actions": None, "stop_reason": None, "latency_ms": None, "cost_usd": None}
     await db.insert("messages", [
