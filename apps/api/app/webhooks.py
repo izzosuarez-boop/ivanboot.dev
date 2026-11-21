@@ -16,7 +16,9 @@ import time
 
 from fastapi import APIRouter, BackgroundTasks, Request, Response
 
-from . import config, db, guard, notify, shopify, shopify_admin
+import anthropic
+
+from . import config, db, guard, notify, owner_agent, shopify, shopify_admin
 
 log = logging.getLogger("webhooks")
 router = APIRouter(prefix="/webhooks")
@@ -63,7 +65,8 @@ async def shopify_webhook(request: Request, tasks: BackgroundTasks):
     topic = request.headers.get("x-shopify-topic", "")
     payload = json.loads(body or b"{}")
     if topic == "orders/create":
-        tasks.add_task(notify.new_order, payload)
+        if "demo-seed" not in (payload.get("tags") or ""):  # generated history must not flood the owner
+            tasks.add_task(notify.new_order, payload)
     elif topic == "inventory_levels/update":
         tasks.add_task(_inventory_changed, payload)
     log.info("shopify webhook %s", topic)
@@ -92,11 +95,18 @@ async def _inventory_changed(payload: dict) -> None:
 
 # ── Telegram (owner commands) ────────────────────────────────────────────────────────────────────────
 
-HELP = ("<b>Ardea Skin · owner bot</b>\n"
-        "/stock — low-stock and sold-out products\n"
-        "/orders — last 5 orders\n"
-        "/stats — AI chat usage and spend\n\n"
+HELP = ("<b>Ardea Skin · back-office bot</b>\n"
+        "Ask me anything about the store in plain words, for example:\n"
+        "• <i>Chart of the best sellers of the last 3 months</i>\n"
+        "• <i>Top 10 customers</i>\n"
+        "• <i>How much did we sell this month vs last month?</i>\n"
+        "• <i>What is running out of stock?</i>\n\n"
+        "Shortcuts: /stock · /orders · /stats · /new (forget this conversation)\n"
         "You also get alerts for new orders, low stock, sell-outs and chat escalations.")
+
+
+def allowed(chat_id: str) -> bool:
+    return chat_id == config.TELEGRAM_OWNER_CHAT_ID or chat_id in config.TELEGRAM_ALLOWED_CHAT_IDS
 
 
 @router.post("/telegram")
@@ -109,28 +119,53 @@ async def telegram_webhook(request: Request, tasks: BackgroundTasks):
     chat_id = str((msg.get("chat") or {}).get("id", ""))
     text = (msg.get("text") or "").strip()
     if chat_id and text:
-        tasks.add_task(_command, chat_id, text)
+        tasks.add_task(_handle, chat_id, text)
     return {"ok": True}
 
 
-async def _command(chat_id: str, text: str) -> None:
-    if chat_id != config.TELEGRAM_OWNER_CHAT_ID:
-        await notify.telegram("This is a private bot for the Ardea Skin store owner.", chat_id)
+async def _handle(chat_id: str, text: str) -> None:
+    if not allowed(chat_id):
+        await notify.telegram("This is a private bot for the Ardea Skin store team.", chat_id)
         return
-    cmd = text.split()[0].split("@")[0].lower()
+    cmd = text.split()[0].split("@")[0].lower() if text.startswith("/") else ""
     try:
-        if cmd == "/stock":
-            reply = await _stock_report()
+        if cmd in ("/start", "/help", "/new"):
+            owner_agent.reset(chat_id)
+            await notify.telegram(HELP if cmd != "/new" else "🧹 Fresh start — ask me anything.", chat_id)
+        elif cmd == "/stock":
+            await notify.telegram(await _stock_report(), chat_id)
         elif cmd == "/orders":
-            reply = await _orders_report()
+            await notify.telegram(await _orders_report(), chat_id)
         elif cmd == "/stats":
-            reply = await _stats_report()
+            await notify.telegram(await _stats_report(), chat_id)
+        elif cmd:
+            await notify.telegram(HELP, chat_id)
         else:
-            reply = HELP
+            await _ask(chat_id, text)
     except Exception as e:  # noqa: BLE001
-        log.warning("command %s failed: %s", cmd, e)
-        reply = "Couldn't fetch that right now — try again in a minute."
+        log.warning("telegram %s failed: %s", cmd or "question", e.__class__.__name__)
+        await notify.telegram("Couldn't fetch that right now — try again in a minute.", chat_id)
+
+
+async def _ask(chat_id: str, text: str) -> None:
+    if not config.ANTHROPIC_API_KEY:
+        await notify.telegram("The AI assistant isn't configured. The shortcuts /stock /orders /stats still work.", chat_id)
+        return
+    if await guard.over_budget():
+        await notify.telegram("Today's AI budget is used up. Shortcuts /stock /orders /stats still work.", chat_id)
+        return
+    await notify.typing(chat_id)
+    try:
+        reply, photos, cost = await owner_agent.ask(chat_id, text)
+    except anthropic.APIError as e:
+        log.warning("owner agent: %s", e.__class__.__name__)
+        await notify.telegram("The assistant had a hiccup — please try again.", chat_id)
+        return
     await notify.telegram(reply, chat_id)
+    for png, _ in photos:
+        await notify.typing(chat_id, "upload_photo")
+        await notify.telegram_photo(png, chat_id)
+    log.info("owner question answered: %d chart(s), $%.5f", len(photos), cost)
 
 
 async def _stock_report() -> str:

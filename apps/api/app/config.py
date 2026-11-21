@@ -18,6 +18,8 @@ SHOPIFY_CLIENT_SECRET = env("SHOPIFY_CLIENT_SECRET")  # also the key Shopify sig
 TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN")
 TELEGRAM_OWNER_CHAT_ID = env("TELEGRAM_OWNER_CHAT_ID")
 LOW_STOCK_AT = int(env("LOW_STOCK_AT", "5"))
+# Extra Telegram chats allowed to use the back-office bot (comma-separated chat ids); the owner is always allowed.
+TELEGRAM_ALLOWED_CHAT_IDS = {c.strip() for c in env("TELEGRAM_ALLOWED_CHAT_IDS").split(",") if c.strip()}
 
 ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY")
 AGENT_MODEL = env("AGENT_MODEL", "claude-haiku-5-5")

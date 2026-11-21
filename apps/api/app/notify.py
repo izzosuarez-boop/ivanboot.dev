@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import html
 import logging
+import re
 from datetime import datetime, timezone
 
 import httpx
@@ -27,21 +28,53 @@ def enabled() -> bool:
     return bool(config.TELEGRAM_BOT_TOKEN and config.TELEGRAM_OWNER_CHAT_ID)
 
 
+def _api(method: str) -> str:
+    return f"https://api.telegram.org/bot{config.TELEGRAM_BOT_TOKEN}/{method}"
+
+
+def _plain(text: str) -> str:
+    """Fallback when Telegram rejects our HTML: drop the tags, unescape entities."""
+    return html.unescape(re.sub(r"</?[a-zA-Z][^<>]*>", "", text))
+
+
 async def telegram(text: str, chat_id: str | int | None = None) -> bool:
     chat_id = chat_id or config.TELEGRAM_OWNER_CHAT_ID
     if not config.TELEGRAM_BOT_TOKEN or not chat_id:
         return False
     try:
-        async with httpx.AsyncClient(timeout=8) as http:
-            r = await http.post(f"https://api.telegram.org/bot{config.TELEGRAM_BOT_TOKEN}/sendMessage",
-                                json={"chat_id": chat_id, "text": text[:4000], "parse_mode": "HTML",
-                                      "disable_web_page_preview": True})
+        async with httpx.AsyncClient(timeout=10) as http:
+            body = {"chat_id": chat_id, "text": text[:4000], "parse_mode": "HTML", "disable_web_page_preview": True}
+            r = await http.post(_api("sendMessage"), json=body)
+            if r.status_code == 400:  # model-written HTML that Telegram can't parse: resend as plain text
+                r = await http.post(_api("sendMessage"), json={"chat_id": chat_id, "text": _plain(text)[:4000],
+                                                                "disable_web_page_preview": True})
         if r.status_code != 200:
             log.warning("telegram %s: %s", r.status_code, r.text[:200])
         return r.status_code == 200
     except httpx.HTTPError as e:
-        log.warning("telegram failed: %s", e)
+        log.warning("telegram failed: %s", e.__class__.__name__)  # never log the URL: it contains the token
         return False
+
+
+async def telegram_photo(png: bytes, chat_id: str | int, caption: str = "") -> bool:
+    try:
+        async with httpx.AsyncClient(timeout=30) as http:
+            r = await http.post(_api("sendPhoto"), data={"chat_id": str(chat_id), "caption": caption[:1000]},
+                                files={"photo": ("chart.png", png, "image/png")})
+        if r.status_code != 200:
+            log.warning("telegram photo %s: %s", r.status_code, r.text[:200])
+        return r.status_code == 200
+    except httpx.HTTPError as e:
+        log.warning("telegram photo failed: %s", e.__class__.__name__)
+        return False
+
+
+async def typing(chat_id: str | int, action: str = "typing") -> None:
+    try:
+        async with httpx.AsyncClient(timeout=5) as http:
+            await http.post(_api("sendChatAction"), json={"chat_id": chat_id, "action": action})
+    except httpx.HTTPError:
+        pass
 
 
 async def owner_escalation(row: dict) -> bool:
