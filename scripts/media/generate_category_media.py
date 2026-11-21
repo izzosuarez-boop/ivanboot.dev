@@ -154,6 +154,24 @@ def find_video(node):
     return None
 
 
+def download_video(video: dict, path: Path) -> None:
+    if video.get("data"):
+        path.write_bytes(base64.b64decode(video["data"]))
+        return
+    # uri comes as ".../v1beta/files/<id>:download?alt=media" (or "files/<id>") — see PLAYBOOK C2
+    file_id = re.search(r"files/([^:/?]+)", video["uri"]).group(1)
+    for _ in range(120):  # wait until the file is ACTIVE
+        meta = json.loads(urllib.request.urlopen(urllib.request.Request(f"{API}/files/{file_id}", headers={"x-goog-api-key": key()}), timeout=30).read())
+        if meta.get("state") == "ACTIVE":
+            break
+        if meta.get("state") == "FAILED":
+            raise SystemExit(f"Video file FAILED: {meta}")
+        time.sleep(5)
+    req = urllib.request.Request(f"{API}/files/{file_id}:download?alt=media", headers={"x-goog-api-key": key()})
+    with urllib.request.urlopen(req, timeout=300) as r:
+        path.write_bytes(r.read())
+
+
 def clip(slug: str, resolution: str = "1080p") -> None:
     cat = CATEGORIES[slug]
     v = cat["video"]
@@ -192,23 +210,66 @@ def clip(slug: str, resolution: str = "1080p") -> None:
     if not video:
         raise SystemExit(f"No video in response: {json.dumps(res)[:800]}")
     path = out_dir(slug) / f"clip-{time.strftime('%H%M%S')}.mp4"
-    if video.get("data"):
-        path.write_bytes(base64.b64decode(video["data"]))
-    else:
-        # uri comes as ".../v1beta/files/<id>:download?alt=media" (or "files/<id>")
-        file_id = re.search(r"files/([^:/?]+)", video["uri"]).group(1)
-        for _ in range(120):  # wait until the file is ACTIVE
-            meta = json.loads(urllib.request.urlopen(urllib.request.Request(f"{API}/files/{file_id}", headers={"x-goog-api-key": key()}), timeout=30).read())
-            if meta.get("state") == "ACTIVE":
-                break
-            if meta.get("state") == "FAILED":
-                raise SystemExit(f"Video file FAILED: {meta}")
-            time.sleep(5)
-        req = urllib.request.Request(f"{API}/files/{file_id}:download?alt=media", headers={"x-goog-api-key": key()})
-        with urllib.request.urlopen(req, timeout=300) as r:
-            path.write_bytes(r.read())
-    print(f"clip  -> {path.relative_to(ROOT)} ({path.stat().st_size//1024} KB) in {time.time()-t0:.0f}s, "
+    download_video(video, path)
+    print(f"clip  ->{path.relative_to(ROOT)} ({path.stat().st_size//1024} KB) in {time.time()-t0:.0f}s, "
           f"cost ≈ ${15 * OMNI_PER_SECOND.get(resolution, 0.104):.2f}")
+
+
+# -- 2b. brand film for the store homepage (muted background loop) ---------------------------
+BRAND_FILM = {
+    "references": ["gentle-cream-cleanser", "niacinamide-zinc-serum", "relaxing-sheet-masks"],
+    "shots": (
+        "[0-5s] Morning: the ARDEA cleanser tube from the first reference image stands on wet honed travertine as "
+        "fresh water splashes around it in slow motion, bright clean morning light. "
+        "[5-10s] Afternoon: macro slow-motion shot of a single clear drop falling from the champagne-gold dropper of "
+        "the ARDEA serum from the second reference image, warm golden late-afternoon light. "
+        "[10-15s] Evening: the ARDEA sheet-mask sachets from the third reference image on a lilac waffle linen towel "
+        "beside a lit candle; the camera slowly pulls back to reveal the cleanser tube, the serum bottle and the mask "
+        "sachets standing together on a travertine plinth in soft golden candlelight."
+    ),
+}
+
+
+def brand(resolution: str = "1080p") -> None:
+    refs = [ROOT / "scripts/images/out" / APPROVED[h] for h in BRAND_FILM["references"]]
+    prompt = (
+        f"A calm, cinematic brand film for {BRAND}\nIt moves from morning to afternoon to evening, the three steps of the "
+        f"routine.\n\nShots:\n{BRAND_FILM['shots']}\n\nEach product must look exactly like its reference image "
+        "(same packaging, ARDEA lettering and colors). Smooth, slow, elegant camera moves and soft transitions between "
+        "the three moments, consistent premium color grading. No people. No on-screen text, captions or logos other "
+        "than the ARDEA lettering on the products. Audio: none needed (it plays muted)."
+    )
+    body = {
+        "model": "gemini-omni-1.2-flash",
+        "input": [{"type": "image", "data": base64.b64encode(r.read_bytes()).decode(), "mime_type": "image/jpeg"} for r in refs]
+                 + [{"type": "text", "text": prompt}],
+        "response_format": {"type": "video", "aspect_ratio": "16:9", "resolution": resolution, "duration": "15s", "delivery": "uri"},
+    }
+    t0 = time.time()
+    res = post(f"{API}/interactions", body, timeout=900)
+    (out_dir("home") / "brand-response.json").write_text(json.dumps({k: v for k, v in res.items() if k != "steps"}, indent=1), encoding="utf-8")
+    video = find_video(res)
+    if not video:
+        raise SystemExit(f"No video in response: {json.dumps(res)[:800]}")
+    path = out_dir("home") / f"brand-{time.strftime('%H%M%S')}.mp4"
+    download_video(video, path)
+    print(f"brand -> {path.relative_to(ROOT)} ({path.stat().st_size//1024} KB) in {time.time()-t0:.0f}s, "
+          f"cost ≈ ${15 * OMNI_PER_SECOND.get(resolution, 0.104):.2f}")
+
+
+def brand_web(src: Path) -> None:
+    """Muted, loop-friendly web versions: no audio track, fade from/to the page's sand color, small files."""
+    d = out_dir("home")
+    length = media_seconds(src)
+    fade = f"fade=t=in:st=0:d=0.6:color=0xf5f0e8,fade=t=out:st={length - 0.6:.2f}:d=0.6:color=0xf5f0e8"
+    for height, crf in ((1080, 27), (720, 28)):
+        out = d / f"brand-{height}.mp4"
+        subprocess.run([ffmpeg(), "-y", "-i", str(src), "-an", "-vf", f"scale=-2:{height},{fade}", "-c:v", "libx264",
+                        "-preset", "slow", "-crf", str(crf), "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(out)],
+                       capture_output=True, check=True)
+        print(f"web   -> {out.name} {out.stat().st_size // 1024} KB")
+    poster = d / "brand-poster.jpg"
+    subprocess.run([ffmpeg(), "-y", "-ss", "7", "-i", str(src), "-frames:v", "1", "-q:v", "3", str(poster)], capture_output=True, check=True)
 
 
 # -- 3. narration (Gemini TTS) --------------------------------------------------------------

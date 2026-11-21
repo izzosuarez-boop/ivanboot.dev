@@ -109,5 +109,30 @@
         }
       ]
     }
+  },
+  "home": {
+    "poster": {
+      "id": "gid://shopify/MediaImage/46858683678972",
+      "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/brand-poster.jpg?v=1795218015",
+      "width": 1920,
+      "height": 1080,
+      "alt": "Ardea Skin home how-to video"
+    },
+    "video": {
+      "sources": [
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/brand-1080.mp4?v=1795218129",
+          "height": 1080,
+          "width": 1920,
+          "id": "gid://shopify/GenericFile/46858693968124"
+        },
+        {
+          "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/brand-720.mp4?v=1795218146",
+          "height": 720,
+          "width": 1280,
+          "id": "gid://shopify/GenericFile/46858696589564"
+        }
+      ]
+    }
   }
 }
