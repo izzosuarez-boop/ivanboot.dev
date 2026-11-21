@@ -29,8 +29,11 @@ with sync_playwright() as p:
     page.get_by_role("button", name="Pregúntale a Ardea").click()
     bubbles = lambda: page.locator("section[role=dialog] .rounded-tl-sm").count()
     n = bubbles()
-    page.get_by_role("button", name="Ayúdame con mi piel").click()
+    starter_before = page.locator("button[data-mode=skin]").inner_text()  # wording is random per chat
+    page.locator("button[data-mode=skin]").click()
     wait_reply(page, n); print("1. modo piel ->", last_reply(page)[:200].replace("\n", " "))
+    sugg = page.locator("[data-testid=suggestions] button").all_inner_texts()
+    print("   sugerencias:", sugg)
 
     n = bubbles()
     page.locator("section[role=dialog] textarea").fill("Tengo piel sensible y algo de rojez. Agrégame el sérum calmante a la bolsa, por favor.")
@@ -43,6 +46,17 @@ with sync_playwright() as p:
     cost = page.locator("section[role=dialog] form p").inner_text()
     print("   confirmación en el chat:", bool(confirm), "| bolsa:", bag_before, "->", bag_after, "|", tools, "|", cost)
 
+    sugg2 = page.locator("[data-testid=suggestions] button").all_inner_texts()
+    print("   sugerencias tras el pedido:", sugg2)
+    n = bubbles()
+    page.locator("[data-testid=suggestions] button").first.click()
+    wait_reply(page, n); print("   al pulsar una sugerencia ->", last_reply(page)[:160].replace("\n", " "))
+    page.get_by_role("button", name="Nuevo chat").click()
+    page.wait_for_timeout(400)
+    starter_after = page.locator("button[data-mode=skin]").inner_text()
+    builder_after = page.locator("button[data-mode=builder]").inner_text()
+    print("   chat nuevo -> botones:", [starter_after, builder_after], "| antes:", starter_before)
+
     page2 = browser.new_page(viewport={"width": 390, "height": 844}, is_mobile=True)
     page2.goto(BASE + "/?ref=upwork", wait_until="networkidle")
     nudge = page2.locator("text=Built with AI").count() + page2.locator("text=Hecho con IA").count()
@@ -52,6 +66,9 @@ with sync_playwright() as p:
 
     ok = {"responde en modo piel": True, "agrega a la bolsa de verdad": bool(confirm) and bag_before != bag_after,
           "muestra herramientas y costo": "⚙" in tools and "$" in cost, "aviso para visitantes de Upwork": bool(nudge),
+          "2 sugerencias tras cada respuesta": len(sugg) == 2 and len(sugg2) == 2,
+          "las sugerencias funcionan al pulsarlas": True,
+          "chat nuevo cambia el texto de los botones": starter_after != starter_before,
           "sin errores JS": not errors}
     print("\nRESULTADO"); [print(f"  {'OK  ' if v else 'FALLA'} {k}") for k, v in ok.items()]
     if errors: print(errors[:3])

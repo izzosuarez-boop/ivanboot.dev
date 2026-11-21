@@ -17,7 +17,23 @@ type Action =
   | { type: "add_to_cart"; lines: Line[]; result?: { ok: boolean; message?: string } }
   | { type: "product_cards"; cards: Card[] }
   | { type: "escalated"; ref: string };
-type Msg = { role: "user" | "assistant" | "notice"; text: string; actions?: Action[]; tools?: string[] };
+type Msg = { role: "user" | "assistant" | "notice"; text: string; actions?: Action[]; tools?: string[]; suggestions?: string[] };
+
+// Opening buttons: one per branch, a different wording on every new chat (2026-11-21 request)
+const STARTERS: Record<"en" | "es", Record<Mode, string[]>> = {
+  en: {
+    skin: ["Help me with my skin", "Build me a simple skincare routine", "Which serum suits my skin?", "What helps with redness and sensitivity?", "I have oily skin — where do I start?"],
+    builder: ["How is this site built?", "What tech stack powers this store?", "How does this AI chat work?", "How were the product videos made?", "What did it cost to build this demo?"],
+  },
+  es: {
+    skin: ["Ayúdame con mi piel", "Arma una rutina sencilla para mí", "¿Qué sérum le va a mi piel?", "¿Qué ayuda con la rojez y la sensibilidad?", "Tengo la piel grasa, ¿por dónde empiezo?"],
+    builder: ["¿Cómo está construido este sitio?", "¿Qué tecnologías usa esta tienda?", "¿Cómo funciona este chat con IA?", "¿Cómo se hicieron los videos de producto?", "¿Cuánto costó construir esta demo?"],
+  },
+};
+const pickOne = (list: string[], avoid?: string) => {
+  const pool = list.filter((x) => x !== avoid);
+  return pool[Math.floor(Math.random() * pool.length)] ?? list[0];
+};
 
 const T = {
   en: {
@@ -89,11 +105,17 @@ export function AgentChat() {
   const [cost, setCost] = useState(0);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [starters, setStarters] = useState<Record<Mode, string>>({ skin: T.en.skin, builder: T.en.builder });
   const endRef = useRef<HTMLDivElement>(null);
+
+  const newStarters = (l: "en" | "es", prev?: Record<Mode, string>) =>
+    setStarters({ skin: pickOne(STARTERS[l].skin, prev?.skin), builder: pickOne(STARTERS[l].builder, prev?.builder) });
 
   // restore + language + ?ref (visitors coming from Upwork start in "how it's built")
   useEffect(() => {
-    setLang(navigator.language?.toLowerCase().startsWith("es") ? "es" : "en");
+    const l = navigator.language?.toLowerCase().startsWith("es") ? "es" : "en";
+    setLang(l);
+    newStarters(l); // random wording, picked after mount so server and client HTML match
     try {
       const saved = JSON.parse(sessionStorage.getItem(STORE_KEY) || "null");
       if (saved) { setMsgs(saved.msgs ?? []); setConvId(saved.convId ?? null); setMode(saved.mode ?? null); setCost(saved.cost ?? 0); setRef(saved.ref ?? null); }
@@ -137,7 +159,13 @@ export function AgentChat() {
       setConvId(data.conversation_id);
       setCost(data.usage?.cost_usd ?? 0);
       const actions = await runActions(data.actions ?? []);
-      setMsgs((m) => [...m, { role: "assistant", text: data.reply, actions, tools: data.tools_used }]);
+      const branch: Mode = (data.mode as Mode) ?? chosenMode ?? "skin";
+      let suggestions: string[] = (data.suggestions ?? []).slice(0, 2);
+      if (suggestions.length < 2) { // always offer two options from the current branch
+        const pool = STARTERS[lang][branch].filter((s) => s !== clean && !suggestions.includes(s));
+        while (suggestions.length < 2 && pool.length) suggestions = [...suggestions, pool.splice(Math.floor(Math.random() * pool.length), 1)[0]];
+      }
+      setMsgs((m) => [...m, { role: "assistant", text: data.reply, actions, tools: data.tools_used, suggestions }]);
     } catch {
       setMsgs((m) => [...m, { role: "notice", text: lang === "es" ? "No pude conectar con el asistente. Inténtalo de nuevo." : "Couldn't reach the assistant. Please try again." }]);
     } finally {
@@ -147,12 +175,15 @@ export function AgentChat() {
 
   function pick(m: Mode) {
     setMode(m);
-    send(m === "skin" ? t.skin : t.builder, m);
+    send(starters[m], m);
   }
 
   function reset() {
     setMsgs([]); setConvId(null); setCost(0); setMode(null);
+    newStarters(lang, starters); // a new chat gets new wordings for both branches
   }
+
+  const lastAssistant = (() => { for (let i = msgs.length - 1; i >= 0; i--) if (msgs[i].role !== "user") return i; return -1; })();
 
   return (
     <>
@@ -192,9 +223,9 @@ export function AgentChat() {
             {msgs.length === 0 && (
               <div className="flex flex-wrap gap-2">
                 {(["skin", "builder"] as Mode[]).map((m) => (
-                  <button key={m} type="button" onClick={() => pick(m)}
+                  <button key={m} type="button" data-mode={m} onClick={() => pick(m)}
                     className={`rounded-full border px-3.5 py-2 text-[13px] transition hover:border-clay ${mode === m ? "border-clay bg-clay text-sand" : "border-sand-2 bg-white/50"}`}>
-                    {m === "skin" ? t.skin : t.builder}
+                    {starters[m]}
                   </button>
                 ))}
               </div>
@@ -231,6 +262,16 @@ export function AgentChat() {
                 ))}
                 {m.tools && m.tools.length > 0 && (
                   <p className="text-[11px] text-clay-muted">⚙ {[...new Set(m.tools)].map((x) => t.tools[x] ?? x).join(" · ")}</p>
+                )}
+                {i === lastAssistant && !busy && m.suggestions && m.suggestions.length > 0 && (
+                  <div className="flex flex-wrap gap-2 pt-1" data-testid="suggestions">
+                    {m.suggestions.map((s) => (
+                      <button key={s} type="button" onClick={() => send(s)}
+                        className="rounded-full border border-sand-2 bg-white/50 px-3.5 py-1.5 text-left text-[13px] transition hover:border-clay">
+                        {s}
+                      </button>
+                    ))}
+                  </div>
                 )}
               </div>
             ))}
