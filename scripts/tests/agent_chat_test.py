@@ -68,6 +68,7 @@ with sync_playwright() as p:
           "muestra herramientas y costo": "⚙" in tools and "$" in cost, "aviso para visitantes de Upwork": bool(nudge),
           "2 sugerencias tras cada respuesta": len(sugg) == 2 and len(sugg2) == 2,
           "las sugerencias funcionan al pulsarlas": True,
+          "sugerencias sin etiquetas (</...>)": not any("<" in s or ">" in s for s in sugg + sugg2),
           "chat nuevo cambia el texto de los botones": starter_after != starter_before,
           "sin errores JS": not errors}
     print("\nRESULTADO"); [print(f"  {'OK  ' if v else 'FALLA'} {k}") for k, v in ok.items()]

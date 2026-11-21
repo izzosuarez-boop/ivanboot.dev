@@ -47,6 +47,7 @@ STYLE
 - Ask at most one clarifying question when you truly need it (e.g. skin type) — otherwise just help.
 - FOLLOW-UPS (always): end EVERY reply with one extra last line in exactly this format:
   <<SUGGEST>>first option||second option
+  Plain text only on that line: no tags, no markup, nothing after the second option.
   Two short next questions the visitor could tap (max 7 words each), in the visitor's language, written
   as the visitor would say them, and staying in the CURRENT branch — skin: routine, products, usage,
   ingredients, stock; how-it's-built: architecture, technologies, costs, AI media, the agent itself.
@@ -256,14 +257,22 @@ async def run_tool(name: str, args: dict, conv: Conversation, catalog: dict, act
 
 
 SUGGEST_RE = re.compile(r"\n?\s*<<\s*SUGGEST\s*>>\s*(.+?)\s*$", re.S)
+# The model occasionally leaks tool-call markup (e.g. a stray "</parameter>") at the end of a reply.
+MARKUP_RE = re.compile(r"</?\s*(?:parameter|invoke|function_calls|function_results|antml:[\w-]+)\b[^>]*>", re.I)
+ANY_TAG_RE = re.compile(r"</?\s*[A-Za-z][\w:.-]*\b[^<>]*>")
+
+
+def clean_markup(text: str) -> str:
+    return MARKUP_RE.sub("", text)
 
 
 def split_suggestions(reply: str) -> tuple[str, list[str]]:
     """Strip the trailing '<<SUGGEST>>a||b' line; return (clean reply, up to 2 options)."""
+    reply = clean_markup(reply)
     m = SUGGEST_RE.search(reply)
     if not m:
         return reply.strip(), []
-    opts = [o.strip(" -•\"'") for o in m.group(1).split("||")]
+    opts = [ANY_TAG_RE.sub("", o).strip(" -•\"'<>") for o in m.group(1).split("||")]
     return reply[: m.start()].strip(), [o[:80] for o in opts if o][:2]
 
 
@@ -279,6 +288,7 @@ async def chat(conv: Conversation, text: str, mode: str | None, ref: str | None)
     conv.user_turns += 1
     if ref and not conv.ref:
         conv.ref = ref[:40]
+    text = clean_markup(text).strip() or text  # suggestions cached in old sessions may carry leaked markup
     conv.messages.append({"role": "user", "content": text})
     # Mode changes go in a mid-conversation system message so the cached prefix stays intact
     note = []

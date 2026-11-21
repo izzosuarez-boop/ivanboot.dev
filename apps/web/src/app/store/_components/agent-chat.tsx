@@ -17,6 +17,9 @@ type Action =
   | { type: "add_to_cart"; lines: Line[]; result?: { ok: boolean; message?: string } }
   | { type: "product_cards"; cards: Card[] }
   | { type: "escalated"; ref: string };
+// The model occasionally leaks tool-call markup like "</parameter>"; never show or resend it.
+const stripMarkup = (s: string) => s.replace(/<\/?\s*[A-Za-z][\w:.-]*\b[^<>]*>/g, "").trim();
+
 type Msg = { role: "user" | "assistant" | "notice"; text: string; actions?: Action[]; tools?: string[]; suggestions?: string[] };
 
 // Opening buttons: one per branch, a different wording on every new chat (2026-11-21 request)
@@ -143,7 +146,7 @@ export function AgentChat() {
   }
 
   async function send(text: string, chosenMode: Mode | null = mode) {
-    const clean = text.trim();
+    const clean = stripMarkup(text);
     if (!clean || busy) return;
     setMsgs((m) => [...m, { role: "user", text: clean }]);
     setInput("");
@@ -160,7 +163,7 @@ export function AgentChat() {
       setCost(data.usage?.cost_usd ?? 0);
       const actions = await runActions(data.actions ?? []);
       const branch: Mode = (data.mode as Mode) ?? chosenMode ?? "skin";
-      let suggestions: string[] = (data.suggestions ?? []).slice(0, 2);
+      let suggestions: string[] = (data.suggestions ?? []).map(stripMarkup).filter(Boolean).slice(0, 2);
       if (suggestions.length < 2) { // always offer two options from the current branch
         const pool = STARTERS[lang][branch].filter((s) => s !== clean && !suggestions.includes(s));
         while (suggestions.length < 2 && pool.length) suggestions = [...suggestions, pool.splice(Math.floor(Math.random() * pool.length), 1)[0]];
@@ -265,7 +268,7 @@ export function AgentChat() {
                 )}
                 {i === lastAssistant && !busy && m.suggestions && m.suggestions.length > 0 && (
                   <div className="flex flex-wrap gap-2 pt-1" data-testid="suggestions">
-                    {m.suggestions.map((s) => (
+                    {m.suggestions.map(stripMarkup).filter(Boolean).map((s) => (
                       <button key={s} type="button" onClick={() => send(s)}
                         className="rounded-full border border-sand-2 bg-white/50 px-3.5 py-1.5 text-left text-[13px] transition hover:border-clay">
                         {s}
