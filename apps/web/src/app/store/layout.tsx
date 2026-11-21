@@ -4,6 +4,7 @@ import Link from "next/link";
 import { site, storeHref } from "@/lib/site";
 import { BagLink, BagLinkFallback } from "./_components/bag-link";
 import { categories } from "@/lib/categories";
+import { AgentChat } from "./_components/agent-chat";
 
 export const metadata: Metadata = {
   title: { default: "Ardea Skin — Skincare that explains itself", template: "%s · Ardea Skin" },
@@ -40,6 +41,7 @@ export default function StoreLayout({ children }: LayoutProps<"/store">) {
         </nav>
       </header>
       <main className="flex-1">{children}</main>
+      <AgentChat />
       <footer className="border-t border-sand-2">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-8 text-xs text-clay-muted sm:flex-row sm:justify-between sm:px-6">
           <span>Ardea Skin · fictional brand for demonstration</span>
