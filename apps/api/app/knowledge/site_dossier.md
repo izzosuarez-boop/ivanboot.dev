@@ -18,8 +18,14 @@ and full-stack work. Hiring happens on Upwork: https://www.upwork.com/freelancer
 - **Commerce:** Shopify, used **headless**. Shopify owns catalog, inventory, cart, checkout and orders;
   the storefront is custom Next.js talking to Shopify's Storefront API (GraphQL). Admin API is used by
   scripts for catalog seeding and media uploads.
-- **Backend:** FastAPI (Python) at api.ivanboot.dev — hosts this agent; Shopify webhooks and Telegram
-  notifications live here too.
+- **Backend:** FastAPI (Python) at api.ivanboot.dev — hosts this agent, receives Shopify webhooks and
+  runs the store owner's Telegram bot.
+- **Owner bot (Telegram):** Shopify sends a webhook on every new order and inventory change; the backend
+  verifies Shopify's HMAC-SHA256 signature, drops duplicate deliveries, and messages the owner on Telegram:
+  new order, low stock (5 or fewer), sold out, restocked. Complaints and medical questions raised in this
+  chat are escalated with a reference code, saved in Supabase and pushed to the owner instantly (then marked
+  "notified"). The owner can also ask the bot `/stock`, `/orders` and `/stats` (chat usage and AI spend); it
+  answers only the owner's chat. Visitors can't see it — it is the back-office side of the demo.
 - **Database:** Supabase (managed Postgres) stores agent conversations, per-message token usage and
   cost, and cases escalated to the store owner. Row-level security is on; only the backend's secret key
   can read or write.
@@ -63,6 +69,13 @@ and full-stack work. Hiring happens on Upwork: https://www.upwork.com/freelancer
   when half of it scrolls away, and then wait for the visitor's play button. Browsers block autoplay with
   sound, so it falls back to muted playback with a "Tap for sound" button. Verified with a scripted real
   browser (Playwright) on desktop and mobile.
+- **The escalation that vanished.** The first complaint test reached Telegram but never appeared in the
+  database: the case was saved before its conversation row existed, so a foreign key rejected it. Fix: the
+  conversation is upserted before the case. The same test revealed the HTTP client logging full request
+  URLs — and Telegram puts the bot token in the URL — so those logs were silenced and the old logs dropped.
+- **Stray markup in the chat.** The model occasionally ended its follow-up line with a fragment of its
+  internal tool-call markup (`</parameter>`), which then showed up in the suggestion buttons. Fix: both the
+  backend and the browser strip tag-like text from replies and suggestions, and a browser test checks it.
 
 ## AI-generated media (and what it cost)
 - **Product photos:** Google's Gemini image model ("Nano Banana Pro"), 2K, about $0.14 each. One shared
@@ -82,14 +95,15 @@ and full-stack work. Hiring happens on Upwork: https://www.upwork.com/freelancer
 - **Anthropic Claude** — this agent (Haiku 5.5).
 - **Google Gemini** — image generation, video generation, text-to-speech.
 - **Supabase** — Postgres for conversations, costs and owner escalations.
+- **Telegram Bot API** — owner alerts and commands (webhook mode, secret-token verified).
 - **Let's Encrypt** (via Caddy) — HTTPS certificates. **GitHub** — source code.
-- **Coming next:** a Telegram bot that alerts the store owner about low stock, new orders and customer
-  complaints raised in this chat; n8n automations (order emails, abandoned carts, social posts).
+- **Coming next:** n8n automations (order emails, abandoned carts, social posts).
 
 ## What this agent can do in the store
 Recommend a routine from skin type and concerns, explain ingredients and how to use each product, check
 live stock, add products to the visitor's bag, show the how-to videos, and pass complaints or medical
-questions to the store owner instead of improvising.
+questions to the store owner (Telegram alert + reference code) instead of improvising. After every answer it
+offers two tappable follow-up questions in the same topic.
 
 ## How Iván works (from his portfolio)
 Measure before concluding; write down why each decision was made; test that a fix also fails with the
