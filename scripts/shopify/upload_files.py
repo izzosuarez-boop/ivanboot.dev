@@ -47,7 +47,8 @@ def upload(s: ShopifyAdmin, path: Path, kind: str, alt: str) -> dict:
     fid = created["files"][0]["id"]
 
     q = """query($id:ID!){ node(id:$id){ ... on MediaImage { fileStatus image { url width height } }
-                                          ... on Video { fileStatus duration sources { url mimeType width height } } } }"""
+                                          ... on Video { fileStatus duration sources { url mimeType width height } }
+                                          ... on GenericFile { fileStatus url } } }"""
     for _ in range(90):  # videos take a while to transcode
         n = s.gql(q, {"id": fid})["node"]
         if n["fileStatus"] == "READY":
@@ -60,6 +61,8 @@ def upload(s: ShopifyAdmin, path: Path, kind: str, alt: str) -> dict:
 
     if kind == "IMAGE":
         return {"id": fid, "url": n["image"]["url"], "width": n["image"]["width"], "height": n["image"]["height"], "alt": alt}
+    if kind == "FILE":
+        return {"id": fid, "url": n["url"]}
     mp4 = sorted((x for x in n["sources"] if x["mimeType"] == "video/mp4"), key=lambda x: x["height"], reverse=True)
     return {"id": fid, "duration_ms": n.get("duration"),
             "sources": [{"url": x["url"], "height": x["height"], "width": x["width"]} for x in mp4]}
@@ -71,6 +74,9 @@ def main() -> int:
     ap.add_argument("--hero", type=Path)
     ap.add_argument("--video", type=Path)
     ap.add_argument("--poster", type=Path)
+    ap.add_argument("--raw-video", type=Path, nargs="+", metavar="MP4",
+                    help="upload our own encodes as generic files (served byte-for-byte; Shopify's video "
+                         "transcodes were 2-3x larger, measured 2026-11-20). Name them <name>-<height>.mp4")
     a = ap.parse_args()
     media = json.loads(MEDIA_JSON.read_text(encoding="utf-8")) if MEDIA_JSON.exists() else {}
     entry = media.get(a.slug, {})
@@ -92,6 +98,15 @@ def main() -> int:
         entry["video"] = upload(s, a.video, "VIDEO", f"How to use Ardea Skin {a.slug}")
         save()
         print("video ->", [(x["height"], x["url"][:70]) for x in entry["video"]["sources"]])
+    if a.raw_video:
+        sources = []
+        for p in a.raw_video:
+            f = upload(s, p, "FILE", f"Ardea Skin {a.slug} video")
+            height = int(p.stem.rsplit("-", 1)[-1])
+            sources.append({"url": f["url"], "height": height, "width": round(height * 16 / 9), "id": f["id"]})
+        entry["video"] = {"sources": sorted(sources, key=lambda x: -x["height"])}
+        save()
+        print("raw   ->", [(x["height"], x["url"][:70]) for x in entry["video"]["sources"]])
     return 0
 
 

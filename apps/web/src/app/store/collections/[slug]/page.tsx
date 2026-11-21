@@ -8,6 +8,7 @@ import { categories, categoryMedia, getCategory, NAV_LABELS } from "@/lib/catego
 import { getCollectionProducts, type Product } from "@/lib/shopify";
 import { storeHref } from "@/lib/site";
 import { ProductCard } from "../../_components/product-card";
+import { HowToVideo } from "../../_components/howto-video";
 
 export function generateStaticParams() {
   return categories.map((c) => ({ slug: c.slug }));
@@ -123,16 +124,8 @@ async function CategoryPage({ params }: { params: PageProps<"/store/collections/
             </ol>
             {video.length > 0 && (
               <figure>
-                <video
-                  controls
-                  playsInline
-                  preload="metadata"
-                  poster={media.poster?.url}
-                  className="aspect-video w-full rounded-3xl bg-clay object-cover"
-                >
-                  {video.map((v) => <source key={v.url} src={v.url} type="video/mp4" />)}
-                </video>
-                <figcaption className="mt-2 text-xs text-clay-muted">15-second guide · sound on for narration</figcaption>
+                <HowToVideo sources={video} poster={media.poster?.url} label={`How to use ${c.title.toLowerCase()}`} />
+                <figcaption className="mt-2 text-xs text-clay-muted">15-second guide · plays when it&apos;s fully in view</figcaption>
               </figure>
             )}
           </div>

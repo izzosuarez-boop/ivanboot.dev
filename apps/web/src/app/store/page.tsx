@@ -1,96 +1,93 @@
 import { Suspense } from "react";
-import { connection } from "next/server";
-import { getProducts, STEP_LABELS, type Product } from "@/lib/shopify";
+import Image from "next/image";
 import Link from "next/link";
-import { ProductCard } from "./_components/product-card";
-import { categories, categoryForStep } from "@/lib/categories";
+import { connection } from "next/server";
+import { categories, categoryMedia, type Category } from "@/lib/categories";
+import { getProducts } from "@/lib/shopify";
 import { storeHref } from "@/lib/site";
+import { BrandVideo } from "./_components/brand-video";
+import { ProductVisual } from "./_components/product-visual";
 
-const STEP_NOTES: Record<number, string> = {
-  1: "Start clean, morning and night.",
-  2: "Targeted serums for what your skin needs.",
-  3: "A calming ritual, 2–3 evenings a week.",
-};
+// Homepage: one representative product per routine step, no prices (2026-11-20 request) —
+// the full product list lives on each category page.
+const featuredHandle = (c: Category) => c.video?.reference ?? c.chooser[0].handle;
 
-async function Catalog() {
-  await connection(); // live catalog: rendered per request, cached for minutes in lib/shopify
-  let products: Product[];
-  try {
-    products = await getProducts();
-  } catch {
-    return <p className="py-16 text-center text-clay-muted">The catalog is taking a break. Please try again in a moment.</p>;
+async function FeaturedImage({ category }: { category: Category }) {
+  await connection();
+  const products = await getProducts().catch(() => []);
+  const p = products.find((x) => x.handle === featuredHandle(category));
+  if (p?.featuredImage) {
+    return (
+      <Image
+        src={p.featuredImage.url}
+        alt={p.featuredImage.altText ?? p.title}
+        fill
+        sizes="(min-width: 768px) 45vw, 100vw"
+        className="object-cover transition duration-700 group-hover:scale-[1.03]"
+      />
+    );
   }
-  const steps = [...new Set(products.map((p) => p.routineStep))].sort();
-
-  return (
-    <div className="space-y-16">
-      {steps.map((step) => (
-        <section key={step} aria-labelledby={`step-${step}`}>
-          <div className="flex items-baseline justify-between gap-4 border-b border-sand-2 pb-3">
-            <h2 id={`step-${step}`} className="font-serif text-2xl">
-              <span className="mr-3 text-base text-sage-dark">{String(step).padStart(2, "0")}</span>
-              {STEP_LABELS[step] ?? "More"}
-            </h2>
-            <p className="hidden text-sm text-clay-muted sm:block">{STEP_NOTES[step]}</p>
-            {categoryForStep(step) && (
-              <Link href={storeHref(`/collections/${categoryForStep(step)!.slug}`)} className="shrink-0 text-sm text-sage-dark hover:text-clay">
-                How to use →
-              </Link>
-            )}
-          </div>
-          <div className="mt-6 grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4">
-            {products.filter((p) => p.routineStep === step).map((p) => <ProductCard key={p.id} product={p} />)}
-          </div>
-        </section>
-      ))}
-    </div>
-  );
+  return <ProductVisual type={category.title} step={category.step} title={category.title} />;
 }
 
-function CatalogSkeleton() {
+function StepSection({ category, index }: { category: Category; index: number }) {
+  const href = storeHref(`/collections/${category.slug}`);
+  const flip = index % 2 === 1;
   return (
-    <div className="grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4">
-      {Array.from({ length: 8 }, (_, i) => (
-        <div key={i}>
-          <div className="aspect-square animate-pulse rounded-2xl bg-sand-2" />
-          <div className="mt-3 h-4 w-3/4 animate-pulse rounded bg-sand-2" />
+    <section aria-labelledby={`step-${category.slug}`} className="grid items-center gap-8 md:grid-cols-2 md:gap-16">
+      <Link href={href} className={`group relative block aspect-square overflow-hidden rounded-3xl bg-sand-2 ${flip ? "md:order-2" : ""}`} aria-label={`${category.title}: see the range`}>
+        <Suspense fallback={<div className="h-full w-full animate-pulse bg-sand-2" />}>
+          <FeaturedImage category={category} />
+        </Suspense>
+      </Link>
+      <div>
+        <p className="text-xs uppercase tracking-[0.22em] text-sage-dark">{category.kicker}</p>
+        <h2 id={`step-${category.slug}`} className="mt-3 font-serif text-4xl leading-tight sm:text-5xl">{category.title}</h2>
+        <p className="mt-3 text-lg text-clay">{category.tagline}</p>
+        <p className="mt-4 leading-relaxed text-clay-muted">{category.intro}</p>
+        <ul className="mt-6 flex flex-wrap gap-2">
+          {category.benefits.map((b) => (
+            <li key={b.title} className="rounded-full border border-sand-2 px-3.5 py-1.5 text-sm">{b.title}</li>
+          ))}
+        </ul>
+        <div className="mt-8 flex flex-wrap items-center gap-5">
+          <Link href={href} className="rounded-full bg-clay px-6 py-3 text-sm text-sand transition hover:bg-sage-dark">
+            Explore {category.title.toLowerCase()}
+          </Link>
+          <Link href={`${href}#how-to`} className="text-sm text-sage-dark underline-offset-4 hover:text-clay hover:underline">
+            How to use →
+          </Link>
         </div>
-      ))}
-    </div>
+      </div>
+    </section>
   );
 }
 
 export default function StoreHome() {
+  const brand = categoryMedia("home");
   return (
     <>
-      <section className="mx-auto grid max-w-6xl gap-10 px-4 pb-16 pt-14 sm:px-6 md:grid-cols-[1.2fr_1fr] md:items-end">
-        <div>
+      <section className="relative isolate flex min-h-[78vh] items-end overflow-hidden">
+        {brand.video ? (
+          <BrandVideo sources={brand.video.sources} poster={brand.poster?.url} />
+        ) : (
+          <div className="absolute inset-0 bg-sand-2" />
+        )}
+        <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-sand via-sand/45 to-transparent" />
+        <div className="relative mx-auto w-full max-w-6xl px-4 pb-14 sm:px-6 sm:pb-20">
           <p className="rise text-sm uppercase tracking-[0.2em] text-sage-dark">Fragrance-free skincare</p>
-          <h1 className="rise rise-1 mt-4 font-serif text-5xl leading-[1.05] sm:text-6xl">Skincare that explains itself.</h1>
-          <p className="rise rise-2 mt-6 max-w-lg text-lg text-clay-muted">
-            Eight essentials, three simple steps. Each one explains what it does, how to use it and
-            which formula suits your skin.
+          <h1 className="rise rise-1 mt-4 max-w-2xl font-serif text-5xl leading-[1.05] sm:text-7xl">Skincare that explains itself.</h1>
+          <p className="rise rise-2 mt-5 max-w-lg text-lg text-clay-muted">
+            Three simple steps — morning, afternoon, evening. Each one explains what it does and how to use it.
           </p>
           <a href="#shop" className="rise rise-3 mt-8 inline-block rounded-full bg-clay px-6 py-3 text-sm text-sand transition hover:bg-sage-dark">
-            Shop the routine
+            Discover the routine
           </a>
         </div>
-        <ol id="routine" className="rise rise-2 grid grid-cols-3 gap-3 text-center text-xs text-clay-muted">
-          {categories.map((c) => (
-            <li key={c.slug}>
-              <Link href={storeHref(`/collections/${c.slug}`)} className="block rounded-2xl border border-sand-2 bg-sand-2/40 px-2 py-4 transition hover:border-clay-muted hover:bg-sand-2">
-                <span className="block font-serif text-2xl text-clay">{c.step}</span>
-                {STEP_LABELS[c.step]}
-              </Link>
-            </li>
-          ))}
-        </ol>
       </section>
 
-      <div id="shop" className="mx-auto max-w-6xl scroll-mt-24 px-4 pb-24 sm:px-6">
-        <Suspense fallback={<CatalogSkeleton />}>
-          <Catalog />
-        </Suspense>
+      <div id="shop" className="mx-auto max-w-6xl scroll-mt-28 space-y-24 px-4 py-20 sm:px-6 sm:py-28">
+        {categories.map((c, i) => <StepSection key={c.slug} category={c} index={i} />)}
       </div>
     </>
   );

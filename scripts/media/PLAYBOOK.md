@@ -179,6 +179,31 @@ portada y la miniatura ya subidas quedaron sin registrar y se duplicaron al rein
 `category-media.json` después de cada archivo. Si vuelve a pasar, busca con
 `files(query:"filename:<nombre>*")` y borra con `fileDelete` los que no estén en el JSON.
 
+**S3. Shopify recodifica los videos a más peso.** Un MP4 de 2,2 MB (1080p) subido como `VIDEO` se sirvió
+a 4,8 MB, y uno de 0,98 MB (720p) a 3 MB. Para videos de fondo que cargan en cada visita, sube tus propias
+versiones como **archivo genérico** (`--raw-video brand-1080.mp4 brand-720.mp4`), que se sirven tal cual.
+Para los tutoriales, que solo cargan cuando se ven, la versión de Shopify (1080/720/480) está bien.
+
+### Video de marca (portada de la tienda)
+
+- `python -c "import generate_category_media as g; g.brand()"` → un clip de 15 s con las **3 fotos de
+  producto como referencia** (Omni admite hasta 6). Recorre mañana → tarde → noche, el mismo orden que la
+  rutina, y termina con los tres productos juntos.
+- `g.brand_web(<clip>)` → versiones web **sin pista de audio**, con fundido de entrada y salida al color
+  arena de la página (`0xf5f0e8`) para que el bucle no dé saltos.
+- En la web va en `autoPlay muted loop playsInline`. Si el visitante pidió menos movimiento
+  (`prefers-reduced-motion`) o usa ahorro de datos, solo se muestra la miniatura.
+
+### Reproducción automática de los tutoriales (`howto-video.tsx`)
+
+- Arranca una vez cuando el reproductor se ve completo, se pausa con el 50 % o menos visible, y después
+  solo el visitante lo reanuda.
+- Los navegadores bloquean el autoplay **con sonido** si el visitante no ha interactuado: se intenta con
+  sonido y, si falla, se reproduce en silencio con un botón "Tap for sound".
+- **Probado con un navegador real** (Playwright, en `scripts/tests/video_behavior_test.py`, usando el Chrome
+  instalado con `channel="chrome"`: el Chromium descargado por Playwright no coincidía con la versión del
+  paquete).
+
 ### Cuentas y facturación
 
 **F1.** Los modelos de imagen y video de Gemini tienen **cuota 0 en el nivel gratuito** (error 429
