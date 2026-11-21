@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import logging
 import random
+import re
 import string
 import time
 import uuid
@@ -44,6 +45,12 @@ STYLE
 - Reply in the visitor's language (Spanish, English, Portuguese…). Warm, concise, no filler: usually 2–6
   short sentences or a short list. Light markdown only (bold, short lists, links). No headings, no tables.
 - Ask at most one clarifying question when you truly need it (e.g. skin type) — otherwise just help.
+- FOLLOW-UPS (always): end EVERY reply with one extra last line in exactly this format:
+  <<SUGGEST>>first option||second option
+  Two short next questions the visitor could tap (max 7 words each), in the visitor's language, written
+  as the visitor would say them, and staying in the CURRENT branch — skin: routine, products, usage,
+  ingredients, stock; how-it's-built: architecture, technologies, costs, AI media, the agent itself.
+  Never repeat a question already answered. This line is shown as buttons, not as text.
 
 SKIN ADVISOR RULES
 - Recommend only products from the CATALOG below and explain why in one line each. The routine is
@@ -248,6 +255,18 @@ async def run_tool(name: str, args: dict, conv: Conversation, catalog: dict, act
     return f"Unknown tool {name}"
 
 
+SUGGEST_RE = re.compile(r"\n?\s*<<\s*SUGGEST\s*>>\s*(.+?)\s*$", re.S)
+
+
+def split_suggestions(reply: str) -> tuple[str, list[str]]:
+    """Strip the trailing '<<SUGGEST>>a||b' line; return (clean reply, up to 2 options)."""
+    m = SUGGEST_RE.search(reply)
+    if not m:
+        return reply.strip(), []
+    opts = [o.strip(" -•\"'") for o in m.group(1).split("||")]
+    return reply[: m.start()].strip(), [o[:80] for o in opts if o][:2]
+
+
 MODE_NOTES = {
     "skin": "The visitor chose 'Help me with my skin'. Act as the skin advisor (switch if they ask about the site).",
     "builder": "The visitor chose 'How is this site built?'. Act as the how-it's-built guide (switch if they ask about skincare).",
@@ -326,9 +345,11 @@ async def chat(conv: Conversation, text: str, mode: str | None, ref: str | None)
     else:
         reply = reply or "Sorry — that took too many steps. Could you rephrase?"
 
+    reply, suggestions = split_suggestions(reply)
     latency = int((time.time() - t0) * 1000)
     await _log(conv, text, reply, actions, stop, latency, turn_cost)
     return {"conversation_id": conv.id, "reply": reply, "actions": actions, "mode": conv.mode, "tools_used": tools_used,
+            "suggestions": suggestions,
             "usage": {"cost_usd": round(conv.cost_usd, 6), "input_tokens": conv.input_tokens,
                       "cached_tokens": conv.cache_read, "output_tokens": conv.output_tokens,
                       "model": config.AGENT_MODEL, "latency_ms": latency}}
