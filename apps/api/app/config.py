@@ -17,7 +17,12 @@ SHOPIFY_CLIENT_SECRET = env("SHOPIFY_CLIENT_SECRET")  # also the key Shopify sig
 # Owner bot (Telegram). The webhook secret is derived from the bot token so no extra variable is needed.
 TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN")
 TELEGRAM_OWNER_CHAT_ID = env("TELEGRAM_OWNER_CHAT_ID")
-LOW_STOCK_AT = int(env("LOW_STOCK_AT", "5"))
+# What the owner is told right away (everything else waits for the daily summary):
+LOW_STOCK_AT = int(env("LOW_STOCK_AT", "9"))          # stock alert when a variant drops below 10 (and at 0)
+BIG_ORDER_USD = float(env("BIG_ORDER_USD", "150"))    # only orders above this are announced one by one
+URGENT_ESCALATIONS = {"complaint", "order_issue", "medical_question"}  # human_request/other -> daily summary
+DIGEST_TZ = env("DIGEST_TZ", "America/Bogota")
+DIGEST_HOUR = int(env("DIGEST_HOUR", "9"))            # daily summary every day, weekly report on Mondays
 # Extra Telegram chats allowed to use the back-office bot (comma-separated chat ids); the owner is always allowed.
 TELEGRAM_ALLOWED_CHAT_IDS = {c.strip() for c in env("TELEGRAM_ALLOWED_CHAT_IDS").split(",") if c.strip()}
 

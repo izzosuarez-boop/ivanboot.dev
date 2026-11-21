@@ -53,7 +53,7 @@ TOOLS = [
     {"name": "get_top_customers", "description": "Customers who spent the most in a period, with order count (bar chart).",
      "input_schema": {"type": "object", "properties": {"days": DAYS, "n": {"type": "integer", "minimum": 1, "maximum": 20},
                                                        "chart": CHART}, "required": ["days"]}},
-    {"name": "get_stock", "description": "Current stock of every variant on sale (low = 5 or fewer).",
+    {"name": "get_stock", "description": "Current stock of every variant on sale (low = under 10 units).",
      "input_schema": {"type": "object", "properties": {"only_low": {"type": "boolean"}}}},
     {"name": "get_recent_orders", "description": "The latest orders with totals and items.",
      "input_schema": {"type": "object", "properties": {"n": {"type": "integer", "minimum": 1, "maximum": 10}}}},

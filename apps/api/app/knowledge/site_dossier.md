@@ -20,12 +20,24 @@ and full-stack work. Hiring happens on Upwork: https://www.upwork.com/freelancer
   scripts for catalog seeding and media uploads.
 - **Backend:** FastAPI (Python) at api.ivanboot.dev — hosts this agent, receives Shopify webhooks and
   runs the store owner's Telegram bot.
-- **Owner bot (Telegram):** Shopify sends a webhook on every new order and inventory change; the backend
-  verifies Shopify's HMAC-SHA256 signature, drops duplicate deliveries, and messages the owner on Telegram:
-  new order, low stock (5 or fewer), sold out, restocked. Complaints and medical questions raised in this
-  chat are escalated with a reference code, saved in Supabase and pushed to the owner instantly (then marked
-  "notified"). The owner can also ask the bot `/stock`, `/orders` and `/stats` (chat usage and AI spend); it
-  answers only the owner's chat. Visitors can't see it — it is the back-office side of the demo.
+- **Owner bot (Telegram):** the back-office side of the demo; visitors can't see it and it answers only
+  allow-listed chats. Shopify sends a webhook on every order and inventory change; the backend verifies
+  Shopify's HMAC-SHA256 signature and drops duplicate deliveries.
+  - *Designed not to flood the owner:* one message per event doesn't scale (at ~5,000 visitors a month that
+    is several pings a day), so only actionable events are pushed right away — a product sold out or under 10
+    units, orders over $150, and complaints, order issues or medical questions escalated from this chat
+    (with a reference code, stored in Supabase). Everything else waits for a **daily summary at 9:00**
+    (yesterday's sales vs the day before, star product, stock to watch, chat activity, cases waiting) and a
+    **weekly report on Mondays** with two charts. A small scheduler inside the API keeps each report's last
+    run date in Supabase, so a restart never sends twice and a report missed during downtime still goes out.
+  - *Ask it in plain language:* "chart of the best sellers of the last 3 months", "top 10 customers", "how
+    much did we sell this month vs last month?". Claude Haiku 5.5 picks a tool (sales, best sellers, best
+    customers, stock, recent orders, chat stats); the numbers come only from Shopify's Admin API, and charts
+    are rendered on the server with matplotlib in the store's palette and sent to Telegram as images — the
+    model never draws or invents data. About $0.0005 per question.
+  - *Demo data:* a seeding script created a realistic 3-month history (219 orders from 44 fictitious
+    customers with reserved example.com emails; growing demand, busier weekends, an October campaign spike),
+    tagged `demo-seed`, without touching inventory or sending receipts — and the bot never alerts on it.
 - **Database:** Supabase (managed Postgres) stores agent conversations, per-message token usage and
   cost, and cases escalated to the store owner. Row-level security is on; only the backend's secret key
   can read or write.

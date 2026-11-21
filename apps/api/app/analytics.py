@@ -38,8 +38,9 @@ async def _fetch(with_names: bool) -> list[dict]:
                 continue
             c = o.get("customer") or {}
             cid = (c.get("id") or "").rsplit("/", 1)[-1]
+            at = datetime.fromisoformat(o["processedAt"].replace("Z", "+00:00"))
             out.append({
-                "name": o["name"], "day": datetime.fromisoformat(o["processedAt"].replace("Z", "+00:00")).date(),
+                "name": o["name"], "at": at, "day": at.date(),
                 "total": float(o["totalPriceSet"]["shopMoney"]["amount"]),
                 "customer_id": cid or None,
                 "customer": c.get("displayName") or (f"Customer …{cid[-4:]}" if cid else "Guest"),

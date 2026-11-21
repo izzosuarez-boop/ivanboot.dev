@@ -18,7 +18,9 @@ import httpx
 sys.stdout.reconfigure(encoding="utf-8")
 ENV = Path(__file__).resolve().parents[2] / ".env"
 WEBHOOK_URL = "https://api.ivanboot.dev/webhooks/telegram"
-COMMANDS = [{"command": "stock", "description": "Low-stock and sold-out products"},
+COMMANDS = [{"command": "digest", "description": "Yesterday's summary"},
+            {"command": "weekly", "description": "Last 7 days with charts"},
+            {"command": "stock", "description": "Low-stock and sold-out products"},
             {"command": "orders", "description": "Last 5 orders"},
             {"command": "stats", "description": "AI chat usage and spend"},
             {"command": "help", "description": "What this bot does"}]

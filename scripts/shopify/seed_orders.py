@@ -131,7 +131,7 @@ def create(s: ShopifyAdmin, var: dict, o: dict) -> dict:
         "financialStatus": "PAID",
         "transactions": [{"kind": "SALE", "status": "SUCCESS", "gateway": "manual", "amountSet": usd(total),
                           "processedAt": o["processed_at"]}],
-        "tags": [TAG], "sourceName": "web", "sourceIdentifier": o["key"],
+        "tags": [TAG], "sourceIdentifier": o["key"],  # sourceName "web" is reserved for Shopify
     }
     if old:
         order["fulfillmentStatus"] = "FULFILLED"

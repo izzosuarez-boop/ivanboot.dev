@@ -78,7 +78,11 @@ async def typing(chat_id: str | int, action: str = "typing") -> None:
 
 
 async def owner_escalation(row: dict) -> bool:
+    """Urgent cases (complaints, order issues, medical questions) go out now; the rest stay 'open' and are
+    listed in the next daily summary, which then marks them notified."""
     kind = row.get("kind") or "other"
+    if kind not in config.URGENT_ESCALATIONS:
+        return False
     text = (f"{ICONS.get(kind, '💬')} <b>{esc(LABELS.get(kind, 'Case'))}</b> · <code>{esc(row.get('ref_code'))}</code>\n"
             f"From the store chat:\n\n{esc(row.get('summary'))}"
             + (f"\n\nContact: {esc(row['contact'])}" if row.get("contact") else ""))
@@ -95,7 +99,7 @@ async def new_order(order: dict) -> bool:
                       for li in order.get("line_items") or [])
     test = " · test order" if order.get("test") else ""
     admin = f"https://admin.shopify.com/store/{config.SHOPIFY_SHOP}/orders/{order.get('id')}"
-    return await telegram(f"🛍 <b>New order {esc(order.get('name'))}</b>{test}\n"
+    return await telegram(f"💰 <b>Big order {esc(order.get('name'))}</b>{test}\n"
                           f"{esc(order.get('total_price'))} {esc(order.get('currency'))}\n\n{items}\n\n"
                           f'<a href="{esc(admin)}">Open in Shopify</a>')
 
@@ -103,4 +107,4 @@ async def new_order(order: dict) -> bool:
 async def stock_alert(name: str, qty: int) -> bool:
     if qty <= 0:
         return await telegram(f"⛔ <b>Sold out:</b> {esc(name)}\nIt now shows as sold out in the store.")
-    return await telegram(f"📉 <b>Low stock:</b> {esc(name)} — {qty} left")
+    return await telegram(f"📉 <b>Low stock:</b> {esc(name)} — only {qty} left")

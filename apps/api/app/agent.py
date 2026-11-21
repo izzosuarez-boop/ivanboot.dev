@@ -238,9 +238,10 @@ async def run_tool(name: str, args: dict, conv: Conversation, catalog: dict, act
         saved = await db.insert("escalations", row)
         actions.append({"type": "escalated", "ref": ref})
         from . import notify  # owner alert (Telegram) — best effort
-        await notify.owner_escalation(row)
+        urgent = await notify.owner_escalation(row)
         return json.dumps({"reference": ref, "saved": saved is not None,
-                           "note": "The store owner has been notified. Give the visitor this reference."})
+                           "note": ("The store team has been alerted right away." if urgent else
+                                    "The store team reviews these cases daily.") + " Give the visitor this reference."})
 
     if name == "get_chat_stats":
         totals = await db.rpc("agent_stats") or {}

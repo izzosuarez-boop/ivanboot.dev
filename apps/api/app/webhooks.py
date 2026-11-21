@@ -18,7 +18,7 @@ from fastapi import APIRouter, BackgroundTasks, Request, Response
 
 import anthropic
 
-from . import config, db, guard, notify, owner_agent, shopify, shopify_admin
+from . import config, db, guard, notify, owner_agent, reports, shopify, shopify_admin
 
 log = logging.getLogger("webhooks")
 router = APIRouter(prefix="/webhooks")
@@ -65,7 +65,8 @@ async def shopify_webhook(request: Request, tasks: BackgroundTasks):
     topic = request.headers.get("x-shopify-topic", "")
     payload = json.loads(body or b"{}")
     if topic == "orders/create":
-        if "demo-seed" not in (payload.get("tags") or ""):  # generated history must not flood the owner
+        # one message per order doesn't scale: only big real orders now, the rest in the daily summary
+        if "demo-seed" not in (payload.get("tags") or "") and float(payload.get("total_price") or 0) > config.BIG_ORDER_USD:
             tasks.add_task(notify.new_order, payload)
     elif topic == "inventory_levels/update":
         tasks.add_task(_inventory_changed, payload)
@@ -87,10 +88,8 @@ async def _inventory_changed(payload: dict) -> None:
     _STOCK_STATE[item_id] = new
     if new == old:
         return
-    if new != "ok":
+    if new != "ok" and not (new == "low" and old == "out"):  # going down only; restocks are not announced
         await notify.stock_alert(info["name"], info["total"])
-    elif old in ("low", "out"):
-        await notify.telegram(f"✅ <b>Restocked:</b> {notify.esc(info['name'])} — {info['total']} available")
 
 
 # ── Telegram (owner commands) ────────────────────────────────────────────────────────────────────────
@@ -101,8 +100,11 @@ HELP = ("<b>Ardea Skin · back-office bot</b>\n"
         "• <i>Top 10 customers</i>\n"
         "• <i>How much did we sell this month vs last month?</i>\n"
         "• <i>What is running out of stock?</i>\n\n"
-        "Shortcuts: /stock · /orders · /stats · /new (forget this conversation)\n"
-        "You also get alerts for new orders, low stock, sell-outs and chat escalations.")
+        "Shortcuts: /digest · /weekly · /stock · /orders · /stats · /new (forget this conversation)\n\n"
+        "<b>What I send on my own</b>\n"
+        "• Daily summary at 9:00 and a weekly report with charts on Mondays\n"
+        "• Right away: sold out or under 10 units, orders over $150, and complaints, order issues or "
+        "medical questions from the store chat")
 
 
 def allowed(chat_id: str) -> bool:
@@ -138,6 +140,12 @@ async def _handle(chat_id: str, text: str) -> None:
             await notify.telegram(await _orders_report(), chat_id)
         elif cmd == "/stats":
             await notify.telegram(await _stats_report(), chat_id)
+        elif cmd == "/digest":
+            await notify.typing(chat_id)
+            await reports.send_daily(chat_id)
+        elif cmd == "/weekly":
+            await notify.typing(chat_id, "upload_photo")
+            await reports.send_weekly(chat_id)
         elif cmd:
             await notify.telegram(HELP, chat_id)
         else:
