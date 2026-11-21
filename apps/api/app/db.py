@@ -56,3 +56,18 @@ async def rpc(fn: str, args: dict | None = None):
         return r.json() if r.status_code < 300 else None
     except httpx.HTTPError:
         return None
+
+
+async def update(path: str, fields: dict) -> bool:
+    """PATCH rows matching a PostgREST filter, e.g. update("escalations?ref_code=eq.AR-123", {...})."""
+    if not enabled():
+        return False
+    try:
+        async with httpx.AsyncClient(timeout=8) as http:
+            r = await http.patch(f"{config.SUPABASE_URL}/rest/v1/{path}", json=fields, headers=_headers())
+        if r.status_code >= 300:
+            log.warning("supabase update %s -> %s %s", path, r.status_code, r.text[:200])
+        return r.status_code < 300
+    except httpx.HTTPError as e:
+        log.warning("supabase update %s failed: %s", path, e)
+        return False

@@ -11,6 +11,13 @@ def env(name: str, default: str = "") -> str:
 SHOPIFY_SHOP = env("SHOPIFY_SHOP")
 SHOPIFY_API_VERSION = env("SHOPIFY_API_VERSION", "2026-10")
 SHOPIFY_STOREFRONT_PRIVATE_TOKEN = env("SHOPIFY_STOREFRONT_PRIVATE_TOKEN")
+SHOPIFY_CLIENT_ID = env("SHOPIFY_CLIENT_ID")
+SHOPIFY_CLIENT_SECRET = env("SHOPIFY_CLIENT_SECRET")  # also the key Shopify signs webhooks with (HMAC-SHA256)
+
+# Owner bot (Telegram). The webhook secret is derived from the bot token so no extra variable is needed.
+TELEGRAM_BOT_TOKEN = env("TELEGRAM_BOT_TOKEN")
+TELEGRAM_OWNER_CHAT_ID = env("TELEGRAM_OWNER_CHAT_ID")
+LOW_STOCK_AT = int(env("LOW_STOCK_AT", "5"))
 
 ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY")
 AGENT_MODEL = env("AGENT_MODEL", "claude-haiku-5-5")

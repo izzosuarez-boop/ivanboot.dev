@@ -1,4 +1,4 @@
-"""ivanboot.dev API — the Ardea Skin agent (and, next, Shopify webhooks + Telegram)."""
+"""ivanboot.dev API — the Ardea Skin agent, Shopify webhooks and the owner's Telegram bot."""
 from __future__ import annotations
 
 import logging
@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from . import agent, config, db, guard
+from . import agent, config, db, guard, notify, shopify_admin, webhooks
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 STARTED_AT = time.time()
@@ -24,6 +24,7 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
 )
+app.include_router(webhooks.router)
 
 
 class ChatIn(BaseModel):
@@ -43,6 +44,7 @@ async def health() -> dict:
         "status": "ok", "version": VERSION, "uptime_s": int(time.time() - STARTED_AT),
         "shopify_configured": bool(config.SHOPIFY_SHOP and config.SHOPIFY_STOREFRONT_PRIVATE_TOKEN),
         "agent_configured": bool(config.ANTHROPIC_API_KEY), "db_configured": db.enabled(),
+        "admin_configured": shopify_admin.enabled(), "telegram_configured": notify.enabled(),
     }
 
 
