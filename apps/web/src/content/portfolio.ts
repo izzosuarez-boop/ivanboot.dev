@@ -1,0 +1,245 @@
+// Portfolio content: the six sections of the hub circle, clockwise from the top, and their projects.
+// Videos and project images are filled in later (null = placeholder frame).
+
+export type ProjectStatus = "Live demo" | "Case study" | "In progress";
+
+export type Project = {
+  title: string;
+  status: ProjectStatus;
+  summary: string;
+  problem: string;
+  how: string;
+  result: string;
+  stack: string[];
+  link?: { label: string; href: string };
+  image?: string | null;
+};
+
+export type Section = {
+  slug: string;
+  label: string;      // text on the circle
+  short: string;      // compact label for small screens
+  pitch: string;      // headline inside the section
+  intro: string;
+  video: { title: string; src: string | null; poster?: string | null };
+  projects: Project[];
+};
+
+const STORE = "https://tienda.ivanboot.dev";
+const REPO = "https://github.com/izzosuarez-boop/ivanboot.dev";
+
+export const sections: Section[] = [
+  {
+    slug: "ai-agents",
+    label: "AI Agents & LLMs",
+    short: "AI Agents",
+    pitch: "Agents that sell, support and report — with the costs measured.",
+    intro:
+      "LLMs treated as a component with a budget and an SLA: tools that read real data, outputs checked in code, " +
+      "spend caps, failover and logs. Not a chat box glued to a prompt.",
+    video: { title: "The Ardea Skin agent: advising, building a cart and explaining how it was built", src: null },
+    projects: [
+      {
+        title: "Ardea Skin store agent",
+        status: "Live demo",
+        summary: "A dual-mode agent inside a headless Shopify store: a skin advisor for shoppers and a technical guide for clients who want to know how the site works.",
+        problem: "A store chat must answer with live stock and prices, never invent medical advice, and stay cheap enough for a public page anyone can spam.",
+        how: "Claude Haiku 5.5 with tools that read Shopify (catalog, stock, cart) and a cached system prompt. Complaints and medical questions are escalated to the owner with a reference code. Daily spend cap and per-visitor rate limits.",
+        result: "About $0.0002–0.001 per turn. Conversations, token usage and cost are logged in Supabase; a browser test checks the full flow.",
+        stack: ["Claude API", "Tool use", "FastAPI", "Shopify Storefront API", "Supabase", "Playwright"],
+        link: { label: "Try it in the store", href: STORE },
+      },
+      {
+        title: "LLM integrations in production",
+        status: "Case study",
+        summary: "Three production systems on two providers: a function-calling support agent, a vision model as an independent second reader, and a human-like async responder.",
+        problem: "Production LLMs fail in quiet ways: queued requests, confident wrong reads, behavior that a prompt cannot make measurable.",
+        how: "Cheap model for normal traffic with a measured failover to a stronger one; vision checks run in off / shadow / active modes; probabilities and limits enforced in code, outside the model.",
+        result: "Failover after 20 s with a 5-minute cooldown (responses back to 1–5 s); new models measured on real traffic in shadow mode before they decide anything.",
+        stack: ["Anthropic", "DeepSeek", "Function calling", "Structured output", "Python"],
+      },
+    ],
+  },
+  {
+    slug: "automation",
+    label: "Automation & Bots",
+    short: "Automation",
+    pitch: "Bots that do the routine work and only interrupt you when it matters.",
+    intro:
+      "Telegram and chat bots, scheduled reports, webhooks and workers that run 24/7 — designed around what a person " +
+      "can actually read in a day.",
+    video: { title: "The store owner's Telegram bot: alerts, reports and charts on demand", src: null },
+    projects: [
+      {
+        title: "Store owner bot on Telegram",
+        status: "Live demo",
+        summary: "The back office of the Ardea Skin demo: the owner asks in plain language (“top 10 customers”, “chart of best sellers in 3 months”) and gets answers and charts.",
+        problem: "One message per order stops being readable at a few thousand visitors a month; the owner needs signal, not a feed.",
+        how: "Shopify webhooks verified with HMAC; only actionable events are pushed (sold out, under 10 units, orders over $150, complaints). Everything else goes into a 9:00 daily summary and a Monday report with charts. Questions are answered by Claude with read-only tools; charts are rendered server-side with matplotlib.",
+        result: "About $0.0005 per question. A scheduler that never sends twice after a restart and catches up after downtime.",
+        stack: ["Telegram Bot API", "Shopify Admin API", "Webhooks", "Claude API", "matplotlib", "Supabase"],
+      },
+      {
+        title: "Fleet of headless Linux workers",
+        status: "Case study",
+        summary: "Nine Ubuntu servers running desktop-automation workers 24/7 (computer vision and OCR on a virtual display), each with its own network egress.",
+        problem: "Unattended machines fail silently: a config edited but never applied, a tunnel that swallows its own transport, a worker that dies at 3 a.m.",
+        how: "Clone-don't-rebuild setup scripts, per-machine SOCKS5 egress through tun2socks with pinned routes, systemd units and a watchdog.",
+        result: "A new machine in about 45 minutes; a dead worker restored in 3–4 seconds; a catalog of real failures, each caught by hitting it.",
+        stack: ["Linux", "systemd", "Networking", "iptables", "Computer vision"],
+      },
+      {
+        title: "Social media automation",
+        status: "In progress",
+        summary: "Scheduled posts and replies generated from the catalog and approved by a person before publishing.",
+        problem: "",
+        how: "",
+        result: "",
+        stack: ["n8n", "Claude API", "Meta Graph API"],
+      },
+    ],
+  },
+  {
+    slug: "software",
+    label: "Software, APIs & QA",
+    short: "Software & QA",
+    pitch: "Software that is tested against the wrong answer, not just the right one.",
+    intro:
+      "Backends, API integrations, protocol work and test automation. Every claim backed by a test, a measurement or " +
+      "a log line.",
+    video: { title: "Browser tests running against the live store", src: null },
+    projects: [
+      {
+        title: "Protocol lab",
+        status: "Case study",
+        summary: "A reverse-engineered TCP protocol bench: frame parser, MITM proxy with hooks, mock servers and client, and a replay and fuzzing harness.",
+        problem: "Studying a legacy protocol without touching production, and trusting a parser that real clients feed in odd fragments.",
+        how: "One parser shared by the proxy and every mock, an asyncio proxy that rewrites redirects, and a fuzzer that cuts the stream at every byte.",
+        result: "Zero dependencies beyond the standard library; end-to-end runs with assertions in all four traffic directions.",
+        stack: ["Python asyncio", "TCP", "Fuzzing", "Testing"],
+      },
+      {
+        title: "On-chain escrow test bench",
+        status: "Case study",
+        summary: "A non-custodial escrow where a legal rule is a contract invariant: a buyer's money can only reach the seller or come back.",
+        problem: "Custodial payment hops caused three incidents in one week; the question was what an escrow really costs per order.",
+        how: "CREATE2 one-address-per-order design whose salt makes diversion impossible, compared against a single-contract design, with gas measured on two chains.",
+        result: "TRON made every sale lose money; the same contract on BSC costs about $0.02 per order. Found that USDT's transfer returns false even when funds move.",
+        stack: ["Solidity", "Python", "TRON", "BSC", "CREATE2"],
+      },
+      {
+        title: "API integrations and browser tests",
+        status: "Live demo",
+        summary: "The plumbing behind the store: Shopify Storefront and Admin APIs, signed webhooks, Telegram, Supabase — and Playwright tests that drive a real browser.",
+        problem: "Integrations break at the edges: a cookie set too late, a duplicate webhook, a token printed in a log.",
+        how: "HMAC verification and de-duplication of webhooks, cart mutations in a Route Handler, scripted desktop and mobile browser runs before every release.",
+        result: "Cart, chat and video behavior verified end to end on every change.",
+        stack: ["REST", "GraphQL", "Webhooks", "Playwright", "FastAPI"],
+        link: { label: "Source code", href: REPO },
+      },
+    ],
+  },
+  {
+    slug: "scraping",
+    label: "Web Scraping & Data",
+    short: "Scraping",
+    pitch: "Data collected reliably, matched intelligently and delivered where it is useful.",
+    intro: "Scrapers that respect each site's rules, survive layout changes and turn pages into clean, matched data.",
+    video: { title: "Coming soon", src: null },
+    projects: [
+      {
+        title: "Competitor price radar",
+        status: "In progress",
+        summary: "Prices from permitted competitor sites, matched to the store's products with an LLM and shown as a live dashboard.",
+        problem: "",
+        how: "",
+        result: "",
+        stack: ["Python", "Playwright", "Claude API", "Supabase"],
+      },
+    ],
+  },
+  {
+    slug: "ai-media",
+    label: "AI Media",
+    short: "AI Media",
+    pitch: "Product photos and videos made with AI — and checked in code.",
+    intro:
+      "Generated images, videos and voice with one art direction, and quality control that does not rely on eyes alone.",
+    video: { title: "How the Ardea Skin photos and videos were made", src: null },
+    projects: [
+      {
+        title: "Ardea Skin product photography",
+        status: "Live demo",
+        summary: "Thirteen product photos and three category covers for a fictional brand, with one shared art direction and a different scene per category.",
+        problem: "Generated packshots tend to look like a pharmacy, misspell labels or come out as collages.",
+        how: "A written art direction (heavy glass, champagne-gold metal, printed lettering, travertine), approved references, labels cropped and zoomed letter by letter, and a detector that flags collages.",
+        result: "About $0.14 per image; a wrong “130 ML” fixed by editing only that text and verified with a pixel diff.",
+        stack: ["Gemini image", "Python", "Pillow", "Shopify Files"],
+        link: { label: "See them in the store", href: STORE },
+      },
+      {
+        title: "Category videos with narration",
+        status: "Live demo",
+        summary: "15-second how-to videos with the real product, narration and burned-in captions.",
+        problem: "The bottle in a generated video must be the real one, and the voice must say exactly the script, in sync with the image.",
+        how: "Approved photo as video reference, one narration line per caption, transcription back to text to check the voice, assembly with ffmpeg.",
+        result: "About $1.70–1.90 per category; the whole demo's media budget was roughly $10.",
+        stack: ["Gemini video", "Gemini TTS", "ffmpeg", "Python"],
+        link: { label: "Watch in the store", href: STORE },
+      },
+    ],
+  },
+  {
+    slug: "web-shopify",
+    label: "Web & Shopify",
+    short: "Web & Shopify",
+    pitch: "Fast, custom storefronts on top of the commerce platform clients already trust.",
+    intro:
+      "Headless Shopify with a custom Next.js frontend: Shopify keeps payments, inventory and checkout; the experience " +
+      "is fully yours.",
+    video: { title: "A tour of tienda.ivanboot.dev, from catalog to checkout", src: null },
+    projects: [
+      {
+        title: "Ardea Skin — headless Shopify store",
+        status: "Live demo",
+        summary: "A working store for a fictional skincare brand: real catalog, cart and Shopify checkout in test mode, with an AI advisor built in.",
+        problem: "Show both sides a client needs: solid Shopify integration and a frontend that does not look like every other theme.",
+        how: "Next.js 16 with server-side Storefront API calls (private token never reaches the browser), cached product data, host-based routing for two sites in one app.",
+        result: "Instant static shells with live stock streamed in; a burst of visitors costs one Shopify request.",
+        stack: ["Shopify Storefront API", "Next.js 16", "React 19", "Tailwind", "TypeScript"],
+        link: { label: "Open the store", href: STORE },
+      },
+      {
+        title: "One-VPS production setup",
+        status: "Live demo",
+        summary: "The whole site — portfolio, store and API — on one Linux server with Docker Compose and automatic HTTPS.",
+        problem: "Keep hosting cheap and simple without giving up HTTPS, zero-downtime-ish deploys and a smoke test.",
+        how: "Caddy reverse proxy with Let's Encrypt and HTTP/3, Next.js and FastAPI containers, one-command deploy that builds on the server and checks the result.",
+        result: "Deploys in one command; media served from Shopify's CDN, not the server.",
+        stack: ["Docker Compose", "Caddy", "Linux", "Let's Encrypt"],
+        link: { label: "Source code", href: REPO },
+      },
+    ],
+  },
+];
+
+export const sectionBySlug = (slug: string) => sections.find((s) => s.slug === slug);
+
+// About card (opened from the photo in the hub). Empty fields are hidden until filled in.
+export const about = {
+  name: "Iván",
+  role: "AI engineer & automation developer",
+  bio:
+    "I build AI agents, automations and the software around them — from production LLM systems and scraping " +
+    "pipelines to Shopify stores and 24/7 Linux workers. I measure before I conclude and write down why each " +
+    "decision was made, so clients know what they are paying for.",
+  education: [] as { title: string; place: string; years: string }[],
+  highlights: [
+    "LLM systems in production on Anthropic and DeepSeek",
+    "Headless Shopify, Next.js and FastAPI",
+    "Bots and automation with Telegram, webhooks and n8n",
+    "Linux servers, Docker and networking",
+  ],
+  skills: ["Claude / LLM APIs", "AI agents & tool use", "Python", "TypeScript", "Next.js", "FastAPI", "Shopify",
+    "Web scraping", "Playwright", "Supabase / Postgres", "Docker", "Linux"],
+};

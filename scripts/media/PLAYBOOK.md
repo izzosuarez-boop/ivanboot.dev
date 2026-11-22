@@ -270,3 +270,21 @@ y es fácil de rehacer con `generate_category_media.post()`.
 
 La última toma siempre es el producto solo, en reposo: de ahí sale la miniatura del video (el script
 toma un fotograma 1,5 s antes del final).
+
+---
+
+## 5. Escena del portafolio (Iván en su escritorio)
+
+- **Comando:** `python scripts/images/generate_portrait_scene.py C:/Users/Trollo/Desktop/ivan.jpeg --tag v2 [--extra "…"]`.
+  Usa la foto real como **referencia de identidad**. Cuesta ≈ 0,14 USD por intento.
+- **El prompt pide:**
+  - una sola foto continua y cuadrada, con el sujeto centrado;
+  - vista de tres cuartos hacia la cámara;
+  - pantallas sin texto legible;
+  - bordes que caen a casi negro (`#0b0d10`), para fundirse con la página sin borde duro.
+- **Antes de aprobar:** compara la cara con la foto original (gafas, barba, forma de la cara). Revisa que no haya texto
+  inventado en las pantallas.
+- **Publicación:** la aprobada se exporta a `apps/web/public/portfolio/scene.webp` (1400 px, WebP calidad 84, unos 85 KB).
+- **v1 (2026-11-21):** buen parecido. Pendientes:
+  - el sujeto queda un poco a la izquierda;
+  - las pantallas son blancas y brillantes; en modo oscuro encajarían mejor con la noche.

@@ -10,6 +10,12 @@
   --accent: #5eead4;
   --accent-2: #a78bfa;
 
+  /* Portfolio hub: night office (monitor glow + desk lamp) */
+  --night: #090b0e;
+  --glow: #5eead4;
+  --lamp: #f2b45c;
+  --text-2: #c3cad3;
+
   /* Ardea Skin palette (light, calm) */
   --sand: #f5f0e8;
   --sand-2: #ebe3d6;
@@ -28,6 +34,10 @@
   --color-muted: var(--muted);
   --color-accent: var(--accent);
   --color-accent-2: var(--accent-2);
+  --color-night: var(--night);
+  --color-glow: var(--glow);
+  --color-lamp: var(--lamp);
+  --color-text-2: var(--text-2);
   --color-sand: var(--sand);
   --color-sand-2: var(--sand-2);
   --color-clay: var(--clay);
@@ -58,7 +68,25 @@ body {
 .rise-2 { animation-delay: 0.16s; }
 .rise-3 { animation-delay: 0.24s; }
 
+/* Hub circle segments */
+.ring-band { fill: rgba(17, 21, 26, 0.82); stroke: var(--line); stroke-width: 1; transition: fill 0.25s, stroke 0.25s; }
+.ring-label { transition: fill 0.25s; }
+.ring-seg:hover .ring-band, .ring-seg:focus-visible .ring-band { fill: rgba(94, 234, 212, 0.09); stroke: rgba(94, 234, 212, 0.6); }
+.ring-seg:hover .ring-label, .ring-seg:focus-visible .ring-label { fill: #fff; }
+.ring-seg:focus-visible .ring-band { stroke-width: 2; }
+.ring-seg[data-active] .ring-band { fill: rgba(94, 234, 212, 0.1); stroke: rgba(94, 234, 212, 0.45); }
+
+/* Page content entering after the ring has moved, and leaving before it moves back */
+@keyframes stage-in {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: none; }
+}
+.stage-in { animation: stage-in 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.stage-out { opacity: 0 !important; transform: translateY(16px); transition: opacity 0.3s, transform 0.3s; }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.fade-in { animation: fade-in 0.9s ease both; }
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .rise { animation: none; }
+  .rise, .stage-in, .fade-in { animation: none; }
 }

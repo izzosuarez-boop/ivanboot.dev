@@ -4,7 +4,7 @@ export const site = {
   handle: "ivanboot",
   domain: "ivanboot.dev",
   storeUrl: process.env.NEXT_PUBLIC_STORE_URL ?? "https://tienda.ivanboot.dev",
-  upworkUrl: process.env.NEXT_PUBLIC_UPWORK_URL ?? "",
+  upworkUrl: process.env.NEXT_PUBLIC_UPWORK_URL || "https://www.upwork.com/freelancers/~01d5ad771e5c598546",
   workanaUrl: process.env.NEXT_PUBLIC_WORKANA_URL ?? "",
 };
 
