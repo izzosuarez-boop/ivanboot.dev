@@ -56,7 +56,8 @@ def main() -> int:
     if "--webhook" in sys.argv:
         secret = hashlib.sha256(f"ardea-owner-bot:{token}".encode()).hexdigest()[:48]
         r = httpx.post(f"{api}/setWebhook", timeout=15, json={
-            "url": WEBHOOK_URL, "secret_token": secret, "allowed_updates": ["message"], "drop_pending_updates": True})
+            "url": WEBHOOK_URL, "secret_token": secret, "allowed_updates": ["message", "callback_query"],  # buttons
+            "drop_pending_updates": True})
         print("setWebhook:", r.json().get("description"))
         print("setMyCommands:", httpx.post(f"{api}/setMyCommands", json={"commands": COMMANDS}, timeout=15).json().get("ok"))
         info = httpx.get(f"{api}/getWebhookInfo", timeout=15).json()["result"]

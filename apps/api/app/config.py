@@ -23,6 +23,7 @@ BIG_ORDER_USD = float(env("BIG_ORDER_USD", "150"))    # only orders above this a
 URGENT_ESCALATIONS = {"complaint", "order_issue", "medical_question"}  # human_request/other -> daily summary
 DIGEST_TZ = env("DIGEST_TZ", "America/Bogota")
 DIGEST_HOUR = int(env("DIGEST_HOUR", "9"))            # daily summary every day, weekly report on Mondays
+WEB_INTERNAL_URL = env("WEB_INTERNAL_URL", "http://web:3000")  # storefront container (cache refresh)
 # Extra Telegram chats allowed to use the back-office bot (comma-separated chat ids); the owner is always allowed.
 TELEGRAM_ALLOWED_CHAT_IDS = {c.strip() for c in env("TELEGRAM_ALLOWED_CHAT_IDS").split(",") if c.strip()}
 

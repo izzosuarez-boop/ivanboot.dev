@@ -74,3 +74,42 @@ async def recent_orders(n: int = 5) -> list[dict]:
              "total": f'{o["totalPriceSet"]["shopMoney"]["amount"]} {o["totalPriceSet"]["shopMoney"]["currencyCode"]}',
              "items": [f'{li["quantity"]}× {li["name"]}' for li in o["lineItems"]["nodes"]]}
             for o in data["orders"]["nodes"]]
+
+
+# ── inventory writes (owner bot restock, always after the owner confirms) ─────────────────────────────
+
+async def variants_with_inventory() -> list[dict]:
+    """Every variant with what a stock change needs: [{name, handle, qty, item_id, location_id}].
+    The store has a single location; a variant without an inventory level there can't be restocked."""
+    data = await gql("""{ productVariants(first: 100) { nodes { displayName inventoryQuantity product { handle }
+        inventoryItem { id tracked inventoryLevels(first: 1) { nodes { location { id }
+          quantities(names: ["available"]) { quantity } } } } } } }""")
+    out = []
+    for n in data["productVariants"]["nodes"]:
+        levels = n["inventoryItem"]["inventoryLevels"]["nodes"]
+        if not n["inventoryItem"]["tracked"] or not levels:
+            continue
+        out.append({"name": n["displayName"], "handle": n["product"]["handle"],
+                    "qty": levels[0]["quantities"][0]["quantity"],
+                    "item_id": n["inventoryItem"]["id"], "location_id": levels[0]["location"]["id"]})
+    return out
+
+
+async def available_qty(item_id: str, location_id: str) -> int | None:
+    data = await gql("""query($i: ID!, $l: ID!) { inventoryItem(id: $i) { inventoryLevel(locationId: $l) {
+        quantities(names: ["available"]) { quantity } } } }""", {"i": item_id, "l": location_id})
+    level = (data.get("inventoryItem") or {}).get("inventoryLevel")
+    return level["quantities"][0]["quantity"] if level else None
+
+
+async def set_available(item_id: str, location_id: str, quantity: int, expected: int, ref: str) -> list[str]:
+    """Set the available quantity with a compare-and-swap: Shopify rejects the change if the stock is no
+    longer `expected` (an order came in between proposal and confirmation). Returns user errors ([] = ok).
+    `ref` doubles as the idempotency key Shopify requires, so a repeated request is applied only once."""
+    data = await gql("""mutation($input: InventorySetQuantitiesInput!, $key: String!) {
+        inventorySetQuantities(input: $input) @idempotent(key: $key) {
+        userErrors { field message code } } }""", {"key": ref, "input": {
+        "name": "available", "reason": "received", "referenceDocumentUri": ref,
+        "quantities": [{"inventoryItemId": item_id, "locationId": location_id,
+                        "quantity": quantity, "changeFromQuantity": expected}]}})
+    return [e["message"] for e in data["inventorySetQuantities"]["userErrors"]]

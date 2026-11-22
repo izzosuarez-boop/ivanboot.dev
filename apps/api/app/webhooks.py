@@ -18,7 +18,7 @@ from fastapi import APIRouter, BackgroundTasks, Request, Response
 
 import anthropic
 
-from . import config, db, guard, notify, owner_agent, reports, shopify, shopify_admin
+from . import config, db, guard, notify, owner_agent, reports, restock, shopify, shopify_admin, web_cache
 
 log = logging.getLogger("webhooks")
 router = APIRouter(prefix="/webhooks")
@@ -84,6 +84,7 @@ async def _inventory_changed(payload: dict) -> None:
         return
     if not info or info["handle"] not in live:  # retired products are no longer sold: stay quiet
         return
+    await web_cache.refresh_products()  # the store shows the new stock (or "sold out") right away
     new, old = _level(info["total"]), _STOCK_STATE.get(item_id)
     _STOCK_STATE[item_id] = new
     if new == old:
@@ -99,7 +100,8 @@ HELP = ("<b>Ardea Skin · back-office bot</b>\n"
         "• <i>Chart of the best sellers of the last 3 months</i>\n"
         "• <i>Top 10 customers</i>\n"
         "• <i>How much did we sell this month vs last month?</i>\n"
-        "• <i>What is running out of stock?</i>\n\n"
+        "• <i>What is running out of stock?</i>\n"
+        "• <i>Vitamin C is sold out, add 40 units</i> (I always ask before changing stock)\n\n"
         "Shortcuts: /digest · /weekly · /stock · /orders · /stats · /new (forget this conversation)\n\n"
         "<b>What I send on my own</b>\n"
         "• Daily summary at 9:00 and a weekly report with charts on Mondays\n"
@@ -117,6 +119,10 @@ async def telegram_webhook(request: Request, tasks: BackgroundTasks):
             request.headers.get("x-telegram-bot-api-secret-token", ""), telegram_secret()):
         return Response(status_code=401)
     update = await request.json()
+    cb = update.get("callback_query")
+    if cb:  # an inline button was tapped (restock Confirm / Cancel)
+        tasks.add_task(_button, cb)
+        return {"ok": True}
     msg = update.get("message") or {}
     chat_id = str((msg.get("chat") or {}).get("id", ""))
     text = (msg.get("text") or "").strip()
@@ -164,16 +170,41 @@ async def _ask(chat_id: str, text: str) -> None:
         return
     await notify.typing(chat_id)
     try:
-        reply, photos, cost = await owner_agent.ask(chat_id, text)
+        reply, photos, cost, proposal = await owner_agent.ask(chat_id, text)
     except anthropic.APIError as e:
         log.warning("owner agent: %s", e.__class__.__name__)
         await notify.telegram("The assistant had a hiccup — please try again.", chat_id)
         return
-    await notify.telegram(reply, chat_id)
+    keyboard = notify.buttons((("✅ Confirm", f"rs:{proposal}:y"), ("Cancel", f"rs:{proposal}:n"))) if proposal else None
+    await notify.telegram(reply, chat_id, keyboard)
     for png, _ in photos:
         await notify.typing(chat_id, "upload_photo")
         await notify.telegram_photo(png, chat_id)
     log.info("owner question answered: %d chart(s), $%.5f", len(photos), cost)
+
+
+async def _button(cb: dict) -> None:
+    msg = cb.get("message") or {}
+    chat_id = str((msg.get("chat") or {}).get("id", ""))
+    data = cb.get("data") or ""
+    parts = data.split(":")
+    if not allowed(chat_id) or len(parts) != 3 or parts[0] != "rs":
+        await notify.answer_callback(cb.get("id", ""))
+        return
+    _, pid, choice = parts
+    try:
+        if choice == "y":
+            result, toast = await restock.confirm(chat_id, pid)
+        else:
+            result, toast = restock.cancel(chat_id, pid), "Cancelled"
+    except Exception as e:  # noqa: BLE001
+        log.warning("restock %s failed: %s", choice, e.__class__.__name__)
+        result, toast = "Couldn't reach Shopify — nothing was changed. Try again in a minute.", "Error"
+    await notify.answer_callback(cb.get("id", ""), toast)
+    original = notify.esc(msg.get("text") or "")
+    await notify.edit_message(chat_id, msg.get("message_id"), f"{original}\n\n{result}".strip())
+    owner_agent.remember(chat_id, f"[tapped {'Confirm' if choice == 'y' else 'Cancel'}]", notify._plain(result))
+    log.info("restock button %s: %s", choice, toast)
 
 
 async def _stock_report() -> str:

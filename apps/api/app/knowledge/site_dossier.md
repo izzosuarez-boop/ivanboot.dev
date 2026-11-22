@@ -35,6 +35,12 @@ and full-stack work. Hiring happens on Upwork: https://www.upwork.com/freelancer
     customers, stock, recent orders, chat stats); the numbers come only from Shopify's Admin API, and charts
     are rendered on the server with matplotlib in the store's palette and sent to Telegram as images — the
     model never draws or invents data. About $0.0005 per question.
+  - *It can act, carefully:* the one change it can make is stock ("Vitamin C is sold out, add 40 units").
+    The model can only propose; the change happens when the owner taps a Confirm button under the message.
+    Only the owner's chat can do it, at most 500 units at a time; the write is a compare-and-swap (if an order
+    changed the stock in between, Shopify rejects it instead of overwriting), the result is read back from
+    Shopify, every attempt is logged in Supabase, and the store's cache is refreshed so the product shows as
+    back on sale within seconds.
   - *Demo data:* a seeding script created a realistic 3-month history (219 orders from 44 fictitious
     customers with reserved example.com emails; growing demand, busier weekends, an October campaign spike),
     tagged `demo-seed`, without touching inventory or sending receipts — and the bot never alerts on it.
@@ -88,6 +94,11 @@ and full-stack work. Hiring happens on Upwork: https://www.upwork.com/freelancer
 - **Stray markup in the chat.** The model occasionally ended its follow-up line with a fragment of its
   internal tool-call markup (`</parameter>`), which then showed up in the suggestion buttons. Fix: both the
   backend and the browser strip tag-like text from replies and suggestions, and a browser test checks it.
+
+- **Letting a chatbot change real stock.** Reading data is harmless; writing is not. The model never
+  writes: it prepares a proposal and the owner confirms with a button, a proposal works once and expires in
+  10 minutes, and Shopify's compare-and-swap rejects a confirmation if the stock moved meanwhile. A test runs
+  the whole flow against the real store (including the rejected case) and restores the original numbers.
 
 ## AI-generated media (and what it cost)
 - **Product photos:** Google's Gemini image model ("Nano Banana Pro"), 2K, about $0.14 each. One shared

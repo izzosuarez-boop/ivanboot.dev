@@ -33,10 +33,10 @@ export const sections: Section[] = [
     slug: "ai-agents",
     label: "AI Agents & LLMs",
     short: "AI Agents",
-    pitch: "Agents that sell, support and report — with the costs measured.",
+    pitch: "AI agents: systems that think, plan and act.",
     intro:
-      "LLMs treated as a component with a budget and an SLA: tools that read real data, outputs checked in code, " +
-      "spend caps, failover and logs. Not a chat box glued to a prompt.",
+      "Beyond a chat: from asking for things to delegating the work. Today AI agents work for you — integrated " +
+      "into your platforms and workflows, they act as a force multiplier.",
     video: { title: "The Ardea Skin agent: advising, building a cart and explaining how it was built", src: null },
     projects: [
       {

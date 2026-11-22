@@ -12,7 +12,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 
-from . import analytics, charts, config, db, guard, shopify, shopify_admin
+from . import analytics, charts, config, db, guard, restock, shopify, shopify_admin
 from .agent import client, cost_of
 
 MAX_TURNS_KEPT = 12  # remembered text turns per chat (tool calls are not kept between questions)
@@ -37,7 +37,13 @@ store owner inside Telegram. Today is {today} (UTC).
 - Earlier answers in this chat end with an [answered from: …] note: those numbers came from tools and any
   chart was already sent. Don't re-check or re-send them; call a tool only for what the new message needs.
   Never write such a note yourself.
-- You can only read data. If asked to change prices, stock or orders, explain that it is done in Shopify admin."""
+- The only change you can make is stock, with propose_restock ("add 40 units of Vitamin C", "set the gel
+  cleanser to 100"). It never changes anything by itself: it prepares the change and the server attaches
+  Confirm / Cancel buttons to your reply. Then write one short line with the product, current → new units,
+  and ask the owner to confirm with the button. Never say the stock was changed — you only learn the result
+  after the tap. If several variants match, ask which one. If propose_restock is not in your tools, this chat
+  can't change stock.
+- Prices, orders and anything else are changed in Shopify admin: say so."""
 
 DAYS = {"type": "integer", "minimum": 1, "maximum": 365, "description": "Window in days ending today"}
 CHART = {"type": "boolean", "description": "Render and send a chart image of this result"}
@@ -60,6 +66,16 @@ TOOLS = [
     {"name": "get_chat_stats", "description": "Usage and AI spend of the store's customer chat.",
      "input_schema": {"type": "object", "properties": {}}},
 ]
+RESTOCK_TOOL = {
+    "name": "propose_restock",
+    "description": "Prepare a stock change for one product variant on sale. Nothing changes until the owner taps "
+                   "Confirm on the button attached to your reply. Use mode 'add' to add units (restock) or 'set' "
+                   "for an exact new stock. Max 500 units per change.",
+    "input_schema": {"type": "object", "properties": {
+        "product": {"type": "string", "description": "Variant name as listed by get_stock, e.g. "
+                                                     "'Vitamin C 15% Brightening Serum - 30 ml' (a close name also works)"},
+        "units": {"type": "integer", "minimum": 0, "maximum": 2000},
+        "mode": {"type": "string", "enum": ["add", "set"]}}, "required": ["product", "units"]}}
 
 
 @dataclass
@@ -88,7 +104,19 @@ def _money(v: float) -> str:
     return f"${v:,.0f}" if v >= 100 else f"${v:,.2f}"
 
 
-async def _run_tool(name: str, a: dict, photos: list[tuple[bytes, str]]) -> dict:
+def remember(chat_id: str, user: str, assistant: str) -> None:
+    """Add an exchange that happened outside ask() (e.g. a button tap) so follow-up questions know about it."""
+    chat = _chat(chat_id)
+    chat.messages = (chat.messages + [{"role": "user", "content": user},
+                                      {"role": "assistant", "content": assistant}])[-MAX_TURNS_KEPT:]
+
+
+async def _run_tool(name: str, a: dict, photos: list[tuple[bytes, str]], chat_id: str, state: dict) -> dict:
+    if name == "propose_restock":
+        result, pid = await restock.propose(chat_id, str(a.get("product", "")), a.get("units", 0), a.get("mode", "add"))
+        if pid:
+            state["proposal"] = pid
+        return result
     if name == "get_sales":
         r = await analytics.sales(a.get("days", 30), a.get("group_by") or ("month" if a.get("days", 30) > 120 else "week"))
         if a.get("chart") and r["series"]:
@@ -130,17 +158,19 @@ async def _run_tool(name: str, a: dict, photos: list[tuple[bytes, str]]) -> dict
     return {"error": f"unknown tool {name}"}
 
 
-async def ask(chat_id: str, text: str) -> tuple[str, list[tuple[bytes, str]], float]:
-    """Returns (reply text in Telegram HTML, chart PNGs, cost in USD)."""
+async def ask(chat_id: str, text: str) -> tuple[str, list[tuple[bytes, str]], float, str | None]:
+    """Returns (reply text in Telegram HTML, chart PNGs, cost in USD, restock proposal id to attach buttons to)."""
     chat = _chat(chat_id)
     turn = chat.messages + [{"role": "user", "content": text[:1500]}]
     photos: list[tuple[bytes, str]] = []
     used: list[str] = []
+    state: dict = {}
+    tools = TOOLS + ([RESTOCK_TOOL] if chat_id == config.TELEGRAM_OWNER_CHAT_ID else [])
     cost, reply = 0.0, ""
     system = SYSTEM.format(today=datetime.now(timezone.utc).date().isoformat())
     for _ in range(5):
         resp = await client.messages.create(
-            model=config.AGENT_MODEL, max_tokens=1200, system=system, tools=TOOLS, messages=turn,
+            model=config.AGENT_MODEL, max_tokens=1200, system=system, tools=tools, messages=turn,
             thinking={"type": "adaptive"}, output_config={"effort": "low"})
         cost += cost_of(resp.usage)
         turn.append({"role": "assistant", "content": [b.model_dump(exclude_none=True) for b in resp.content]})
@@ -152,7 +182,7 @@ async def ask(chat_id: str, text: str) -> tuple[str, list[tuple[bytes, str]], fl
             if b.type == "tool_use":
                 used.append(f"{b.name}({json.dumps(b.input or {}, separators=(',', ':'))})")
                 try:
-                    out = await _run_tool(b.name, b.input or {}, photos)
+                    out = await _run_tool(b.name, b.input or {}, photos, chat_id, state)
                 except Exception as e:  # noqa: BLE001 — report to the model, it explains to the owner
                     out = {"error": f"{type(e).__name__}: {str(e)[:200]}"}
                 results.append({"type": "tool_result", "tool_use_id": b.id, "content": json.dumps(out, default=str)})
@@ -164,4 +194,4 @@ async def ask(chat_id: str, text: str) -> tuple[str, list[tuple[bytes, str]], fl
     note = f"\n\n[answered from: {'; '.join(used)}{'; chart sent' if photos else ''}]" if used else ""
     chat.messages = (chat.messages + [{"role": "user", "content": text[:1500]},
                                       {"role": "assistant", "content": reply + note}])[-MAX_TURNS_KEPT:]
-    return reply, photos, cost
+    return reply, photos, cost, state.get("proposal")

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Deploy the stack to the VPS. Run from Git Bash:  bash infra/deploy.sh
+# Deploy the stack to the VPS. Run from Git Bash:  bash infra/deploy.sh [service ...]
+#   bash infra/deploy.sh        # rebuild everything
+#   bash infra/deploy.sh api    # rebuild only the API (the web container keeps running its current image)
 # Requires the "portafolio" host alias in ~/.ssh/config (or DEPLOY_HOST=user@ip).
 set -euo pipefail
 
@@ -7,6 +9,7 @@ HOST="${DEPLOY_HOST:-portafolio}"
 DIR=/opt/ivanboot
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 VERSION="$(date -u +%Y%m%d-%H%M%S)"
+SERVICES="$*"
 cd "$ROOT"
 
 echo "==> uploading source ($VERSION) to $HOST:$DIR"
@@ -20,7 +23,7 @@ scp -q .env "$HOST:$DIR/.env"
 ssh "$HOST" "chmod 600 $DIR/.env"
 
 echo "==> building and starting containers"
-ssh "$HOST" "cd $DIR && APP_VERSION=$VERSION docker compose -f infra/docker-compose.yml up -d --build --remove-orphans && docker image prune -f >/dev/null && docker compose -f infra/docker-compose.yml ps"
+ssh "$HOST" "cd $DIR && APP_VERSION=$VERSION docker compose -f infra/docker-compose.yml up -d --build ${SERVICES:---remove-orphans} && docker image prune -f >/dev/null && docker compose -f infra/docker-compose.yml ps"
 
 echo "==> smoke test"
 sleep 5

@@ -37,17 +37,23 @@ def _plain(text: str) -> str:
     return html.unescape(re.sub(r"</?[a-zA-Z][^<>]*>", "", text))
 
 
-async def telegram(text: str, chat_id: str | int | None = None) -> bool:
+def buttons(*rows: list[tuple[str, str]]) -> dict:
+    """Inline keyboard: buttons((("✅ Confirm", "rs:ab12:y"), ("Cancel", "rs:ab12:n")))."""
+    return {"inline_keyboard": [[{"text": t, "callback_data": d} for t, d in row] for row in rows]}
+
+
+async def telegram(text: str, chat_id: str | int | None = None, keyboard: dict | None = None) -> bool:
     chat_id = chat_id or config.TELEGRAM_OWNER_CHAT_ID
     if not config.TELEGRAM_BOT_TOKEN or not chat_id:
         return False
+    extra = {"reply_markup": keyboard} if keyboard else {}
     try:
         async with httpx.AsyncClient(timeout=10) as http:
             body = {"chat_id": chat_id, "text": text[:4000], "parse_mode": "HTML", "disable_web_page_preview": True}
-            r = await http.post(_api("sendMessage"), json=body)
+            r = await http.post(_api("sendMessage"), json=body | extra)
             if r.status_code == 400:  # model-written HTML that Telegram can't parse: resend as plain text
                 r = await http.post(_api("sendMessage"), json={"chat_id": chat_id, "text": _plain(text)[:4000],
-                                                                "disable_web_page_preview": True})
+                                                                "disable_web_page_preview": True} | extra)
         if r.status_code != 200:
             log.warning("telegram %s: %s", r.status_code, r.text[:200])
         return r.status_code == 200
@@ -66,6 +72,30 @@ async def telegram_photo(png: bytes, chat_id: str | int, caption: str = "") -> b
         return r.status_code == 200
     except httpx.HTTPError as e:
         log.warning("telegram photo failed: %s", e.__class__.__name__)
+        return False
+
+
+async def answer_callback(callback_id: str, text: str = "") -> None:
+    """Stop the spinner on a tapped inline button (optionally with a short toast)."""
+    try:
+        async with httpx.AsyncClient(timeout=5) as http:
+            await http.post(_api("answerCallbackQuery"), json={"callback_query_id": callback_id, "text": text[:190]})
+    except httpx.HTTPError:
+        pass
+
+
+async def edit_message(chat_id: str | int, message_id: int, text: str) -> bool:
+    """Replace a message's text and remove its buttons (so a decision can't be tapped twice)."""
+    try:
+        async with httpx.AsyncClient(timeout=10) as http:
+            r = await http.post(_api("editMessageText"), json={
+                "chat_id": chat_id, "message_id": message_id, "text": text[:4000], "parse_mode": "HTML",
+                "disable_web_page_preview": True, "reply_markup": {"inline_keyboard": []}})
+        if r.status_code != 200:
+            log.warning("telegram edit %s: %s", r.status_code, r.text[:200])
+        return r.status_code == 200
+    except httpx.HTTPError as e:
+        log.warning("telegram edit failed: %s", e.__class__.__name__)
         return False
 
 
