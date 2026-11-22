@@ -1,7 +1,7 @@
 """Brand intro for every Ivan Dev video: a slate with "By Ivan Dev" whose clapper snaps shut (2 s, with sound).
 
-    python scripts/media/intro_clapper.py            # -> scripts/media/out/brand/intro-by-ivan-dev.mp4
-    python scripts/media/intro_clapper.py --preview  # also a contact sheet of key frames
+    python scripts/media/intro_clapper.py --reuse-frames       # -> scripts/media/out/brand/intro-by-ivan-dev.mp4 (real clap)
+    python scripts/media/intro_clapper.py --variants --reuse-frames  # intro-sound-A/B/C.mp4 to choose by ear
 
 Made in code, not with a video model, so it is identical in every video, the lettering is exact and it costs
 nothing. Frames are drawn with Pillow at 2x and downsampled (clean edges); the clap is synthesized with numpy
@@ -193,37 +193,82 @@ def frame(t: float) -> Image.Image:
 
 
 # ── sound ─────────────────────────────────────────────────────────────────────────────────────────────
+# v2 (2026-11-23): v1 (190 Hz "tock" + 72 Hz thump) sounded like a hollow wood block, not a slate. A real
+# clapperboard is two hardwood sticks slapping: a very short broadband snap, the sticks' own inharmonic
+# modes in the 1-6 kHz range (free-free bar ratios 1 : 2.756 : 5.404 : 8.933) decaying in tens of ms, often
+# a double hit a few ms apart (one end lands first), almost no low end, and a small room's reflections.
+BAR_MODES = (1.0, 2.756, 5.404, 8.933)
+SOUNDS = {
+    # f0: lowest stick mode (Hz) · decay of each mode (s) · gap between the two hits (s) · room mix · room RT60 (s)
+    "A": {"label": "studio", "f0": 1350, "decay": (0.034, 0.021, 0.013, 0.008), "gap": 0.003, "snap": 0.9,
+          "room": 0.16, "rt60": 0.32},
+    "B": {"label": "bright, snappy", "f0": 1900, "decay": (0.022, 0.014, 0.009, 0.006), "gap": 0.0015, "snap": 1.2,
+          "room": 0.10, "rt60": 0.25},
+    "C": {"label": "woody, fuller", "f0": 950, "decay": (0.050, 0.030, 0.018, 0.010), "gap": 0.004, "snap": 0.7,
+          "room": 0.22, "rt60": 0.45},
+}
 
-def clap_audio() -> np.ndarray:
-    n = int(DURATION * SR)
-    out = np.zeros(n, dtype=np.float64)
-    rng = np.random.default_rng(7)
-    t = np.arange(int(0.45 * SR)) / SR
-    # wood "tock": a few decaying partials
-    tock = (0.9 * np.sin(2 * np.pi * 190 * t) * np.exp(-t / 0.045)
-            + 0.55 * np.sin(2 * np.pi * 455 * t) * np.exp(-t / 0.028)
-            + 0.35 * np.sin(2 * np.pi * 1130 * t) * np.exp(-t / 0.016)
-            + 0.25 * np.sin(2 * np.pi * 2650 * t) * np.exp(-t / 0.008))
-    # slap: bright noise burst (differenced = high-passed)
-    noise = rng.standard_normal(len(t))
-    slap = np.diff(noise, prepend=0) * np.exp(-t / 0.010) * 0.5
-    thump = 0.5 * np.sin(2 * np.pi * 72 * t) * np.exp(-t / 0.06)
-    hit = tock + slap + thump
-    # small room: convolve with a short decaying noise tail
-    ir_t = np.arange(int(0.28 * SR)) / SR
-    ir = rng.standard_normal(len(ir_t)) * np.exp(-ir_t / 0.06) * 0.035
+
+def _hit(v: dict, rng: np.random.Generator, length: float = 0.25) -> np.ndarray:
+    t = np.arange(int(length * SR)) / SR
+    modes = sum((0.9 / (k + 1) ** 0.6) * np.sin(2 * np.pi * v["f0"] * r * t + rng.uniform(0, 6.28)) * np.exp(-t / d)
+                for k, (r, d) in enumerate(zip(BAR_MODES, v["decay"])))
+    burst = rng.standard_normal(len(t)) * np.exp(-t / 0.0006)          # ~1 ms broadband snap
+    snap = np.diff(burst, prepend=0) * v["snap"]                        # high-passed: bright, not boomy
+    return modes + snap
+
+
+def clap_audio(sound: str = "A") -> np.ndarray:
+    from scipy.signal import butter, sosfilt
+    v = SOUNDS[sound]
+    rng = np.random.default_rng(11)
+    hit = _hit(v, rng)
+    gap = int(v["gap"] * SR)                                            # the second end of the arm lands
+    dry = np.zeros(len(hit) + gap)
+    dry[: len(hit)] += hit
+    dry[gap:] += 0.6 * _hit(v, rng)
+    dry = sosfilt(butter(4, 350, "highpass", fs=SR, output="sos"), dry)
+    dry = np.tanh(dry / np.max(np.abs(dry)) * 1.6)                      # a little punch
+    # small room: a few early reflections + a dark, decaying tail
+    ir_len = int(v["rt60"] * SR)
+    ir_t = np.arange(ir_len) / SR
+    tail = rng.standard_normal(ir_len) * np.exp(-6.9 * ir_t / v["rt60"])
+    tail = sosfilt(butter(2, 4500, "lowpass", fs=SR, output="sos"), tail)
+    ir = tail * v["room"] / np.sqrt(np.sum(tail ** 2))  # by energy: the direct hit must stay the loudest part
+    for ms, g in ((7, 0.35), (13, 0.25), (21, 0.18)):
+        ir[int(ms / 1000 * SR)] += g * v["room"] * 2
     ir[0] = 1.0
-    hit = np.convolve(hit, ir)[: len(t)]
-    i = int(IMPACT * SR) - int(0.002 * SR)
-    out[i:i + len(hit)] += hit[: n - i]
-    # a faint air "swish" while the arm falls
-    a, b = int(0.75 * SR), int(IMPACT * SR)
-    sw = rng.standard_normal(b - a)
-    sw = np.convolve(sw, np.ones(24) / 24, mode="same")  # soften
-    env = np.linspace(0, 1, b - a) ** 3
-    out[a:b] += sw * env * 0.05
-    out = out / np.max(np.abs(out)) * 10 ** (-3 / 20)  # peak -3 dBFS
-    return out
+    wet = np.convolve(dry, ir)
+    n = int(DURATION * SR)
+    out = np.zeros(n)
+    i = int(IMPACT * SR)
+    m = min(len(wet), n - i)
+    out[i:i + m] += wet[:m]
+    return out / np.max(np.abs(out)) * 10 ** (-1.5 / 20)               # peak -1.5 dBFS
+
+
+# v3 (2026-11-22): the user rejected every synthesized version; the intro uses a real recorded slate clap
+# (CC0, see sounds/SOURCES.md). Its onset is placed exactly on the frame where the arm closes.
+SAMPLE = HERE / "sounds" / "slate-clap-194719-cc0.wav"
+
+
+def sample_audio(path: Path = SAMPLE) -> np.ndarray:
+    with wave.open(str(path)) as w:
+        sr, ch = w.getframerate(), w.getnchannels()
+        a = np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16).astype(np.float64) / 32767
+    a = a.reshape(-1, ch).mean(axis=1)
+    if sr != SR:
+        from scipy.signal import resample_poly
+        a = resample_poly(a, SR, sr)
+    onset = int(np.argmax(np.abs(a) > 0.1 * np.abs(a).max()))
+    a = a[onset:]
+    fade = min(len(a), int(0.01 * SR))
+    a[-fade:] *= np.linspace(1, 0, fade)                                # no click at the end
+    out = np.zeros(int(DURATION * SR))
+    i = int(IMPACT * SR)
+    m = min(len(a), len(out) - i)
+    out[i:i + m] = a[:m]
+    return out / np.max(np.abs(out)) * 10 ** (-1.0 / 20)               # peak -1 dBFS
 
 
 def write_wav(path: Path, mono: np.ndarray) -> None:
@@ -236,6 +281,15 @@ def write_wav(path: Path, mono: np.ndarray) -> None:
         w.writeframes(stereo.tobytes())
 
 
+def render(ff: str, frames_dir: Path, sound: str, mp4: Path) -> None:
+    wav = OUT / f"clap-{sound}.wav"
+    write_wav(wav, sample_audio() if sound == "real" else clap_audio(sound))
+    subprocess.run([ff, "-y", "-loglevel", "error", "-framerate", str(FPS), "-i", str(frames_dir / "%03d.png"),
+                    "-i", str(wav), "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "16", "-preset", "slow",
+                    "-c:a", "aac", "-b:a", "192k", "-shortest", "-movflags", "+faststart", str(mp4)], check=True)
+    print(f"{mp4.name}: sound {sound} ({SOUNDS[sound]['label'] if sound in SOUNDS else SAMPLE.name})")
+
+
 def main() -> None:
     import imageio_ffmpeg
     ff = imageio_ffmpeg.get_ffmpeg_exe()
@@ -243,16 +297,15 @@ def main() -> None:
     frames_dir = OUT / "frames"
     frames_dir.mkdir(exist_ok=True)
     total = int(FPS * DURATION)
-    for i in range(total):
-        frame(i / FPS).save(frames_dir / f"{i:03d}.png")
-    wav = OUT / "clap.wav"
-    write_wav(wav, clap_audio())
-    mp4 = OUT / "intro-by-ivan-dev.mp4"
-    subprocess.run([ff, "-y", "-loglevel", "error", "-framerate", str(FPS), "-i", str(frames_dir / "%03d.png"),
-                    "-i", str(wav), "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "16", "-preset", "slow",
-                    "-c:a", "aac", "-b:a", "192k", "-shortest", "-movflags", "+faststart", str(mp4)], check=True)
-    print(f"intro -> {mp4.relative_to(HERE.parents[1])} ({mp4.stat().st_size // 1024} KB), impact at {IMPACT:.2f}s "
-          f"(frame {int(IMPACT * FPS)})")
+    if "--reuse-frames" not in sys.argv or not (frames_dir / f"{total - 1:03d}.png").exists():
+        for i in range(total):
+            frame(i / FPS).save(frames_dir / f"{i:03d}.png")
+    if "--variants" in sys.argv:          # one file per sound, to choose by ear
+        for k in SOUNDS:
+            render(ff, frames_dir, k, OUT / f"intro-sound-{k}.mp4")
+        return
+    sound = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--sound=")), "real")
+    render(ff, frames_dir, sound, OUT / "intro-by-ivan-dev.mp4")
     if "--preview" in sys.argv:
         picks = [0, 6, 18, 28, 33, 34, 38, 59]
         thumbs = [Image.open(frames_dir / f"{i:03d}.png").resize((480, 270)) for i in picks]
@@ -260,7 +313,6 @@ def main() -> None:
         for k, im in enumerate(thumbs):
             sheet.paste(im, ((k % 4) * 480, (k // 4) * 270))
         sheet.save(OUT / "preview.jpg", quality=90)
-        print(f"preview -> {(OUT / 'preview.jpg').relative_to(HERE.parents[1])} (frames {picks})")
 
 
 if __name__ == "__main__":
