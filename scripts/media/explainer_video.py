@@ -64,6 +64,20 @@ SHOTS = {
                       "no zoom, no pan. The monitors stay exactly where they are, their screens steady and evenly "
                       "lit. Only the man moves.",
         },
+        "whiteboard": {
+            "seconds": 10,
+            "reference": "whiteboard-still.png",   # approved still: owner + whiteboard with blank sticky notes
+            "prompt": "Animate the reference image exactly as it is: the same woman, the same office, the same "
+                      "whiteboard with the same grid of blank sticky notes in the same places, the same framing. "
+                      "She studies the board for a moment, then steps closer and, with the black marker, draws a "
+                      "quick, loose circle around one sticky note, then around a second and a third note in other "
+                      "places on the board, each circle drawn around the OUTSIDE edge of the note so the note itself "
+                      "stays clean and uncovered. Then she steps back to where she started, caps the marker and "
+                      "looks at the board with a decided, confident half-smile. She always stays on the left side "
+                      "of the board and never stands in front of the notes for long. LOCKED-OFF STATIC CAMERA on a "
+                      "tripod: no camera movement, no zoom, no pan. The sticky notes never move and stay blank: "
+                      "no writing appears on them.",
+        },
     },
 }
 
@@ -94,6 +108,25 @@ STILLS = {
                 "golden rim light. The room falls off into deep near-black darkness at the edges. Photorealistic, "
                 "natural skin texture, sharp focus on his face and the screens. "
                 "No readable words, no logos, no brand names, no watermark, no other people."),
+        },
+        "whiteboard": {
+            "refs": ["apps/web/public/portfolio/scene.webp"],
+            "prompt": (
+                "The reference image only sets the look: the same night-time mood, warm amber lamp light and cool "
+                "teal ambient glow, the same color grading. It is NOT the place and the man in it must NOT appear. "
+                "Create ONE single continuous cinematic photograph, 16:9, not a collage. A small, modern business "
+                "office in the evening. A woman in her late thirties, the owner of a small business, smart casual "
+                "(dark green blouse, dark trousers), dark hair tied back, stands at the LEFT edge of a large "
+                "wall-mounted whiteboard, turned three-quarters toward it, holding an uncapped black marker, "
+                "thoughtful. The whiteboard fills the center and right of the frame, seen almost straight on, "
+                "slightly from her side. On it: a neat grid of 12 square sticky notes, 4 columns by 3 rows, evenly "
+                "spaced with generous gaps, alternating soft yellow and light mint green. Every sticky note is "
+                "COMPLETELY BLANK: no writing, no drawings, no marks anywhere on the notes or on the board. She "
+                "does not cover any note. "
+                "Lighting: a warm amber desk lamp to the left, a cool teal glow from a laptop screen out of frame, "
+                "the room falling off into darkness at the edges; the board is evenly lit so every note is clearly "
+                "visible. Camera: eye level, 35mm, medium-wide, sharp focus on the board and on her. Photorealistic, "
+                "natural skin texture. No readable text, no logos, no watermark, no other people."),
         },
     },
 }

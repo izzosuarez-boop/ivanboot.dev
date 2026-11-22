@@ -381,3 +381,16 @@ Script de montaje: `scripts/media/overview_assemble.py`.
   píxeles brillantes y comparar medianas con la pantalla original que no se toca (la izquierda).
 
 **E13. `loudnorm` sube el audio a 96 kHz.** Añade `-ar 48000` a la salida.
+
+**Toma 2: la dueña encierra en círculos, en su pizarra, las tareas donde la IA tiene sentido.**
+- **Fotograma** con post-its completamente en blanco (`--still`, $0,14) y **clip de Omni de 10 s** con la cámara
+  fija ($1,04). Ella dibuja los círculos alrededor de las notas, sin tapar el papel.
+- **Posiciones:** los 15 post-its se detectan por color en el último cuadro (`wb_notes.json`).
+  La deriva medida entre el primer y el último cuadro fue de 0 px.
+- **Texto:** `overview_assemble.py whiteboard <en|es>` escribe las tareas con letra de rotulador (Ink Free, copiada
+  de Windows a `fonts/`). Prueba primero en 2 líneas y, si no cabe, en 3.
+  La tinta solo aparece donde se ve el papel: se compara cada píxel con el color del papel de esa nota en el cuadro
+  limpio. Así el brazo, la mano o el rotulador la tapan de forma natural.
+- **E14. El fin de cada círculo** se mide contando píxeles oscuros en un anillo alrededor de la nota. La manga oscura de
+  ella también cuenta, así que se toma el cuadro después de la ÚLTIMA vez que el conteo baja del 85 %.
+  Los distintivos turquesa salen en cadena cuando termina el último círculo; si no, aparecen encima de su mano.

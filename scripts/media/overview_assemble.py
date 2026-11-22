@@ -313,30 +313,201 @@ def coding() -> Path:
     return out
 
 
-def sample() -> Path:
-    """Intro + shot 1 with its voice line and the clip's room tone, loudness -16 LUFS."""
-    shot = WORK / "coding-composite.mp4"
-    if not shot.exists():
-        shot = coding()
-    voice = WORK / "v-coding-en.wav"
-    if not voice.exists():
-        g.tts_line("portfolio", "Today, AI is forcing us to change the way we work to stay competitive.", voice, "Charon")
+# ── shot 2: the owner circles, on her whiteboard, the tasks where AI makes sense ─────────────────────────────
+# 15 sticky notes, row by row (detected by color on the clip's last frame -> wb_notes.json). She circles notes
+# 0, 7 and 11, so those carry the repetitive tasks; the rest are the work that stays human.
+NOTES_TEXT = {
+    "en": ["Reply to emails", "Meet clients", "Product ideas", "Hire a designer", "Brand vision",
+           "Supplier deals", "Set prices", "Update stock", "Plan launch", "Team 1:1s",
+           "Partner calls", "Send invoices", "Budget review", "Train staff", "Store layout"],
+    "es": ["Responder correos", "Reunión con clientes", "Ideas de producto", "Contratar diseñador", "Visión de marca",
+           "Negociar proveedores", "Definir precios", "Actualizar stock", "Planear lanzamiento", "Reuniones de equipo",
+           "Llamadas con socios", "Enviar facturas", "Revisar presupuesto", "Capacitar equipo", "Diseño de tienda"],
+}
+CIRCLED = (0, 7, 11)
+INK = (38, 40, 58)
+
+
+def note_text(text: str, size: int = 300) -> Image.Image:
+    """Marker handwriting on a transparent square: the biggest size that fits in 2 lines, else in 3."""
+    im = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+
+    def wrap(font):
+        words, lines, cur = text.split(), [], ""
+        for w_ in words:
+            test = (cur + " " + w_).strip()
+            if font.getlength(test) > size * 0.84 and cur:
+                lines.append(cur); cur = w_
+            else:
+                cur = test
+        return lines + [cur]
+
+    fit = None
+    for max_lines, smallest in ((2, 50), (3, 30)):
+        for fs in range(80, smallest - 1, -3):
+            font = f("Inkfree.ttf", fs)
+            lines = wrap(font)
+            if len(lines) <= max_lines and max(font.getlength(x) for x in lines) <= size * 0.86:
+                fit = (fs, font, lines)
+                break
+        if fit:
+            break
+    fs, font, lines = fit
+    lh = int(fs * 1.12)
+    y = (size - lh * len(lines)) // 2
+    for k, line in enumerate(lines):
+        x = (size - font.getlength(line)) / 2 + (k % 2) * 4 - 2          # a slightly uneven hand
+        d.text((x, y + k * lh), line, font=font, fill=INK + (235,))
+    return im.rotate(-1.5, resample=Image.BICUBIC)
+
+
+def badge(size: int = 64) -> Image.Image:
+    """Small teal 'AI' sparkle badge, our brand color, popped next to each circled note."""
+    S = 4
+    im = Image.new("RGBA", (size * S, size * S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    c, r = size * S / 2, size * S / 2 - 2 * S
+    d.ellipse([c - r, c - r, c + r, c + r], fill=GLOW + (255,), outline=(255, 255, 255, 255), width=3 * S)
+    k = r * 0.62
+    star = [(c, c - k), (c + k * .28, c - k * .28), (c + k, c), (c + k * .28, c + k * .28), (c, c + k),
+            (c - k * .28, c + k * .28), (c - k, c), (c - k * .28, c - k * .28)]
+    d.polygon(star, fill=(9, 40, 38, 255))
+    return im.resize((size, size), Image.LANCZOS)
+
+
+def ring_times(src: Path, notes: list[dict]) -> dict[int, float]:
+    """When each circle is finished: dark marker pixels in a ring around the note reach 85% of their final count."""
+    counts = {i: [] for i in CIRCLED}
+    for fr in frames(src):
+        lum = fr.mean(2)
+        for i in CIRCLED:
+            q = np.array(notes[i]["quad"])
+            x0, y0 = q.min(0) - 32
+            x1, y1 = q.max(0) + 32
+            ix0, iy0 = q.min(0) - 3
+            ix1, iy1 = q.max(0) + 3
+            box = lum[y0:y1, x0:x1] < 95
+            box[iy0 - y0:iy1 - y0, ix0 - x0:ix1 - x0] = False
+            counts[i].append(int(box.sum()))
+    out = {}
+    for i, c in counts.items():
+        final = np.median(c[-20:])
+        # her dark sleeve also darkens the ring while she draws: take the frame after the LAST one below 85 %
+        below = [k for k, v in enumerate(c) if v < 0.85 * final]
+        out[i] = ((below[-1] + 1) if below else 0) / FPS
+    return out
+
+
+def whiteboard(lang: str = "en") -> Path:
+    import json
+    src = latest("whiteboard-[0-9]*.mp4")
+    notes = json.loads((WORK / "wb_notes.json").read_text())
+    texts = NOTES_TEXT[lang]
+    done = ring_times(src, notes)
+    print("circles finished at", {k: round(v, 2) for k, v in done.items()})
+    # the badges pop one after another, in drawing order, once her hand has left the board area of the last circle
+    order = sorted(CIRCLED, key=lambda k: done[k])
+    pop = {k: max(done.values()) + 0.45 + n * 0.28 for n, k in enumerate(order)}
+    ref = np.asarray(Image.open(WORK / "wb_last.png").convert("RGB"), np.float32)
+    layers = []
+    for k, n in enumerate(notes):
+        q = n["quad"]
+        xs, ys = [p[0] for p in q], [p[1] for p in q]
+        bx0, by0, bx1, by1 = min(xs) - 2, min(ys) - 2, max(xs) + 3, max(ys) + 3
+        canvas = note_text(texts[k])
+        c = coeffs([(0, 0), (300, 0), (300, 300), (0, 300)], [(x - bx0, y - by0) for x, y in q])
+        warped = canvas.transform((bx1 - bx0, by1 - by0), Image.PERSPECTIVE, c, Image.BICUBIC).filter(ImageFilter.GaussianBlur(0.5))
+        a = np.asarray(warped, np.float32)
+        # the note's own paper color (clean last frame), to know per frame where the paper is visible
+        patch = ref[by0:by1, bx0:bx1]
+        paper = np.median(patch[a[..., 3] < 10].reshape(-1, 3), axis=0)
+        layers.append((bx0, by0, a, paper))
+    bdg = badge(58)
+    enc = subprocess.Popen([g.ffmpeg(), "-loglevel", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24",
+                            "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-crf", "15",
+                            "-preset", "slow", "-pix_fmt", "yuv420p", str(WORK / f"whiteboard-composite-{lang}.mp4")],
+                           stdin=subprocess.PIPE)
+    dur = 10.0
+    for i, fr in enumerate(frames(src)):
+        t = i / FPS
+        base = fr.astype(np.float32)
+        for bx0, by0, a, paper in layers:
+            h_, w_ = a.shape[:2]
+            region = base[by0:by0 + h_, bx0:bx0 + w_]
+            # ink only where the paper shows: her arm, hand or marker passing in front hides the writing
+            dist = np.sqrt(((region - paper) ** 2).sum(2))
+            visible = np.clip(1 - (dist - 38) / 30, 0, 1)
+            m = (a[..., 3] / 255.0 * visible)[..., None]
+            # multiply-like ink: darker on the lit paper, keeps the paper's shading
+            ink = region * (np.array(INK, np.float32) / 255.0) * 0.9 + 12
+            base[by0:by0 + h_, bx0:bx0 + w_] = region * (1 - m) + ink * m
+        img = Image.fromarray(np.clip(base, 0, 255).astype(np.uint8))
+        for k in CIRCLED:
+            p = ease((t - pop[k]) / 0.3)
+            if p <= 0:
+                continue
+            q = notes[k]["quad"]
+            cx, cy = q[1][0] + 30, q[1][1] - 26           # outside the top-right corner of the note, past the circle
+            s = 0.6 + 0.4 * p + 0.12 * np.sin(min(1.0, p) * np.pi)  # small overshoot on the pop
+            bb = bdg.resize((max(1, int(58 * s)),) * 2, Image.LANCZOS)
+            bb.putalpha(Image.fromarray((np.asarray(bb)[..., 3] * min(1.0, p * 1.4)).astype(np.uint8)))
+            img.paste(bb, (int(cx - bb.width / 2), int(cy - bb.height / 2)), bb)
+        img = push_in(img, t, dur, z1=1.12, focus=(1210, 445))
+        enc.stdin.write(np.asarray(img).tobytes())
+        if i in (0, 60, 120, 180, 240, 290):
+            img.save(WORK / f"wb_{lang}_{i:03d}.jpg", quality=92)
+    enc.stdin.close(); enc.wait()
+    print(f"shot 2 ({lang}) ->", f"whiteboard-composite-{lang}.mp4")
+    return WORK / f"whiteboard-composite-{lang}.mp4"
+
+
+# ── samples for review ─────────────────────────────────────────────────────────────────────────────────────
+VOICE = {
+    "en": {
+        "coding": "Today, AI is forcing us to change the way we work to stay competitive.",
+        "whiteboard": "The question we should all be asking isn't whether to use AI at work, but where and how to "
+                      "bring it in, so it makes sense and boosts productivity.",
+    },
+}
+SHOTS = [("coding", "coding-composite.mp4", "coding-[0-9]*.mp4"),
+         ("whiteboard", "whiteboard-composite-{lang}.mp4", "whiteboard-[0-9]*.mp4")]
+
+
+def sample(lang: str = "en", upto: int = 2) -> Path:
+    """Intro + the first `upto` shots with their voice lines and the clips' room tone, loudness -16 LUFS."""
+    upto = int(upto)
     intro = HERE / "out/brand/intro-by-ivan-dev.mp4"
-    out = WORK / "sample-shot1.mp4"
-    clip = latest("coding-[0-9]*.mp4")
-    subprocess.run([g.ffmpeg(), "-loglevel", "error", "-y", "-i", str(intro), "-i", str(shot), "-i", str(clip), "-i", str(voice),
-                    "-filter_complex",
-                    f"[0:v]fps={FPS},scale={W}:{H},setsar=1[v0];[1:v]setsar=1,fade=t=in:st=0:d=0.25,fade=t=out:st=5.6:d=0.4[v1];"
-                    "[v0][v1]concat=n=2:v=1:a=0[v];"
-                    "[0:a]aresample=48000,apad=whole_dur=2[a0];"
-                    "[2:a]aresample=48000,volume=0.30,afade=t=out:st=5.4:d=0.6,adelay=2000|2000[room];"
-                    "[3:a]aresample=48000,adelay=2450|2450[vo];"
-                    "[a0][room][vo]amix=inputs=3:normalize=0:duration=longest,atrim=0:8,loudnorm=I=-16:TP=-1.5:LRA=11[a]",
-                    "-map", "[v]", "-map", "[a]", "-c:v", "libx264", "-crf", "18", "-preset", "slow", "-pix_fmt", "yuv420p",
-                    "-c:a", "aac", "-b:a", "160k", "-ar", "48000", "-movflags", "+faststart", str(out)], check=True)
-    print("sample ->", out.relative_to(g.ROOT), f"(voice {g.media_seconds(voice):.1f}s)")
+    ins, vf, af, mix, t0 = ["-i", str(intro)], [f"[0:v]fps={FPS},scale={W}:{H},setsar=1[v0]"], \
+        ["[0:a]aresample=48000[a0]"], ["[a0]"], 2.0
+    k = 1
+    for n, (key, comp, raw) in enumerate(SHOTS[:upto], 1):
+        shot = WORK / comp.format(lang=lang)
+        voice = WORK / f"v-{key}-{lang}.wav"
+        if not voice.exists():
+            g.tts_line("portfolio", VOICE[lang][key], voice, "Charon")
+        d = g.media_seconds(shot)
+        ins += ["-i", str(shot), "-i", str(latest(raw)), "-i", str(voice)]
+        vf.append(f"[{k}:v]setsar=1,fade=t=in:st=0:d=0.25,fade=t=out:st={d - 0.35:.2f}:d=0.35[v{n}]")
+        ms, vs = int(t0 * 1000), int((t0 + 0.35) * 1000)
+        af.append(f"[{k + 1}:a]aresample=48000,volume=0.30,afade=t=in:d=0.3,afade=t=out:st={d - 0.5:.2f}:d=0.5,adelay={ms}|{ms}[r{n}]")
+        af.append(f"[{k + 2}:a]aresample=48000,adelay={vs}|{vs}[s{n}]")
+        mix += [f"[r{n}]", f"[s{n}]"]
+        print(f"shot {n}: {d:.1f}s at {t0:.1f}s · voice {g.media_seconds(voice):.1f}s")
+        t0 += d
+        k += 3
+    total = t0
+    graph = ";".join(vf + ["".join(f"[v{i}]" for i in range(upto + 1)) + f"concat=n={upto + 1}:v=1:a=0[v]"] + af +
+                     ["".join(mix) + f"amix=inputs={len(mix)}:normalize=0:duration=longest,atrim=0:{total:.2f},"
+                      "loudnorm=I=-16:TP=-1.5:LRA=11[a]"])
+    out = WORK / f"sample-shots1-{upto}-{lang}.mp4"
+    subprocess.run([g.ffmpeg(), "-loglevel", "error", "-y", *ins, "-filter_complex", graph, "-map", "[v]", "-map", "[a]",
+                    "-c:v", "libx264", "-crf", "18", "-preset", "slow", "-pix_fmt", "yuv420p", "-c:a", "aac",
+                    "-b:a", "160k", "-ar", "48000", "-movflags", "+faststart", str(out)], check=True)
+    print("sample ->", out.relative_to(g.ROOT), f"({total:.1f}s)")
     return out
 
 
 if __name__ == "__main__":
-    {"coding": coding, "sample": sample}[sys.argv[1]]()
+    cmd, args = sys.argv[1], sys.argv[2:]
+    {"coding": coding, "whiteboard": whiteboard, "sample": sample}[cmd](*args)
