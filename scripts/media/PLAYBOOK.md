@@ -409,3 +409,18 @@ Script de montaje: `scripts/media/overview_assemble.py`.
   esquina doblada, y el texto salía diminuto y torcido.
 - **Sonido:** ambiente de sala y trazos reales de rotulador, recortados del audio del primer clip de Omni
   (1,85–2,40 s y 3,30–3,90 s) y colocados en cada círculo (`whiteboard-room.wav`). Nada sintético.
+
+**Toma 3: el cerebro de IA y las herramientas, hecha toda con código.**
+- **Emblema:** un cerebro de circuitos turquesa sobre negro puro (`brain --still`, 1:1, $0,14), mezclado en modo
+  pantalla para que el negro desaparezca. Late un poco con cada llegada.
+- **Logos:** `scripts/media/logos.py` descarga los SVG de Simple Icons (CC0, versión fija) y los rasteriza en Chrome
+  con Playwright a 512 px, en blanco y con fondo transparente. El script los presenta como fichas tipo app con el
+  color de la marca; las marcas negras van en ficha clara.
+- **E16. Logos retirados por sus marcas:** Excel, Adobe, OpenAI/ChatGPT, Slack y Google AI Studio ya no están en
+  Simple Icons. NO se sacan de otras fuentes: salen como fichas con el nombre (uso nominativo).
+- **Sincronía:** cada grupo entra cuando la voz lo nombra. Los tiempos de cada palabra se estimaron midiendo las
+  pausas reales del audio de la voz y repartiendo proporcionalmente los caracteres entre ellas.
+- **E17. Logos encimados en escalera:** pasaba con anillos a velocidades distintas y ángulos repartidos por igual.
+  **Solución:** muestreo del punto más lejano sobre las 4 órbitas en pantalla, con tope por órbita (mínimo 132 px
+  entre fichas), y todas las órbitas girando juntas. La entrada en espiral sigue con duraciones distintas
+  (1,2–2,5 s).

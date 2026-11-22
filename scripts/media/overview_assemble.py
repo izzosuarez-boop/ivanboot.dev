@@ -517,16 +517,214 @@ def whiteboard_audio() -> Path:
     return out
 
 
+# ── shot 3: the AI brain and the tools it connects to, orbiting in from outside the frame ──────────────────
+# Groups enter as the voice names them (word times measured on v-logos-en.wav: pauses at 5.79, 7.89, 11.04 s).
+# A name-only chip (no logo) is used for brands that asked Simple Icons to remove theirs.
+LOGO_GROUPS = [
+    (2.0, ["n8n", "zapier", "python", "chip:API"]),                       # "delegating repetitive tasks"
+    (4.6, ["whatsapp", "telegram", "instagram", "facebook"]),             # "attention 24/7"
+    (7.0, ["claude", "googlegemini", "notion", "googledrive", "chip:ChatGPT"]),   # "the tools you use every day"
+    (8.8, ["gmail"]),                                                     # "your email"
+    (9.3, ["shopify", "googlesheets", "chip:Excel"]),                     # "inventory"
+    (10.2, ["stripe", "quickbooks", "odoo"]),                             # "invoicing"
+    (11.3, ["youtube", "tiktok", "elevenlabs", "figma", "chip:Adobe"]),   # "video and content creation"
+]
+LOGOS_DUR = 13.8
+VOICE_OFFSET = 0.35          # the voice starts this long after the shot
+RINGS = [(390, 0, 0.045), (490, 0, 0.045), (590, 0, 0.045), (690, 0, 0.045)]   # radius, -, orbit speed: all together
+TILT = 0.65                  # orbit plane seen in perspective
+CENTER = (960, 520)
+
+
+def tile(name: str, size: int = 240) -> Image.Image:
+    """App-icon style tile: brand color with the white glyph, or a dark chip with the name."""
+    import json
+    S = 2
+    im = Image.new("RGBA", (size * S, size * S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    box = [6 * S, 6 * S, (size - 6) * S, (size - 6) * S]
+    rad = int(size * 0.26 * S)
+    if name.startswith("chip:"):
+        text = name[5:]
+        d.rounded_rectangle(box, rad, fill=(24, 30, 37, 255), outline=GLOW + (255,), width=4 * S)
+        for fs in range(96, 20, -4):
+            font = f("segoeuib.ttf", fs * S)
+            if font.getlength(text) < (size - 50) * S:
+                break
+        bb = d.textbbox((0, 0), text, font=font)
+        d.text(((size * S - (bb[2] - bb[0])) / 2 - bb[0], (size * S - (bb[3] - bb[1])) / 2 - bb[1]), text,
+               font=font, fill=(236, 242, 245, 255))
+    else:
+        colors = json.loads((HERE / "out/logos/colors.json").read_text())
+        hx = colors[name]["hex"].lstrip("#")
+        rgb = tuple(int(hx[i:i + 2], 16) for i in (0, 2, 4))
+        dark = sum(rgb) < 120
+        fill = (240, 242, 244) if dark else rgb
+        d.rounded_rectangle(box, rad, fill=fill + (255,))
+        # soft top highlight, like a real app icon
+        hl = Image.new("L", im.size, 0)
+        ImageDraw.Draw(hl).rounded_rectangle([box[0], box[1], box[2], box[1] + (box[3] - box[1]) // 2], rad, fill=38)
+        im.paste(Image.new("RGBA", im.size, (255, 255, 255, 255)), (0, 0), hl)
+        glyph = Image.open(HERE / f"out/logos/{name}.png").convert("RGBA")
+        gs = int(size * 0.56 * S)
+        glyph = glyph.resize((gs, gs), Image.LANCZOS)
+        if dark:
+            a = glyph.split()[3]
+            glyph = Image.new("RGBA", glyph.size, (20, 20, 24, 255)); glyph.putalpha(a)
+        im.alpha_composite(glyph, ((size * S - gs) // 2, (size * S - gs) // 2))
+    return im.resize((size, size), Image.LANCZOS)
+
+
+def logos_background() -> np.ndarray:
+    yy, xx = np.mgrid[0:H, 0:W].astype(np.float32)
+    cx, cy = CENTER
+    d = np.sqrt(((xx - cx) / W) ** 2 + ((yy - cy) / H) ** 2)
+    night = np.array([9, 11, 14], np.float32)
+    glow = np.array(GLOW, np.float32)
+    bg = night + glow[None, None, :] * (0.10 * np.exp(-(d / 0.28) ** 2))[..., None]
+    bg *= (1 - 0.35 * np.clip(d / 0.75, 0, 1) ** 2)[..., None]
+    img = Image.fromarray(np.clip(bg, 0, 255).astype(np.uint8))
+    dr = ImageDraw.Draw(img, "RGBA")
+    for r, _, _ in RINGS:                                                   # faint orbit guides
+        dr.ellipse([cx - r, cy - r * TILT, cx + r, cy + r * TILT], outline=GLOW + (16,), width=1)
+    return np.asarray(img, np.float32)
+
+
+def logos_shot() -> Path:
+    rng = np.random.default_rng(3)
+    names = [n for _, grp in LOGO_GROUPS for n in grp]
+    starts = {}
+    for t0, grp in LOGO_GROUPS:
+        for k, n in enumerate(grp):
+            starts[n] = t0 - 0.3 + k * 0.16
+    # slots: farthest-point sampling on the four orbits (screen space), capped per orbit, so no two tiles touch
+    # once everyone has arrived; all orbits then turn together, which keeps that spacing. Logos are dealt to the
+    # slots (sorted by angle) with a step of 9, so the members of one group land far apart.
+    N = len(names)
+    caps = [5, 6, 7, 7]
+    cand = [(ri, a) for ri in range(len(RINGS)) for a in np.arange(0, 2 * np.pi, 0.03)]
+    pos = np.array([(RINGS[ri][0] * np.cos(a), RINGS[ri][0] * np.sin(a) * TILT) for ri, a in cand])
+    chosen = [int(rng.integers(len(cand)))]
+    count = [0] * len(RINGS); count[cand[chosen[0]][0]] += 1
+    dmin = np.linalg.norm(pos - pos[chosen[0]], axis=1)
+    while len(chosen) < N:
+        ok = np.array([count[ri] < caps[ri] for ri, _ in cand])
+        k = int(np.argmax(np.where(ok, dmin, -1)))
+        chosen.append(k); count[cand[k][0]] += 1
+        dmin = np.minimum(dmin, np.linalg.norm(pos - pos[k], axis=1))
+    print(f"logo slots: closest pair {dmin[chosen].max() if False else min(np.linalg.norm(pos[a] - pos[b]) for a in chosen for b in chosen if a < b):.0f} px apart")
+    slots = sorted((cand[k] for k in chosen), key=lambda c: c[1])
+    plan = {}
+    for j, n in enumerate(names):
+        ri, a = slots[(j * 9) % N]
+        plan[n] = {"ring": ri, "base": a, "dur": float(rng.uniform(1.2, 2.5)), "sweep": float(rng.uniform(1.4, 2.6))}
+    tiles = {n: tile(n) for n in names}
+    bg = logos_background()
+    brain_src = Image.open(WORK / "brain-still.png").convert("RGB")
+    out = WORK / "logos-composite.mp4"
+    enc = subprocess.Popen([g.ffmpeg(), "-loglevel", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24",
+                            "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-crf", "15",
+                            "-preset", "slow", "-pix_fmt", "yuv420p", str(out)], stdin=subprocess.PIPE)
+    cx, cy = CENTER
+    stars = rng.uniform([0, 0], [W, H], (160, 2))
+    star_ph = rng.uniform(0, 6.28, 160)
+    finale = 12.35                         # every connection lights up at once, on "content creation"
+    for i in range(int(LOGOS_DUR * FPS)):
+        t = i / FPS
+        frame = bg.copy()
+        lines = Image.new("L", (W * 2, H * 2), 0)                           # glow layer (2x, anti-aliased)
+        ld = ImageDraw.Draw(lines)
+        for (sx, sy), ph in zip(stars, star_ph):                            # slow twinkle
+            v = int(40 + 40 * np.sin(t * 1.3 + ph))
+            ld.ellipse([sx * 2 - 2, sy * 2 - 2, sx * 2 + 2, sy * 2 + 2], fill=max(0, v))
+        placed, pulse = [], 0.0
+        for n in names:
+            p = plan[n]
+            r, _, w = RINGS[p["ring"]]
+            u = (t - starts[n]) / p["dur"]
+            if u <= 0:
+                continue
+            e_ = 1 - (1 - min(u, 1.0)) ** 3                                 # ease-out: fast in, gentle landing
+            ang = p["base"] + w * t - p["sweep"] * (1 - e_)
+            rad = r + (1500 - r) * (1 - e_)
+            x, y = cx + rad * np.cos(ang), cy + rad * np.sin(ang) * TILT
+            depth = (np.sin(ang) + 1) / 2                                   # 0 back .. 1 front
+            scale = (0.80 + 0.20 * depth) * (0.55 + 0.45 * e_) * 0.44
+            arrived = t - starts[n] - p["dur"]
+            if arrived > 0:
+                k = min(1.0, arrived / 0.5)
+                a_line = 40 + 120 * max(0.0, 1 - arrived / 0.9)
+                if t > finale:
+                    a_line = max(a_line, 170 * max(0.0, 1 - (t - finale) / 1.2) + 40)
+                ld.line([(x * 2, y * 2), (cx * 2, cy * 2)], fill=int(a_line), width=2)
+                if k < 1:                                                   # a light pulse runs to the brain
+                    px, py = x + (cx - x) * k, y + (cy - y) * k
+                    ld.ellipse([px * 2 - 9, py * 2 - 9, px * 2 + 9, py * 2 + 9], fill=255)
+                    rr = 70 * scale * 2 * (1 + 1.4 * k)
+                    ld.ellipse([x * 2 - rr, y * 2 - rr, x * 2 + rr, y * 2 + rr], outline=int(200 * (1 - k)), width=3)
+                else:
+                    pulse += max(0.0, 1 - (arrived - 0.5) / 0.6)
+            placed.append((depth, n, x, y, scale, e_))
+        if t > finale:
+            pulse += 1.2 * max(0.0, 1 - (t - finale) / 1.0)
+        glow_l = lines.resize((W, H), Image.LANCZOS)
+        gl = np.asarray(glow_l, np.float32) / 255.0
+        gb = np.asarray(glow_l.filter(ImageFilter.GaussianBlur(5)), np.float32) / 255.0
+        frame += (gl * 0.9 + gb * 1.2)[..., None] * np.array(GLOW, np.float32)[None, None, :]
+        img = Image.fromarray(np.clip(frame, 0, 255).astype(np.uint8)).convert("RGBA")
+
+        def draw_tiles(front: bool):
+            for depth, n, x, y, scale, e_ in sorted(placed):
+                if (depth >= 0.5) != front:
+                    continue
+                sz = max(4, int(240 * scale))
+                tl = tiles[n].resize((sz, sz), Image.LANCZOS)
+                a = np.asarray(tl, np.float32)
+                bright = 0.72 + 0.28 * depth
+                a[..., :3] *= bright
+                a[..., 3] *= min(1.0, e_ * 1.6)
+                tl = Image.fromarray(a.clip(0, 255).astype(np.uint8))
+                img.alpha_composite(tl, (int(x - sz / 2), int(y - sz / 2)))
+
+        draw_tiles(front=False)
+        # the brain: fades and grows in, beats a little with every arrival; screen blend (its black disappears)
+        appear = ease((t - 0.1) / 1.1)
+        bs = int(570 * (0.86 + 0.14 * appear) * (1 + 0.035 * min(pulse, 1.5)))
+        br = np.asarray(brain_src.resize((bs, bs), Image.LANCZOS), np.float32) / 255.0 * appear * (1 + 0.25 * min(pulse, 1.2))
+        base = np.asarray(img, np.float32)
+        x0, y0 = cx - bs // 2, cy - bs // 2
+        reg = base[y0:y0 + bs, x0:x0 + bs, :3] / 255.0
+        base[y0:y0 + bs, x0:x0 + bs, :3] = (1 - (1 - reg) * (1 - np.clip(br, 0, 1))) * 255
+        img = Image.fromarray(base.clip(0, 255).astype(np.uint8))
+        draw_tiles(front=True)
+        img = push_in(img.convert("RGB"), t, LOGOS_DUR, z1=1.06, focus=CENTER)
+        enc.stdin.write(np.asarray(img).tobytes())
+        if i in (30, 90, 160, 230, 300, 380, 405):
+            img.save(WORK / f"lg_{i:03d}.jpg", quality=92)
+    enc.stdin.close(); enc.wait()
+    # a quiet room-tone bed (from the whiteboard clip's own audio) so the voice never sits on digital silence
+    subprocess.run([g.ffmpeg(), "-loglevel", "error", "-y", "-i", str(WORK / "whiteboard-175715.mp4"), "-filter_complex",
+                    f"[0:a]atrim=6.0:9.9,asetpts=PTS-STARTPTS,aloop=loop=3:size=187200,atrim=0:{LOGOS_DUR},"
+                    "afade=t=in:d=0.3[a]", "-map", "[a]", "-ar", "48000", "-ac", "2", str(WORK / "logos-room.wav")],
+                   check=True)
+    print("shot 3 ->", out.name)
+    return out
+
+
 # ── samples for review ─────────────────────────────────────────────────────────────────────────────────────
 VOICE = {
     "en": {
         "coding": "Today, AI is forcing us to change the way we work to stay competitive.",
         "whiteboard": "The question we should all be asking isn't whether to use AI at work, but where and how to "
                       "bring it in, so it makes sense and boosts productivity.",
+        "logos": "Bringing it into your workflow means delegating repetitive tasks and work that needs attention "
+                 "24/7, connected to the tools you use every day: your email, inventory, invoicing, video and "
+                 "content creation.",
     },
 }
 SHOTS = [("coding", "coding-composite.mp4", "coding-[0-9]*.mp4"),
-         ("whiteboard", "whiteboard-composite-{lang}.mp4", "whiteboard-room.wav")]
+         ("whiteboard", "whiteboard-composite-{lang}.mp4", "whiteboard-room.wav"),
+         ("logos", "logos-composite.mp4", "logos-room.wav")]
 
 
 def sample(lang: str = "en", upto: int = 2) -> Path:
@@ -565,4 +763,4 @@ def sample(lang: str = "en", upto: int = 2) -> Path:
 
 if __name__ == "__main__":
     cmd, args = sys.argv[1], sys.argv[2:]
-    {"coding": coding, "whiteboard": whiteboard, "sample": sample}[cmd](*args)
+    {"coding": coding, "whiteboard": whiteboard, "logos": logos_shot, "sample": sample}[cmd](*args)

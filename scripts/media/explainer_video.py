@@ -128,6 +128,16 @@ STILLS = {
                 "visible. Camera: eye level, 35mm, medium-wide, sharp focus on the board and on her. Photorealistic, "
                 "natural skin texture. No readable text, no logos, no watermark, no other people."),
         },
+        "brain": {
+            "refs": [],
+            "aspect": "1:1",
+            "prompt": (
+                "A single glowing emblem of a human brain made of fine luminous circuit-board lines and small round "
+                "nodes, like a neural network, seen from the side, elegant and symmetrical in its detail. Color: "
+                "bright teal-cyan (#5eead4) glowing lines with a soft bloom, a few white-hot nodes. Centered, filling "
+                "about 70% of the frame, on a PURE BLACK background (#000000) with nothing else: no text, no logo, "
+                "no frame, no reflections, no floor. Crisp, high detail, vector-like but luminous."),
+        },
         # v2 (user, 2026-11-22): no person; the circles are drawn in code, stroke by stroke, so they look natural
         "whiteboard-empty": {
             "refs": ["scripts/media/out/portfolio-ai-agents-overview/whiteboard-still.png"],
@@ -164,7 +174,7 @@ def still(video: str, name: str) -> None:
     parts.append({"text": s["prompt"]})
     model = "gemini-3-pro-image"
     body = {"contents": [{"role": "user", "parts": parts}],
-            "generationConfig": {"responseModalities": ["IMAGE"], "imageConfig": {"aspectRatio": "16:9", "imageSize": "2K"}}}
+            "generationConfig": {"responseModalities": ["IMAGE"], "imageConfig": {"aspectRatio": s.get("aspect", "16:9"), "imageSize": "2K"}}}
     t0 = time.time()
     res = g.post(f"{g.API}/models/{model}:generateContent", body, timeout=300)
     for part in res.get("candidates", [{}])[0].get("content", {}).get("parts", []):
