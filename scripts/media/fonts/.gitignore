@@ -1,0 +1,6 @@
+# Windows system fonts (Consolas, Segoe UI, Ink Free): Microsoft licence, not redistributable.
+# Scripts load them from here or from C:/Windows/Fonts. Only open-licence fonts (Inter, Fraunces: OFL) are committed.
+consola*.ttf
+segoe*.ttf
+seguiemj.ttf
+Inkfree.ttf

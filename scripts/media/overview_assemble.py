@@ -39,7 +39,8 @@ RIGHT_GRADE = ((34, 62, 72), (212, 234, 238))
 
 
 def f(name: str, size: int) -> ImageFont.FreeTypeFont:
-    return ImageFont.truetype(str(FONTS / name), size)
+    path = FONTS / name   # Windows fonts are not in git (licence): fall back to the system copy
+    return ImageFont.truetype(str(path if path.exists() else Path("C:/Windows/Fonts") / name), size)
 
 
 def ease(t: float) -> float:
