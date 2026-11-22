@@ -3,6 +3,7 @@
     python scripts/media/explainer_assemble.py voice      # Gemini TTS, one file per line, each transcribed back
     python scripts/media/explainer_assemble.py render     # timeline -> MP4 (1080p + 720p) + poster + cues JSON
     python scripts/media/explainer_assemble.py all
+    python scripts/media/explainer_assemble.py all --lang es   # Spanish voice, Spanish titles and end card
 
 Inputs (scripts/media/out/): brand/intro-by-ivan-dev.mp4, portfolio-ai-agents/{couch,office,closing}-*.mp4 and
 raw/{store-chat,store-restock,telegram}.mp4. Captions are NOT burned in: the site's player draws them from
@@ -30,15 +31,37 @@ ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "scripts/media/out"
 WORK = OUT / "portfolio-ai-agents"
 RAW = WORK / "raw"
-VOICE_DIR = WORK / "voice"
-CUES = ROOT / "apps/web/src/content/video-cues/ai-agents.json"
+LANG = "en"  # voice language of the version being built (--lang es builds the Spanish-voice version)
+
+
+def sfx() -> str:
+    return "" if LANG == "en" else f"-{LANG}"
+
+
+def voice_dir() -> Path:
+    return WORK / ("voice" if LANG == "en" else f"voice-{LANG}")
+
+
+def cues_path() -> Path:
+    return ROOT / f"apps/web/src/content/video-cues/ai-agents{sfx()}.json"
+
+
+TITLES = {"Are you a customer?": {"es": "¿Eres cliente?"},
+          "Are you the store owner?": {"es": "¿Eres el dueño de la tienda?"}}
+CARD = {"en": ("AI agents that work for you", "ivanboot.dev   ·   Hire me on Upwork"),
+        "es": ("Agentes de IA que trabajan por ti", "ivanboot.dev   ·   Contrátame en Upwork")}
+
+
+def spoken(key: str) -> str:
+    return LINES[key][0] if LANG == "en" else LINES[key][1]
 W, H, FPS, SR = 1920, 1080, 30, 48000
 VOICE = "Charon"
 
 # id, spoken English (also the English caption), Spanish caption
 SCRIPT = [
     ("customer", "Are you a customer? Try asking a question to the sales agent of our demo skincare store.",
-     "¿Eres cliente? Hazle una pregunta al agente de ventas de nuestra tienda demo de skincare."),
+     # "al agente" and "a la gente" sound the same in Spanish (the transcription heard the latter)
+     "¿Eres cliente? Hazle una pregunta a nuestro agente de ventas de la tienda demo de skincare."),
     ("ask", "Just ask, like you would ask a person in the store.",
      "Pregunta como le preguntarías a alguien en la tienda."),
     ("checks", "It checks the live catalog and stock, recommends a routine, and adds it to your bag.",
@@ -107,18 +130,21 @@ def transcribe(path: Path) -> str:
 
 
 def norm(s: str) -> str:
+    import unicodedata
+    s = "".join(ch for ch in unicodedata.normalize("NFKD", s) if not unicodedata.combining(ch))
     return re.sub(r"[^a-z0-9 ]", "", s.lower().replace("-", " ")).split().__str__()
 
 
 def voice(only: list[str] | None = None) -> None:
-    VOICE_DIR.mkdir(parents=True, exist_ok=True)
-    for key, en, _ in SCRIPT:
+    voice_dir().mkdir(parents=True, exist_ok=True)
+    for key, _, _ in SCRIPT:
         if only and key not in only:
             continue
-        path = VOICE_DIR / f"{key}.wav"
-        g.tts_line("portfolio", en, path, VOICE)
+        text = spoken(key)
+        path = voice_dir() / f"{key}.wav"
+        g.tts_line("portfolio", text, path, VOICE)
         heard = transcribe(path)
-        score = difflib.SequenceMatcher(None, norm(en), norm(heard)).ratio()
+        score = difflib.SequenceMatcher(None, norm(text), norm(heard)).ratio()
         flag = "OK " if score > 0.9 else "CHECK"
         print(f"   {flag} {score:.2f} heard: {heard}")
 
@@ -221,18 +247,18 @@ def end_card() -> Image.Image:
         return tw
     tw = center("Ivan Dev", big, 380, "#ffffff")
     d.rounded_rectangle([(W - tw) / 2, 528, (W - tw) / 2 + tw, 533], radius=2, fill=ic.GLOW)
-    center("AI agents that work for you", mid, 572, ic.TEXT)
-    center("ivanboot.dev   ·   Hire me on Upwork", small, 650, ic.MUTED)
+    center(CARD[LANG][0], mid, 572, ic.TEXT)
+    center(CARD[LANG][1], small, 650, ic.MUTED)
     return img.convert("RGB")
 
 
 def render() -> None:
     segs = segments()
-    vo_len = {k: g.media_seconds(VOICE_DIR / f"{k}.wav") for k in LINES}
+    vo_len = {k: g.media_seconds(voice_dir() / f"{k}.wav") for k in LINES}
     assets = phone_assets()
     enc = subprocess.Popen([g.ffmpeg(), "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}",
                             "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-crf", "17", "-preset", "medium",
-                            "-pix_fmt", "yuv420p", str(WORK / "video-noaudio.mp4")], stdin=subprocess.PIPE)
+                            "-pix_fmt", "yuv420p", str(WORK / f"video-noaudio{sfx()}.mp4")], stdin=subprocess.PIPE)
     t = 0.0
     placed_vo, ambience = [], []
     for s in segs:
@@ -246,7 +272,7 @@ def render() -> None:
             need = vo_len[s["vo"]] + 0.9
             span = s["out"] - s["in"]
             speed = min(1.0, span / need)
-            title = title_layer(s["title"]) if s.get("title") else None
+            title = title_layer(s["title"] if LANG == "en" else TITLES[s["title"]][LANG]) if s.get("title") else None
             dur = span / speed
             for fr in decode(s["src"], s["in"], s["out"], speed, W, H):
                 img = Image.fromarray(fr)
@@ -293,21 +319,22 @@ def render() -> None:
         x = pcm(src, a, b, sp) * gain
         i = int(at * SR); mix[i:i + len(x)] += x[: len(mix) - i]
     for key, at, _ in placed_vo:
-        x = pcm(VOICE_DIR / f"{key}.wav")
+        x = pcm(voice_dir() / f"{key}.wav")
         i = int(at * SR); mix[i:i + len(x)] += x[: len(mix) - i]
     mix = mix[: int(total * SR)]
     raw = WORK / "mix.f32"
     raw.write_bytes(mix.astype(np.float32).tobytes())
-    final = WORK / "ai-agents-explainer.mp4"
-    subprocess.run([g.ffmpeg(), "-y", "-loglevel", "error", "-i", str(WORK / "video-noaudio.mp4"),
+    final = WORK / f"ai-agents-explainer{sfx()}.mp4"
+    subprocess.run([g.ffmpeg(), "-y", "-loglevel", "error", "-i", str(WORK / f"video-noaudio{sfx()}.mp4"),
                     "-f", "f32le", "-ar", str(SR), "-ac", "1", "-i", str(raw),
                     "-af", "loudnorm=I=-16:TP=-1.5:LRA=11", "-c:v", "copy", "-c:a", "aac", "-b:a", "160k", "-ar", str(SR),
                     "-shortest", "-movflags", "+faststart", str(final)], check=True)
-    subprocess.run([g.ffmpeg(), "-y", "-loglevel", "error", "-i", str(final), "-vf", "scale=1280:-2", "-c:v", "libx264",
-                    "-crf", "22", "-preset", "slow", "-c:a", "copy", "-movflags", "+faststart",
-                    str(WORK / "ai-agents-explainer-720.mp4")], check=True)
+    for height, scale in ((1080, "scale=1920:-2"), (720, "scale=1280:-2")):  # web encodes (published files)
+        subprocess.run([g.ffmpeg(), "-y", "-loglevel", "error", "-i", str(final), "-vf", scale, "-c:v", "libx264",
+                        "-crf", "23", "-preset", "slow", "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart",
+                        str(WORK / f"ai-agents{sfx()}-explainer-{height}.mp4")], check=True)
     subprocess.run([g.ffmpeg(), "-y", "-loglevel", "error", "-ss", "4.5", "-i", str(final), "-frames:v", "1", "-q:v", "3",
-                    str(WORK / "ai-agents-poster.jpg")], check=True)
+                    str(WORK / f"ai-agents{sfx()}-poster.jpg")], check=True)
 
     # ── captions for the site's player (EN / ES), timed to the voice ──
     cues = {"en": [], "es": []}
@@ -317,15 +344,20 @@ def render() -> None:
             end = min(end, placed_vo[k + 1][1] - 0.05)
         for lang, text in (("en", LINES[key][0]), ("es", LINES[key][1])):
             cues[lang].append({"start": round(at, 2), "end": round(end, 2), "text": text})
-    CUES.parent.mkdir(parents=True, exist_ok=True)
-    CUES.write_text(json.dumps({"duration": round(total, 2), **cues}, ensure_ascii=False, indent=1), encoding="utf-8")
+    cues_path().parent.mkdir(parents=True, exist_ok=True)
+    cues_path().write_text(json.dumps({"duration": round(total, 2), **cues}, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"-> {final.relative_to(ROOT)} ({final.stat().st_size // 1024} KB, {total:.1f}s), 720p copy, poster, "
-          f"cues {CUES.relative_to(ROOT)}")
+          f"cues {cues_path().relative_to(ROOT)}")
 
 
 if __name__ == "__main__":
-    cmd = sys.argv[1] if len(sys.argv) > 1 else "all"
+    args = sys.argv[1:]
+    if "--lang" in args:
+        i = args.index("--lang")
+        LANG = args[i + 1]
+        del args[i:i + 2]
+    cmd = args[0] if args else "all"
     if cmd in ("voice", "all"):
-        voice(sys.argv[2:] or None)
+        voice(args[1:] or None)
     if cmd in ("render", "all"):
         render()

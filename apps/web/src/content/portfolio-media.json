@@ -1,22 +1,46 @@
 {
   "ai-agents": {
-    "poster": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/ai-agents-poster.jpg?v=1795377727",
-    "duration": 67.33,
-    "sources": [
-      {
-        "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/ai-agents-explainer-1080.mp4?v=1795377734",
-        "height": 1080,
-        "id": "gid://shopify/GenericFile/46875909030140"
+    "versions": {
+      "en": {
+        "poster": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/ai-agents-poster.jpg?v=1795377727",
+        "duration": 67.33,
+        "sources": [
+          {
+            "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/ai-agents-explainer-1080.mp4?v=1795377734",
+            "height": 1080,
+            "id": "gid://shopify/GenericFile/46875909030140"
+          },
+          {
+            "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/ai-agents-explainer-720.mp4?v=1795377743",
+            "height": 720,
+            "id": "gid://shopify/GenericFile/46875909718268"
+          }
+        ],
+        "captions": {
+          "en": "/portfolio/captions/ai-agents.en.vtt",
+          "es": "/portfolio/captions/ai-agents.es.vtt"
+        }
       },
-      {
-        "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/ai-agents-explainer-720.mp4?v=1795377743",
-        "height": 720,
-        "id": "gid://shopify/GenericFile/46875909718268"
+      "es": {
+        "poster": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/ai-agents-es-poster.jpg?v=1795379159",
+        "duration": 67.4,
+        "sources": [
+          {
+            "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/ai-agents-es-explainer-1080.mp4?v=1795379167",
+            "height": 1080,
+            "id": "gid://shopify/GenericFile/46876144271612"
+          },
+          {
+            "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/ai-agents-es-explainer-720.mp4?v=1795379360",
+            "height": 720,
+            "id": "gid://shopify/GenericFile/46876191260924"
+          }
+        ],
+        "captions": {
+          "en": "/portfolio/captions/ai-agents-es.en.vtt",
+          "es": "/portfolio/captions/ai-agents-es.es.vtt"
+        }
       }
-    ],
-    "captions": {
-      "en": "/portfolio/captions/ai-agents.en.vtt",
-      "es": "/portfolio/captions/ai-agents.es.vtt"
     }
   }
 }
