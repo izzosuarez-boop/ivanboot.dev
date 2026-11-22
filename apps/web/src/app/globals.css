@@ -76,6 +76,15 @@ body {
 .ring-seg:focus-visible .ring-band { stroke-width: 2; }
 .ring-seg[data-active] .ring-band { fill: rgba(94, 234, 212, 0.1); stroke: rgba(94, 234, 212, 0.45); }
 
+/* Explainer video subtitles (native text tracks: also styled in full screen) */
+video.explainer::cue {
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-size: 0.72em;
+  line-height: 1.4;
+  color: #fff;
+  background: rgba(9, 11, 14, 0.78);
+}
+
 /* Page content entering after the ring has moved, and leaving before it moves back */
 @keyframes stage-in {
   from { opacity: 0; transform: translateY(24px); }

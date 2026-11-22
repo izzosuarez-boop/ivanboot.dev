@@ -1,0 +1,97 @@
+{
+ "duration": 67.33,
+ "en": [
+  {
+   "start": 2.25,
+   "end": 7.75,
+   "text": "Are you a customer? Try asking a question to the sales agent of our demo skincare store."
+  },
+  {
+   "start": 9.25,
+   "end": 12.48,
+   "text": "Just ask, like you would ask a person in the store."
+  },
+  {
+   "start": 12.95,
+   "end": 17.91,
+   "text": "It checks the live catalog and stock, recommends a routine, and adds it to your bag."
+  },
+  {
+   "start": 20.88,
+   "end": 28.13,
+   "text": "Are you the store owner? Connect your platforms and let an AI agent run the back office, from the app you're most comfortable with."
+  },
+  {
+   "start": 28.65,
+   "end": 31.01,
+   "text": "Ask in plain words."
+  },
+  {
+   "start": 32.28,
+   "end": 36.99,
+   "text": "The agent pulls the real orders from Shopify and sends the chart in seconds."
+  },
+  {
+   "start": 39.08,
+   "end": 47.09,
+   "text": "And it doesn't just report, it acts. Restock a sold-out product with one message; it always asks before changing anything."
+  },
+  {
+   "start": 54.97,
+   "end": 57.56,
+   "text": "Moments later, it's back on sale."
+  },
+  {
+   "start": 58.32,
+   "end": 63.83,
+   "text": "From answering customers to running your store: AI agents that work for you."
+  }
+ ],
+ "es": [
+  {
+   "start": 2.25,
+   "end": 7.75,
+   "text": "¿Eres cliente? Hazle una pregunta al agente de ventas de nuestra tienda demo de skincare."
+  },
+  {
+   "start": 9.25,
+   "end": 12.48,
+   "text": "Pregunta como le preguntarías a alguien en la tienda."
+  },
+  {
+   "start": 12.95,
+   "end": 17.91,
+   "text": "Consulta el catálogo y el stock en vivo, recomienda una rutina y la añade a tu bolsa."
+  },
+  {
+   "start": 20.88,
+   "end": 28.13,
+   "text": "¿Eres el dueño? Conecta tus plataformas y deja que un agente de IA gestione tu tienda desde la app con la que te sientas más cómodo."
+  },
+  {
+   "start": 28.65,
+   "end": 31.01,
+   "text": "Pregunta con tus palabras."
+  },
+  {
+   "start": 32.28,
+   "end": 36.99,
+   "text": "El agente toma los pedidos reales de Shopify y envía la gráfica en segundos."
+  },
+  {
+   "start": 39.08,
+   "end": 47.09,
+   "text": "Y no solo informa: actúa. Repón un producto agotado con un mensaje; siempre pide confirmación antes de cambiar algo."
+  },
+  {
+   "start": 54.97,
+   "end": 57.56,
+   "text": "Momentos después, vuelve a estar a la venta."
+  },
+  {
+   "start": 58.32,
+   "end": 63.83,
+   "text": "De atender clientes a gestionar tu tienda: agentes de IA que trabajan por ti."
+  }
+ ]
+}

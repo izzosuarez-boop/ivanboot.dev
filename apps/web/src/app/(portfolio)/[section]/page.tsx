@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { sections, sectionBySlug, type Project } from "@/content/portfolio";
 import { site } from "@/lib/site";
 import { GoLink, Stage } from "../_components/stage";
+import { ExplainerVideo, type ExplainerMedia } from "../_components/explainer-video";
+import portfolioMedia from "@/content/portfolio-media.json";
 
 export function generateStaticParams() {
   return sections.map((s) => ({ section: s.slug }));
@@ -97,6 +99,7 @@ async function SectionContent({ params }: { params: PageProps<"/[section]">["par
   const s = sections[i];
   const prev = sections[(i + sections.length - 1) % sections.length];
   const next = sections[(i + 1) % sections.length];
+  const media = (portfolioMedia as Record<string, ExplainerMedia>)[s.slug];
 
   return (
     <main className="relative z-0 px-4 pb-24 pt-[190px] sm:px-6">
@@ -110,14 +113,14 @@ async function SectionContent({ params }: { params: PageProps<"/[section]">["par
         </header>
 
         <section aria-label="Explainer video" className="mt-14">
-          {s.video.src ? (
-            <video controls preload="metadata" poster={s.video.poster ?? undefined} className="aspect-video w-full rounded-2xl border border-line bg-black">
-              <source src={s.video.src} type="video/mp4" />
-            </video>
+          {media ? (
+            <ExplainerVideo media={media} title={s.video.title} />
           ) : (
-            <MediaFrame label="Explainer video · coming soon" />
+            <>
+              <MediaFrame label="Explainer video · coming soon" />
+              <p className="mt-3 text-center text-sm text-muted">{s.video.title}</p>
+            </>
           )}
-          <p className="mt-3 text-center text-sm text-muted">{s.video.title}</p>
         </section>
 
         <section aria-label="Projects" className="mt-20 space-y-16 sm:space-y-24">

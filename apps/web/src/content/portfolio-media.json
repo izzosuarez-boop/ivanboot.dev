@@ -1,0 +1,22 @@
+{
+  "ai-agents": {
+    "poster": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/ai-agents-poster.jpg?v=1795377727",
+    "duration": 67.33,
+    "sources": [
+      {
+        "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/ai-agents-explainer-1080.mp4?v=1795377734",
+        "height": 1080,
+        "id": "gid://shopify/GenericFile/46875909030140"
+      },
+      {
+        "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/ai-agents-explainer-720.mp4?v=1795377743",
+        "height": 720,
+        "id": "gid://shopify/GenericFile/46875909718268"
+      }
+    ],
+    "captions": {
+      "en": "/portfolio/captions/ai-agents.en.vtt",
+      "es": "/portfolio/captions/ai-agents.es.vtt"
+    }
+  }
+}

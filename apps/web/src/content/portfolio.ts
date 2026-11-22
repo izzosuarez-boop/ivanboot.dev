@@ -37,7 +37,7 @@ export const sections: Section[] = [
     intro:
       "Beyond a chat: from asking for things to delegating the work. Today AI agents work for you — integrated " +
       "into your platforms and workflows, they act as a force multiplier.",
-    video: { title: "The Ardea Skin agent: advising, building a cart and explaining how it was built", src: null },
+    video: { title: "Two agents at work: the store's sales agent for shoppers, and the owner's back-office agent on Telegram", src: null },
     projects: [
       {
         title: "Ardea Skin store agent",
@@ -75,7 +75,7 @@ export const sections: Section[] = [
         status: "Live demo",
         summary: "The back office of the Ardea Skin demo: the owner asks in plain language (“top 10 customers”, “chart of best sellers in 3 months”) and gets answers and charts.",
         problem: "One message per order stops being readable at a few thousand visitors a month; the owner needs signal, not a feed.",
-        how: "Shopify webhooks verified with HMAC; only actionable events are pushed (sold out, under 10 units, orders over $150, complaints). Everything else goes into a 9:00 daily summary and a Monday report with charts. Questions are answered by Claude with read-only tools; charts are rendered server-side with matplotlib.",
+        how: "Shopify webhooks verified with HMAC; only actionable events are pushed (sold out, under 10 units, orders over $150, complaints). Everything else goes into a 9:00 daily summary and a Monday report with charts. Questions are answered by Claude with tools; charts are rendered server-side with matplotlib. It can also restock a product (“Vitamin C is sold out, add 40 units”), always after the owner taps Confirm.",
         result: "About $0.0005 per question. A scheduler that never sends twice after a restart and catches up after downtime.",
         stack: ["Telegram Bot API", "Shopify Admin API", "Webhooks", "Claude API", "matplotlib", "Supabase"],
       },
