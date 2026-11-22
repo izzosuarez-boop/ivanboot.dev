@@ -64,6 +64,16 @@ SHOTS = {
                       "no zoom, no pan. The monitors stay exactly where they are, their screens steady and evenly "
                       "lit. Only the man moves.",
         },
+        "phone": {
+            "seconds": 8,
+            "reference": "phone-still.png",   # approved still: shop owner holding his phone, screen toward him
+            "prompt": "Animate the reference image exactly as it is: the same man, the same shop, the same framing. "
+                      "He types a short message on his smartphone with both thumbs for a couple of seconds, pauses "
+                      "and reads, then reads again a moment later and a satisfied, relieved smile spreads across his "
+                      "face; he gives a small nod and relaxes his shoulders. He keeps holding the phone in both hands "
+                      "at the same height and place the whole time, its screen facing him, never the camera. "
+                      "LOCKED-OFF STATIC CAMERA on a tripod: no camera movement, no zoom, no pan.",
+        },
         "whiteboard": {
             "seconds": 10,
             "reference": "whiteboard-still.png",   # approved still: owner + whiteboard with blank sticky notes
@@ -126,6 +136,21 @@ STILLS = {
                 "Lighting: a warm amber desk lamp to the left, a cool teal glow from a laptop screen out of frame, "
                 "the room falling off into darkness at the edges; the board is evenly lit so every note is clearly "
                 "visible. Camera: eye level, 35mm, medium-wide, sharp focus on the board and on her. Photorealistic, "
+                "natural skin texture. No readable text, no logos, no watermark, no other people."),
+        },
+        "phone": {
+            "refs": ["apps/web/public/portfolio/scene.webp"],
+            "prompt": (
+                "The reference image only sets the look: night-time mood, warm amber lamp light, a cool teal ambient "
+                "glow, the same color grading. Its place and its man must NOT appear. "
+                "Create ONE single continuous cinematic photograph, 16:9, not a collage. A small business owner, a "
+                "man in his early thirties with a short dark beard and a casual dark green shirt, sits on a stool at "
+                "the wooden counter of his own small shop after closing time: shelves with products and a few warm "
+                "pendant lights glow softly out of focus behind him. He is in the right half of the frame, turned "
+                "three-quarters toward the left of the frame, relaxed, holding his smartphone in both hands at "
+                "chest height in front of him. We see the BACK of the phone: its screen faces him, never the camera. "
+                "Above and to the left of the phone there is calm, dark, softly blurred shop background. "
+                "Eye level, 50mm, medium shot from mid-thigh up, sharp focus on him and the phone, photorealistic, "
                 "natural skin texture. No readable text, no logos, no watermark, no other people."),
         },
         "brain": {

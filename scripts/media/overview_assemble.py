@@ -711,6 +711,173 @@ def logos_shot() -> Path:
     return out
 
 
+# ── shot 4: a shop owner talks to his AI agent from his phone; the chat floats up out of the phone ─────────
+# The phone's screen is never shown: the messages rise from the phone as speech bubbles (user: white, agent: teal)
+# and older ones drift up and fade. The phone is tracked frame by frame so the bubbles always come out of it.
+PHONE_MSGS = {
+    "en": [("user", "Answer today's customer emails and send the overdue invoices."),
+           ("ai", "Sure, I'm on it! 💪"),
+           ("ai", "✅ Done: 14 emails answered,|3 invoices sent.")],
+    "es": [("user", "Responde los correos de clientes de hoy y envía las facturas vencidas."),
+           ("ai", "¡Listo, me pongo en ello! 💪"),
+           ("ai", "✅ Hecho: 14 correos respondidos,|3 facturas enviadas.")],
+}
+PHONE_T = {"user": 0.6, "typing_end": 2.8, "dots": 3.2, "ai1": 4.0, "ai2": 6.0}
+PHONE_DUR = 8.0
+PHONE_TPL = (1630, 290, 1710, 350)          # phone top with the camera lenses, on frame 0
+PHONE_TIP0 = (1662, 282)                    # where the bubbles' tail points on frame 0 (just above the phone)
+
+
+def track_phone(src: Path) -> list[tuple[float, float]]:
+    import cv2
+    fr0 = next(frames(src))
+    x0, y0, x1, y1 = PHONE_TPL
+    tpl = cv2.cvtColor(np.ascontiguousarray(fr0[y0:y1, x0:x1]), cv2.COLOR_RGB2GRAY)
+    out, last = [], (x0, y0)
+    for fr in frames(src):
+        sx, sy = last[0] - 40, last[1] - 40
+        win = cv2.cvtColor(np.ascontiguousarray(fr[sy:sy + (y1 - y0) + 80, sx:sx + (x1 - x0) + 80]), cv2.COLOR_RGB2GRAY)
+        res = cv2.matchTemplate(win, tpl, cv2.TM_CCOEFF_NORMED)
+        _, _, _, (mx, my) = cv2.minMaxLoc(res)
+        last = (sx + mx, sy + my)
+        out.append((last[0] - x0, last[1] - y0))
+    a = np.array(out, np.float32)
+    k = np.ones(7) / 7                       # smooth the jitter, keep the motion
+    sm = np.stack([np.convolve(np.pad(a[:, i], 3, mode="edge"), k, "valid") for i in range(2)], 1)
+    return [(float(dx), float(dy)) for dx, dy in sm]
+
+
+def wrap_text(text: str, font, maxw: float) -> list[str]:
+    """Word wrap; "|" forces a line break (keeps a number with its noun)."""
+    out = []
+    for para in text.split("|"):
+        lines, cur = [], ""
+        for w_ in para.split():
+            test = (cur + " " + w_).strip()
+            if font.getlength(test) > maxw and cur:
+                lines.append(cur); cur = w_
+            else:
+                cur = test
+        out += lines + [cur]
+    return out
+
+
+def speech_bubble(text: str, kind: str, shown: int | None = None, dots: float | None = None) -> Image.Image:
+    """A rounded speech bubble with a tail at the bottom, 2x supersampled, with a soft shadow. `shown` limits the
+    visible characters (typing); `dots` draws the 'typing…' dots instead of text."""
+    S = 2
+    font = f("segoeui.ttf", 27 * S)
+    emoji = ImageFont.truetype("C:/Windows/Fonts/seguiemj.ttf", 25 * S)
+    maxw = 370 * S
+    lines = wrap_text(text, font, maxw) if dots is None else ["   "]
+    lh = int(37 * S)
+    tw = max(font.getlength(x) for x in lines) if dots is None else 90 * S
+    pw, ph = int(tw + 52 * S), int(lh * len(lines) + 30 * S)
+    tail = 22 * S
+    pad = 24 * S
+    im = Image.new("RGBA", (pw + 2 * pad, ph + tail + 2 * pad), (0, 0, 0, 0))
+    fill = (255, 255, 255, 246) if kind == "user" else GLOW + (246,)
+    ink = (22, 26, 32, 255) if kind == "user" else (6, 40, 37, 255)
+    sh = Image.new("L", im.size, 0)
+    sd = ImageDraw.Draw(sh)
+    bx0, by0 = pad, pad
+    sd.rounded_rectangle([bx0, by0 + 8 * S, bx0 + pw, by0 + ph + 8 * S], 30 * S, fill=110)
+    sh = sh.filter(ImageFilter.GaussianBlur(10 * S))
+    im.paste(Image.new("RGBA", im.size, (0, 0, 0, 255)), (0, 0), sh)
+    d = ImageDraw.Draw(im)
+    d.rounded_rectangle([bx0, by0, bx0 + pw, by0 + ph], 30 * S, fill=fill)
+    tx = bx0 + pw * 0.62                                       # tail toward the phone (bottom, a bit right)
+    d.polygon([(tx - 18 * S, by0 + ph - 2), (tx + 14 * S, by0 + ph - 2), (tx + 6 * S, by0 + ph + tail)], fill=fill)
+    if dots is not None:
+        for i in range(3):
+            on = int(dots * 5) % 3 == i
+            cx_, cy_ = bx0 + pw / 2 + (i - 1) * 26 * S, by0 + ph / 2
+            r_ = (8 if on else 6) * S
+            d.ellipse([cx_ - r_, cy_ - r_, cx_ + r_, cy_ + r_], fill=ink[:3] + ((255 if on else 120),))
+    else:
+        left = len(text) if shown is None else shown
+        for k, line in enumerate(lines):
+            x, y = bx0 + 26 * S, by0 + 14 * S + k * lh
+            for ch in line:
+                if left <= 0:
+                    break
+                ef = ord(ch) > 0x2600
+                d.text((x, y + (4 * S if ef else 0)), ch, font=emoji if ef else font, fill=ink, embedded_color=ef)
+                x += (emoji if ef else font).getlength(ch)
+                left -= 1
+            left -= 1                                          # the space eaten by the line break
+    im = im.resize((im.width // S, im.height // S), Image.LANCZOS)
+    im.info["tail"] = (int((tx) / S), int((by0 + ph + tail) / S))
+    return im
+
+
+def phone_shot(lang: str = "en") -> Path:
+    src = latest("phone-[0-9]*.mp4")
+    track = track_phone(src)
+    print(f"phone moves up to {max(abs(x) for x, _ in track):.0f}px x, {max(abs(y) for _, y in track):.0f}px y")
+    msgs = PHONE_MSGS[lang]
+    T = PHONE_T
+    out = WORK / f"phone-composite-{lang}.mp4"
+    enc = subprocess.Popen([g.ffmpeg(), "-loglevel", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24",
+                            "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-crf", "15",
+                            "-preset", "slow", "-pix_fmt", "yuv420p", str(out)], stdin=subprocess.PIPE)
+    full = {k: speech_bubble(m[1], m[0]) for k, m in enumerate(msgs)}
+
+    def pop(t0, t):                                            # ease-out-back: a small overshoot when it appears
+        u = min(1.0, max(0.0, (t - t0) / 0.32))
+        c = 1.7
+        return 1 + (c + 1) * (u - 1) ** 3 + c * (u - 1) ** 2 if u > 0 else 0.0
+
+    for i, fr in enumerate(frames(src)):
+        t = i / FPS
+        if t > PHONE_DUR:
+            break
+        dx, dy = track[min(i, len(track) - 1)]
+        tipx, tipy = PHONE_TIP0[0] + dx, PHONE_TIP0[1] + dy
+        # the stack, newest at the bottom (closest to the phone)
+        stack = []
+        if t >= T["user"]:
+            n = len(msgs[0][1])
+            shown = int(n * min(1.0, (t - T["user"] - 0.1) / (T["typing_end"] - T["user"] - 0.1)))
+            stack.append((T["user"], speech_bubble(msgs[0][1], "user", shown=max(0, shown)) if shown < n else full[0]))
+        if T["dots"] <= t < T["ai1"]:
+            stack.append((T["dots"], speech_bubble("", "ai", dots=t)))
+        if t >= T["ai1"]:
+            stack.append((T["ai1"], full[1]))
+        if t >= T["ai2"]:
+            stack.append((T["ai2"], full[2]))
+        img = Image.fromarray(fr).convert("RGBA")
+        y_bottom = tipy
+        for j, (t0, b) in enumerate(reversed(stack)):
+            p = pop(t0, t)
+            if p <= 0:
+                continue
+            sc = 0.65 + 0.35 * p
+            bb = b.resize((max(1, int(b.width * sc)), max(1, int(b.height * sc))), Image.LANCZOS)
+            tx, ty = b.info["tail"]
+            # newest bubble: tail on the phone; older ones stacked above it, gliding up as new ones arrive
+            if j == 0:
+                x = tipx - tx * sc
+                y = y_bottom - ty * sc
+            else:
+                x = tipx - tx * sc
+                y = y_bottom - bb.height + 18
+            x = min(max(x, 1405), W - bb.width - 20)                   # never over his face, never off the edge
+            a = np.asarray(bb, np.float32)
+            fade = np.clip((y + bb.height * 0.2) / 70.0, 0, 1)          # older bubbles fade out fully at the top
+            a[..., 3] *= min(1.0, p * 1.5) * fade
+            img.alpha_composite(Image.fromarray(a.clip(0, 255).astype(np.uint8)), (int(x), int(y)))
+            y_bottom = y + 18
+        frame = img.convert("RGB")
+        frame = push_in(frame, t, PHONE_DUR, z1=1.04, focus=(1600, 140))   # focus high: keeps the bubbles in frame
+        enc.stdin.write(np.asarray(frame).tobytes())
+        if i in (30, 75, 105, 130, 190, 230):
+            frame.save(WORK / f"ph_{lang}_{i:03d}.jpg", quality=92)
+    enc.stdin.close(); enc.wait()
+    print(f"shot 4 ({lang}) ->", out.name)
+    return out
+
+
 # ── samples for review ─────────────────────────────────────────────────────────────────────────────────────
 VOICE = {
     "en": {
@@ -720,11 +887,14 @@ VOICE = {
         "logos": "Bringing it into your workflow means delegating repetitive tasks and work that needs attention "
                  "24/7, connected to the tools you use every day: your email, inventory, invoicing, video and "
                  "content creation.",
+        "phone": "All of this in one place: an AI agent you can talk to like a person, and hand tasks it completes "
+                 "in seconds.",
     },
 }
 SHOTS = [("coding", "coding-composite.mp4", "coding-[0-9]*.mp4"),
          ("whiteboard", "whiteboard-composite-{lang}.mp4", "whiteboard-room.wav"),
-         ("logos", "logos-composite.mp4", "logos-room.wav")]
+         ("logos", "logos-composite.mp4", "logos-room.wav"),
+         ("phone", "phone-composite-{lang}.mp4", "phone-[0-9]*.mp4")]
 
 
 def sample(lang: str = "en", upto: int = 2) -> Path:
@@ -763,4 +933,4 @@ def sample(lang: str = "en", upto: int = 2) -> Path:
 
 if __name__ == "__main__":
     cmd, args = sys.argv[1], sys.argv[2:]
-    {"coding": coding, "whiteboard": whiteboard, "logos": logos_shot, "sample": sample}[cmd](*args)
+    {"coding": coding, "whiteboard": whiteboard, "logos": logos_shot, "phone": phone_shot, "sample": sample}[cmd](*args)

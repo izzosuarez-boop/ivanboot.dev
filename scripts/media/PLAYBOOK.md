@@ -424,3 +424,13 @@ Script de montaje: `scripts/media/overview_assemble.py`.
   **Solución:** muestreo del punto más lejano sobre las 4 órbitas en pantalla, con tope por órbita (mínimo 132 px
   entre fichas), y todas las órbitas girando juntas. La entrada en espiral sigue con duraciones distintas
   (1,2–2,5 s).
+
+**Toma 4: un dueño de tienda habla con su agente desde el celular.**
+- **Fotograma** del dueño con el celular de espaldas a la cámara ($0,14) y **clip de Omni de 8 s** con cámara fija ($0,83).
+- **Globos:** los mensajes salen del celular (usuario en blanco, agente en turquesa), con aparición elástica.
+  Los anteriores suben y se desvanecen arriba. El texto del usuario se escribe mientras él teclea.
+  Los emojis a color se dibujan con Segoe UI Emoji y `embedded_color=True` (Pillow 11).
+- **Seguimiento:** el celular se sigue cuadro a cuadro con `cv2.matchTemplate` sobre su borde superior con las
+  cámaras, con un suavizado de 7 cuadros. Se movía hasta 30 px.
+- **Encuadre:** nunca encima de su cara (x ≥ 1405). El acercamiento se centra arriba (y = 140) para no sacar los
+  globos de la pantalla. Una "|" en el texto fuerza el salto de línea, para que el número no quede separado de su nombre.
