@@ -68,15 +68,6 @@ export const sections: Section[] = [
         demoHref: STORE_CHAT,
         video: { media: "ai-agents", title: "The store agent and the owner's Telegram agent, in 67 seconds" },
       },
-      {
-        title: "LLM integrations in production",
-        status: "Case study",
-        summary: "Three production systems on two providers: a function-calling support agent, a vision model as an independent second reader, and a human-like async responder.",
-        problem: "Production LLMs fail in quiet ways: queued requests, confident wrong reads, behavior that a prompt cannot make measurable.",
-        how: "Cheap model for normal traffic with a measured failover to a stronger one; vision checks run in off / shadow / active modes; probabilities and limits enforced in code, outside the model.",
-        result: "Failover after 20 s with a 5-minute cooldown (responses back to 1–5 s); new models measured on real traffic in shadow mode before they decide anything.",
-        stack: ["Anthropic", "DeepSeek", "Function calling", "Structured output", "Python"],
-      },
     ],
   },
   {

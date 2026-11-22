@@ -41,12 +41,24 @@ function Switch<T extends string>({ label, options, value, onChange }: {
   );
 }
 
+// Videos that already started by themselves. Module state survives client-side navigation and resets on a
+// full reload, which is exactly "autoplay the first time, or after reloading the page".
+const autoStarted = new Set<string>();
+
 /** Explainer video with a voice switch (one file per language: browsers can't switch audio tracks inside one
  *  file, except Safari) and a subtitles switch (native text tracks, so they also show in full screen).
- *  Both default to the browser's language; switching voice keeps the position and the play state. */
+ *  Both default to the browser's language; switching voice keeps the position and the play state.
+ *  Playback rules (same as the store's how-to video, requested 2026-11-22):
+ *   - starts by itself once the whole player is in view, only once per page load;
+ *   - pauses when half or less of it is visible, when the visitor leaves the section or the tab;
+ *   - after that it only plays again when the visitor presses play;
+ *   - only one explainer plays at a time.
+ *  Browsers refuse autoplay WITH sound until the visitor has interacted with the page (a direct visit or a
+ *  reload), so it tries with sound first and falls back to muted playback plus a "Tap for sound" button. */
 export function ExplainerVideo({ media, title }: { media: ExplainerMedia; title: string }) {
   const video = useRef<HTMLVideoElement>(null);
   const resume = useRef<{ frac: number; play: boolean } | null>(null);
+  const [muted, setMuted] = useState(false);
   const detected = useSyncExternalStore(noop, browserLang, () => "en" as const);
   const [voiceChoice, setVoiceChoice] = useState<Lang | null>(null);
   const [subsChoice, setSubsChoice] = useState<Subs | null>(null);
@@ -66,6 +78,41 @@ export function ExplainerVideo({ media, title }: { media: ExplainerMedia; title:
     return () => el.textTracks.removeEventListener("addtrack", apply);
   }, [subs, voice]);
 
+  useEffect(() => {
+    const el = video.current;
+    if (!el) return;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        // "fully visible", allowing for a player taller than the viewport on small screens
+        const target = Math.min(1, window.innerHeight / e.boundingClientRect.height);
+        const fully = e.intersectionRatio >= target * 0.98;
+        if (fully && !autoStarted.has(title) && !reduceMotion) {
+          autoStarted.add(title);
+          el.muted = false;
+          el.play().catch(() => {
+            el.muted = true;
+            setMuted(true);
+            el.play().catch(() => {}); // some browsers block even muted autoplay (data saver); controls still work
+          });
+        } else if (e.intersectionRatio <= 0.5 && !el.paused) {
+          el.pause(); // from here on, only the visitor's play button resumes it
+        }
+      },
+      { threshold: [0, 0.25, 0.5, 0.75, 0.9, 0.98, 1] },
+    );
+    io.observe(el);
+    const onHide = () => { if (document.hidden) el.pause(); };
+    document.addEventListener("visibilitychange", onHide);
+    return () => {
+      io.disconnect();
+      document.removeEventListener("visibilitychange", onHide);
+      // runs when the visitor leaves the section: Next keeps the page alive but hidden, and a hidden
+      // <video> would keep playing its sound
+      el.pause();
+    };
+  }, [voice, title]);
+
   const changeVoice = (l: Lang) => {
     const el = video.current;
     if (el && l !== voice && el.duration) resume.current = { frac: el.currentTime / el.duration, play: !el.paused };
@@ -75,7 +122,19 @@ export function ExplainerVideo({ media, title }: { media: ExplainerMedia; title:
   const [hi, lo] = [...v.sources].sort((a, b) => b.height - a.height);
   return (
     <figure>
-      <div className="overflow-hidden rounded-2xl border border-line bg-black shadow-[0_30px_80px_-40px_rgba(94,234,212,0.25)]">
+      <div className="relative overflow-hidden rounded-2xl border border-line bg-black shadow-[0_30px_80px_-40px_rgba(94,234,212,0.25)]">
+        {muted && (
+          <button
+            type="button"
+            onClick={() => {
+              const el = video.current;
+              if (el) { el.muted = false; void el.play().catch(() => {}); }
+            }}
+            className="absolute left-3 top-3 z-10 rounded-full border border-glow/50 bg-night/80 px-3.5 py-1.5 text-xs text-glow backdrop-blur transition hover:bg-night"
+          >
+            🔊 Tap for sound
+          </button>
+        )}
         <video
           key={voice} /* a new element per voice: <source> changes alone don't reload a video */
           ref={video}
@@ -85,11 +144,19 @@ export function ExplainerVideo({ media, title }: { media: ExplainerMedia; title:
           poster={v.poster}
           className="explainer aspect-video w-full"
           aria-label={title}
+          onVolumeChange={(e) => setMuted(e.currentTarget.muted)}
+          onPlay={(e) => {
+            const me = e.currentTarget;
+            for (const other of Array.from(document.querySelectorAll<HTMLVideoElement>("video.explainer"))) {
+              if (other !== me && !other.paused) other.pause();
+            }
+          }}
           onLoadedMetadata={(e) => {
             const r = resume.current;
             if (!r) return;
             resume.current = null;
             const el = e.currentTarget;
+            el.muted = muted; // after a voice switch, the new element keeps the muted state
             el.currentTime = r.frac * el.duration; // the two voices differ slightly in length: same relative point
             if (r.play) void el.play().catch(() => {});
           }}
