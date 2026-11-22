@@ -288,3 +288,59 @@ toma un fotograma 1,5 s antes del final).
 - **v1 (2026-11-21):** buen parecido. Pendientes:
   - el sujeto queda un poco a la izquierda;
   - las pantallas son blancas y brillantes; en modo oscuro encajarían mejor con la noche.
+
+---
+
+## 6. Videos explicativos del portafolio (primero: AI Agents, 2026-11-22)
+
+**Flujo completo:**
+
+| Paso | Comando |
+|---|---|
+| 1. Claqueta "By Ivan Dev" (2 s, código; sonido real CC0 en `sounds/`) | `python scripts/media/intro_clapper.py --reuse-frames` |
+| 2. Tomas de personas (Gemini Omni, pantalla del celular nunca visible) | `python scripts/media/explainer_video.py ai-agents couch` |
+| 3. Grabaciones reales de la tienda (Playwright) | `python scripts/media/record_store.py chat` / `restock` |
+| 4. Voz (una frase por subtítulo, transcrita para verificar) | `python scripts/media/explainer_assemble.py voice` |
+| 5. Montaje: marco de celular, zooms, títulos, tarjeta final, mezcla a -16 LUFS | `python scripts/media/explainer_assemble.py render` |
+| 6. Publicación: video en Shopify Files y subtítulos .vtt | `python scripts/media/publish_explainer.py ai-agents` |
+
+**Costo del primero:** unos $2.10 (3 tomas de Omni). La voz cuesta céntimos; la claqueta, las grabaciones y el montaje son gratis.
+
+### Errores encontrados
+
+**E1. Las grabaciones salían en baja resolución.**
+- **Causa:** con emulación móvil, tanto el grabador de video de Playwright como el screencast de Chrome entregan píxeles CSS (390×844).
+- **Solución:** un bucle de `Page.captureScreenshot` con `clip.scale = 2` (780×1688, ~14 fps), que se ensambla con sus tiempos reales.
+
+**E2. Al hacer scroll, la parte de arriba salía en blanco.**
+- **Causa:** el `clip` de CDP va en coordenadas del documento.
+- **Solución:** sumar `scrollX/scrollY` en cada captura.
+
+**E3. Subrayados rojos del corrector.**
+- **Síntoma:** `--disable-spell-checking` empeoró las cosas, porque Chrome marcó todas las palabras al no tener diccionario de inglés.
+- **Solución:** poner `el.spellcheck = false` solo en el campo de texto.
+
+**E4. El celular a tamaño completo es ilegible.**
+- **Causa:** ocupa un cuarto del ancho del cuadro, y en un reproductor de ~1000 px el texto queda en unos 5 px.
+- **Solución:** zoom de unos 2× en cada momento de lectura, enfocado según posiciones medidas en la grabación (fracción de la altura de pantalla).
+
+**E5. La página del producto seguía "Sold out" después de reponer.**
+- **Causa:** la Storefront API de Shopify responde desde réplicas que no coinciden durante 15–40 s.
+- **Solución:** la API refresca la caché de la tienda a los 0/10/25/45/90 s. El grabador espera con `_wait_for` a que la página muestre de verdad cada estado antes de filmarlo.
+
+**E6. En pruebas, un movimiento de stock "no se aplicaba".**
+- **Causa:** Shopify recuerda las claves `@idempotent`.
+- **Solución:** usar una clave única por operación (`time.time_ns()`).
+
+**E7. El agente de la tienda devolvía burbujas vacías.**
+- **Causa:** el modelo escribía la respuesta junto a la llamada a herramienta y el código guardaba solo el último texto.
+- **Solución:** se acumula el texto de todo el turno. Lo detectó la propia grabación del video.
+
+**E8. Los subtítulos no se queman en el video.**
+- Son pistas `<track>` nativas, con selector EN / ES / Off. El idioma por defecto sigue al navegador y se ven también en pantalla completa.
+- Los navegadores solo descargan la pista activa: no lo tomes por un fallo en las pruebas.
+- **Estilo:** `video.explainer::cue` y `size:78%` en cada cue.
+
+**E9. Honestidad del guion.**
+- "Seconds later" se cambió por "Moments later", porque la reposición tarda entre 5 y 40 s en verse.
+- Cada pantalla que aparece es una grabación real.
