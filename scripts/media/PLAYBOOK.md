@@ -394,3 +394,18 @@ Script de montaje: `scripts/media/overview_assemble.py`.
 - **E14. El fin de cada círculo** se mide contando píxeles oscuros en un anillo alrededor de la nota. La manga oscura de
   ella también cuenta, así que se toma el cuadro después de la ÚLTIMA vez que el conteo baja del 85 %.
   Los distintivos turquesa salen en cadena cuando termina el último círculo; si no, aparecen encima de su mano.
+
+**Toma 2 v2 (decisión del usuario): sin persona, círculos dibujados con código.**
+- **E15. Omni no dibuja círculos creíbles:** se completaban solos o aparecían de golpe después de que ella pasara
+  la mano. La toma se simplificó a un fotograma de la pizarra vacía (`whiteboard-empty --still`, $0,14, sin Omni).
+- **Animación (`overview_assemble.py whiteboard`):**
+  - textos fijos en las notas;
+  - círculos trazo a trazo: un bucle que empieza arriba a la izquierda, va en sentido antihorario, se pasa un poco
+    de su inicio, es algo ovalado y se abre en espiral, con antialiasing 3x;
+  - cada distintivo aparece al cerrar su círculo;
+  - acercamiento sobre el fotograma de 2752 px (siempre se reduce, nunca pierde nitidez) y grano en cada cuadro
+    para que no parezca congelado.
+- **Notas:** se detectan por color y se toma el recuadro por percentiles. Las esquinas extremas fallaban con una
+  esquina doblada, y el texto salía diminuto y torcido.
+- **Sonido:** ambiente de sala y trazos reales de rotulador, recortados del audio del primer clip de Omni
+  (1,85–2,40 s y 3,30–3,90 s) y colocados en cada círculo (`whiteboard-room.wav`). Nada sintético.

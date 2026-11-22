@@ -128,6 +128,22 @@ STILLS = {
                 "visible. Camera: eye level, 35mm, medium-wide, sharp focus on the board and on her. Photorealistic, "
                 "natural skin texture. No readable text, no logos, no watermark, no other people."),
         },
+        # v2 (user, 2026-11-22): no person; the circles are drawn in code, stroke by stroke, so they look natural
+        "whiteboard-empty": {
+            "refs": ["scripts/media/out/portfolio-ai-agents-overview/whiteboard-still.png"],
+            "prompt": (
+                "The reference image shows the office and the whiteboard. Create ONE single continuous cinematic "
+                "photograph, 16:9, not a collage, of the SAME office and the SAME whiteboard on its stand, with the "
+                "same night-time mood: warm amber desk lamp, cool teal ambient glow, dark room. NOBODY is in the "
+                "frame: no person, no hands. The camera is closer and almost straight-on, a little to the left of "
+                "center: the whiteboard fills most of the frame, with a glimpse of the dark office, the warm lamp "
+                "and the desk at the left edge. On the board: the same neat grid of 15 square sticky notes, 5 "
+                "columns by 3 rows, evenly spaced with generous gaps, alternating soft yellow and light mint green. "
+                "Every sticky note is COMPLETELY BLANK: no writing, no marks anywhere on the notes or the board. A "
+                "black whiteboard marker with its cap on lies on the tray at the bottom of the board. The board is "
+                "evenly lit so every note is clearly visible. Eye level, 35mm, sharp focus on the board, "
+                "photorealistic. No readable text, no logos, no watermark."),
+        },
     },
 }
 

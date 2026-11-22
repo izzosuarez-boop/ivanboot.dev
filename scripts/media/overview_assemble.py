@@ -315,8 +315,8 @@ def coding() -> Path:
 
 
 # ── shot 2: the owner circles, on her whiteboard, the tasks where AI makes sense ─────────────────────────────
-# 15 sticky notes, row by row (detected by color on the clip's last frame -> wb_notes.json). She circles notes
-# 0, 7 and 11, so those carry the repetitive tasks; the rest are the work that stays human.
+# 15 sticky notes, row by row (found by color on the board still). Notes 0, 7 and 11 get circled, so they carry
+# the repetitive tasks; the rest are the work that stays human.
 NOTES_TEXT = {
     "en": ["Reply to emails", "Meet clients", "Product ideas", "Hire a designer", "Brand vision",
            "Supplier deals", "Set prices", "Update stock", "Plan launch", "Team 1:1s",
@@ -377,90 +377,144 @@ def badge(size: int = 64) -> Image.Image:
     return im.resize((size, size), Image.LANCZOS)
 
 
-def ring_times(src: Path, notes: list[dict]) -> dict[int, float]:
-    """When each circle is finished: dark marker pixels in a ring around the note reach 85% of their final count."""
-    counts = {i: [] for i in CIRCLED}
-    for fr in frames(src):
-        lum = fr.mean(2)
-        for i in CIRCLED:
-            q = np.array(notes[i]["quad"])
-            x0, y0 = q.min(0) - 32
-            x1, y1 = q.max(0) + 32
-            ix0, iy0 = q.min(0) - 3
-            ix1, iy1 = q.max(0) + 3
-            box = lum[y0:y1, x0:x1] < 95
-            box[iy0 - y0:iy1 - y0, ix0 - x0:ix1 - x0] = False
-            counts[i].append(int(box.sum()))
-    out = {}
-    for i, c in counts.items():
-        final = np.median(c[-20:])
-        # her dark sleeve also darkens the ring while she draws: take the frame after the LAST one below 85 %
-        below = [k for k, v in enumerate(c) if v < 0.85 * final]
-        out[i] = ((below[-1] + 1) if below else 0) / FPS
-    return out
+def find_notes(still: np.ndarray) -> list[dict]:
+    """The 15 sticky notes of the board still, by color, row by row: corner quads and centers."""
+    from scipy import ndimage
+    a = still.astype(int)
+    r, g_, b = a[..., 0], a[..., 1], a[..., 2]
+    yellow = (r > 160) & (g_ > 140) & (r - b > 35) & (g_ - b > 20) & (r - g_ < 45)
+    mint = (g_ > 160) & (g_ - r > 20) & (g_ - b > 0) & (r > 90)
+    notes = []
+    for m in (yellow, mint):
+        lab, n = ndimage.label(ndimage.binary_fill_holes(ndimage.binary_opening(m, iterations=2)))
+        for i in range(1, n + 1):
+            ys, xs = np.nonzero(lab == i)
+            if len(xs) < 6000:
+                continue
+            # the notes face the camera: a robust box (percentiles ignore curled corners and stray pixels)
+            l, r_, t, b_ = (int(np.percentile(xs, 2)), int(np.percentile(xs, 98)), int(np.percentile(ys, 2)),
+                            int(np.percentile(ys, 98)))
+            notes.append({"quad": [[l, t], [r_, t], [r_, b_], [l, b_]], "cx": float(xs.mean()), "cy": float(ys.mean()),
+                          "side": float(np.sqrt(len(xs)))})
+    rows = sorted(notes, key=lambda n: n["cy"])
+    if len(rows) != 15:
+        raise SystemExit(f"expected 15 notes, found {len(rows)}")
+    return [n for k in range(3) for n in sorted(rows[k * 5:(k + 1) * 5], key=lambda n: n["cx"])]
+
+
+def circle_path(n: dict, seed: int) -> np.ndarray:
+    """A hand-drawn loop around a note: starts top-left, goes counter-clockwise, overshoots its start a little,
+    slightly wobbly and not quite round, like a quick stroke with a marker. Points in still pixels."""
+    rng = np.random.default_rng(seed)
+    R = n["side"] * 0.80
+    th0 = np.deg2rad(-130 + rng.uniform(-15, 15))
+    th = th0 - np.linspace(0, np.deg2rad(392), 240)               # counter-clockwise on screen (y grows down)
+    ph = rng.uniform(0, 6.28, 3)
+    k = np.linspace(0, 1, th.size)
+    rad = R * (1 + 0.05 * np.sin(2 * th + ph[0]) + 0.025 * np.sin(3 * th + ph[1]) + 0.06 * k)   # spirals out a bit
+    sx, sy = 1.08, 0.94                                            # a little wider than tall
+    return np.stack([n["cx"] + sx * rad * np.cos(th), n["cy"] + 5 + sy * rad * np.sin(th)], 1)
+
+
+def draw_stroke(img: Image.Image, path: np.ndarray, upto: float, width: float = 7.5) -> None:
+    """Draw the first `upto` (0..1) of a marker stroke, anti-aliased (3x supersampled in its box)."""
+    if upto <= 0:
+        return
+    pts = path[: max(2, int(len(path) * min(1.0, upto)))]
+    S = 3
+    x0, y0 = (pts.min(0) - 20).astype(int)
+    x1, y1 = (pts.max(0) + 20).astype(int)
+    layer = Image.new("L", ((x1 - x0) * S, (y1 - y0) * S), 0)
+    d = ImageDraw.Draw(layer)
+    p = [((x - x0) * S, (y - y0) * S) for x, y in pts]
+    d.line(p, fill=235, width=int(width * S), joint="curve")
+    for e in (p[0], p[-1]):                                       # round marker tip
+        d.ellipse([e[0] - width * S / 2, e[1] - width * S / 2, e[0] + width * S / 2, e[1] + width * S / 2], fill=235)
+    mask = layer.resize((x1 - x0, y1 - y0), Image.LANCZOS)
+    ink = Image.new("RGB", mask.size, (34, 36, 50))
+    img.paste(ink, (x0, y0), mask)
+
+
+CIRCLE_AT = (1.4, 2.6, 3.8)   # start of each circle (s); each stroke takes CIRCLE_DUR
+CIRCLE_DUR = 0.55
+WB_DUR = 9.6
 
 
 def whiteboard(lang: str = "en") -> Path:
-    import json
-    src = latest("whiteboard-[0-9]*.mp4")
-    notes = json.loads((WORK / "wb_notes.json").read_text())
-    texts = NOTES_TEXT[lang]
-    done = ring_times(src, notes)
-    print("circles finished at", {k: round(v, 2) for k, v in done.items()})
-    # the badges pop one after another, in drawing order, once her hand has left the board area of the last circle
-    order = sorted(CIRCLED, key=lambda k: done[k])
-    pop = {k: max(done.values()) + 0.45 + n * 0.28 for n, k in enumerate(order)}
-    ref = np.asarray(Image.open(WORK / "wb_last.png").convert("RGB"), np.float32)
-    layers = []
-    for k, n in enumerate(notes):
+    """Shot 2 v2 (2026-11-22): the empty board still; tasks written on the notes, then three circles drawn stroke
+    by stroke around the repetitive ones, each followed by the AI badge; a slow push-in with film grain."""
+    still = Image.open(WORK / "whiteboard-empty-still.png").convert("RGB")
+    notes = find_notes(np.asarray(still))
+    base = np.asarray(still, np.float32).copy()
+    for k, n in enumerate(notes):                                 # handwriting, baked once
         q = n["quad"]
         xs, ys = [p[0] for p in q], [p[1] for p in q]
         bx0, by0, bx1, by1 = min(xs) - 2, min(ys) - 2, max(xs) + 3, max(ys) + 3
-        canvas = note_text(texts[k])
         c = coeffs([(0, 0), (300, 0), (300, 300), (0, 300)], [(x - bx0, y - by0) for x, y in q])
-        warped = canvas.transform((bx1 - bx0, by1 - by0), Image.PERSPECTIVE, c, Image.BICUBIC).filter(ImageFilter.GaussianBlur(0.5))
-        a = np.asarray(warped, np.float32)
-        # the note's own paper color (clean last frame), to know per frame where the paper is visible
-        patch = ref[by0:by1, bx0:bx1]
-        paper = np.median(patch[a[..., 3] < 10].reshape(-1, 3), axis=0)
-        layers.append((bx0, by0, a, paper))
-    bdg = badge(58)
+        a = np.asarray(note_text(NOTES_TEXT[lang][k]).transform((bx1 - bx0, by1 - by0), Image.PERSPECTIVE, c,
+                                                                Image.BICUBIC).filter(ImageFilter.GaussianBlur(0.6)), np.float32)
+        region = base[by0:by1, bx0:bx1]
+        m = (a[..., 3] / 255.0)[..., None]
+        base[by0:by1, bx0:bx1] = region * (1 - m) + (region * (np.array(INK, np.float32) / 255.0) * 0.9 + 12) * m
+    board = Image.fromarray(np.clip(base, 0, 255).astype(np.uint8))
+    paths = {k: circle_path(notes[k], seed=k) for k in CIRCLED}
+    bsize = int(notes[0]["side"] * 0.42)
+    bdg = badge(bsize)
+    SW, SH = board.size
+    out = WORK / f"whiteboard-composite-{lang}.mp4"
     enc = subprocess.Popen([g.ffmpeg(), "-loglevel", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24",
                             "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-crf", "15",
-                            "-preset", "slow", "-pix_fmt", "yuv420p", str(WORK / f"whiteboard-composite-{lang}.mp4")],
-                           stdin=subprocess.PIPE)
-    dur = 10.0
-    for i, fr in enumerate(frames(src)):
+                            "-preset", "slow", "-pix_fmt", "yuv420p", str(out)], stdin=subprocess.PIPE)
+    rng = np.random.default_rng(7)
+    fx, fy = np.mean([n["cx"] for n in notes]), np.mean([n["cy"] for n in notes])
+    for i in range(int(WB_DUR * FPS)):
         t = i / FPS
-        base = fr.astype(np.float32)
-        for bx0, by0, a, paper in layers:
-            h_, w_ = a.shape[:2]
-            region = base[by0:by0 + h_, bx0:bx0 + w_]
-            # ink only where the paper shows: her arm, hand or marker passing in front hides the writing
-            dist = np.sqrt(((region - paper) ** 2).sum(2))
-            visible = np.clip(1 - (dist - 38) / 30, 0, 1)
-            m = (a[..., 3] / 255.0 * visible)[..., None]
-            # multiply-like ink: darker on the lit paper, keeps the paper's shading
-            ink = region * (np.array(INK, np.float32) / 255.0) * 0.9 + 12
-            base[by0:by0 + h_, bx0:bx0 + w_] = region * (1 - m) + ink * m
-        img = Image.fromarray(np.clip(base, 0, 255).astype(np.uint8))
-        for k in CIRCLED:
-            p = ease((t - pop[k]) / 0.3)
-            if p <= 0:
-                continue
-            q = notes[k]["quad"]
-            cx, cy = q[1][0] + 30, q[1][1] - 26           # outside the top-right corner of the note, past the circle
-            s = 0.6 + 0.4 * p + 0.12 * np.sin(min(1.0, p) * np.pi)  # small overshoot on the pop
-            bb = bdg.resize((max(1, int(58 * s)),) * 2, Image.LANCZOS)
-            bb.putalpha(Image.fromarray((np.asarray(bb)[..., 3] * min(1.0, p * 1.4)).astype(np.uint8)))
-            img.paste(bb, (int(cx - bb.width / 2), int(cy - bb.height / 2)), bb)
-        img = push_in(img, t, dur, z1=1.12, focus=(1210, 445))
-        enc.stdin.write(np.asarray(img).tobytes())
-        if i in (0, 60, 120, 180, 240, 290):
-            img.save(WORK / f"wb_{lang}_{i:03d}.jpg", quality=92)
+        img = board.copy()
+        for j, k in enumerate(CIRCLED):
+            u = (t - CIRCLE_AT[j]) / CIRCLE_DUR
+            draw_stroke(img, paths[k], ease(u) if u < 1 else 1.0)
+            p = ease((t - CIRCLE_AT[j] - CIRCLE_DUR - 0.08) / 0.28)
+            if p > 0:
+                cx = notes[k]["cx"] + notes[k]["side"] * 0.78        # just outside the loop, top right
+                cy = notes[k]["cy"] - notes[k]["side"] * 0.70
+                s = 0.6 + 0.4 * p + 0.12 * np.sin(min(1.0, p) * np.pi)
+                bb = bdg.resize((max(1, int(bsize * s)),) * 2, Image.LANCZOS)
+                bb.putalpha(Image.fromarray((np.asarray(bb)[..., 3] * min(1.0, p * 1.4)).astype(np.uint8)))
+                img.paste(bb, (int(cx - bb.width / 2), int(cy - bb.height / 2)), bb)
+        # slow push-in on the still (it is 2752 px wide: always downscaled, always sharp)
+        z = 1 + 0.12 * ease(t / WB_DUR)
+        vw = min(SW, SH * 16 / 9) / z      # the still is a hair wider than 16:9
+        vh = vw * 9 / 16
+        x0 = min(max(0, fx - vw / 2), SW - vw)
+        y0 = min(max(0, fy - vh / 2), SH - vh)
+        frame = np.asarray(img.resize((W, H), Image.LANCZOS, box=(x0, y0, x0 + vw, y0 + vh)), np.float32)
+        frame += rng.normal(0, 2.6, frame.shape)                   # grain, so the still never looks frozen
+        enc.stdin.write(np.clip(frame, 0, 255).astype(np.uint8).tobytes())
+        if i in (0, 50, 66, 90, 130, 160, 280):
+            Image.fromarray(np.clip(frame, 0, 255).astype(np.uint8)).save(WORK / f"wb2_{lang}_{i:03d}.jpg", quality=92)
     enc.stdin.close(); enc.wait()
-    print(f"shot 2 ({lang}) ->", f"whiteboard-composite-{lang}.mp4")
-    return WORK / f"whiteboard-composite-{lang}.mp4"
+    whiteboard_audio()
+    print(f"shot 2 ({lang}) ->", out.name)
+    return out
+
+
+def whiteboard_audio() -> Path:
+    """Room tone + real marker strokes, both cut from the first whiteboard clip's own audio (Omni), placed on
+    the drawn circles: no synthesized sounds."""
+    src = WORK / "whiteboard-175715.mp4"
+    out = WORK / "whiteboard-room.wav"
+    strokes = [(1.85, 2.40), (3.30, 3.90), (1.85, 2.40)]
+    ins, parts, mix = ["-i", str(src)], ["[0:a]atrim=6.0:9.9,asetpts=PTS-STARTPTS,aloop=loop=2:size=187200,"
+                                          f"atrim=0:{WB_DUR},afade=t=in:d=0.3[room]"], ["[room]"]
+    for j, (a, b) in enumerate(strokes):
+        ms = int(CIRCLE_AT[j] * 1000)
+        parts.append(f"[0:a]atrim={a}:{b},asetpts=PTS-STARTPTS,afade=t=in:d=0.03,afade=t=out:st={b - a - 0.08:.2f}:d=0.08,"
+                     f"volume=2.2,adelay={ms}|{ms}[m{j}]")
+        mix.append(f"[m{j}]")
+    graph = ";".join(parts + ["".join(mix) + f"amix=inputs={len(mix)}:normalize=0:duration=first[a]"])
+    subprocess.run([g.ffmpeg(), "-loglevel", "error", "-y", *ins, "-filter_complex", graph, "-map", "[a]",
+                    "-ar", "48000", "-ac", "2", str(out)], check=True)
+    return out
 
 
 # ── samples for review ─────────────────────────────────────────────────────────────────────────────────────
@@ -472,7 +526,7 @@ VOICE = {
     },
 }
 SHOTS = [("coding", "coding-composite.mp4", "coding-[0-9]*.mp4"),
-         ("whiteboard", "whiteboard-composite-{lang}.mp4", "whiteboard-[0-9]*.mp4")]
+         ("whiteboard", "whiteboard-composite-{lang}.mp4", "whiteboard-room.wav")]
 
 
 def sample(lang: str = "en", upto: int = 2) -> Path:
