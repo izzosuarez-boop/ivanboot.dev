@@ -121,7 +121,7 @@ async def confirm(chat_id: str, pid: str) -> tuple[str, str]:
         return (f"⚠️ Nothing changed: the stock of <b>{notify.esc(p.name)}</b> moved since I prepared this "
                 f"(now {final} units). Ask again and I'll use the current number.", "Not applied")
     await _log(p, "applied", final)
-    await web_cache.refresh_products()
+    web_cache.refresh_products_soon()
     back = " It's back on sale in the store." if p.from_qty <= 0 < (final or 0) else ""
     return f"✅ Done. <b>{notify.esc(p.name)}</b>: {p.from_qty} → <b>{final}</b> units.{back}", "Stock updated"
 

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 import time
 
 import httpx
@@ -88,14 +89,18 @@ def catalog_for_prompt(cat: dict) -> str:
 
 
 async def live_stock(handles: list[str]) -> list[dict]:
-    q = """query($q: String!) { products(first: 20, query: $q) { nodes {
-             handle title featuredImage { url }
+    """Live stock for exactly these products. (Until 2026-11-22 this used products(query: "handle:a OR …"),
+    but the Storefront search ignores that filter and returned the whole catalog every time.)"""
+    hs = [h for h in dict.fromkeys(handles) if re.fullmatch(r"[a-z0-9-]+", h)][:10]
+    if not hs:
+        return []
+    fields = """handle title featuredImage { url }
              variants(first: 10) { nodes { id title availableForSale quantityAvailable
-               price { amount } compareAtPrice { amount } } } } } }"""
-    query = " OR ".join(f"handle:{h}" for h in handles[:10]) or "*"
-    data = await storefront(q, {"q": query})
+               price { amount } compareAtPrice { amount } } }"""
+    data = await storefront("{ " + " ".join(f'p{i}: product(handle: "{h}") {{ {fields} }}' for i, h in enumerate(hs)) + " }")
+    nodes = [data[f"p{i}"] for i in range(len(hs)) if data.get(f"p{i}")]
     out = []
-    for p in data["products"]["nodes"]:
+    for p in nodes:
         out.append({
             "handle": p["handle"], "title": p["title"], "image": (p.get("featuredImage") or {}).get("url"),
             "sizes": [{

@@ -16,6 +16,7 @@ import asyncio
 import os
 import re
 import sys
+import time
 from pathlib import Path
 
 sys.stdout.reconfigure(encoding="utf-8")
@@ -75,7 +76,7 @@ async def main() -> int:
     # 3. compare-and-swap: stock moves after the proposal → confirm is rejected, nothing overwritten
     res, pid = await restock.propose(owner, PRODUCT, start, "set")
     p = restock._PENDING[pid]
-    await shopify_admin.set_available(p.item_id, p.location_id, start + 2, start + 1, ref="gid://ardea-test/Move/1")
+    await shopify_admin.set_available(p.item_id, p.location_id, start + 2, start + 1, ref=f"gid://ardea-test/Move/{time.time_ns()}")  # unique: Shopify remembers idempotency keys
     out, toast = await restock.confirm(owner, pid)
     c["CAS: cambio rechazado si el stock se movió"] = toast == "Not applied" and await qty() == start + 2
 
@@ -95,9 +96,10 @@ async def main() -> int:
     out = restock.cancel(owner, pid)
     c["cancelar no cambia nada"] = "nothing" in out and await qty() == start and pid not in restock._PENDING
 
-    # 6. the agent: proposes with buttons, never claims the change happened
+    # 6. the agent: proposes with buttons, never claims the change happened (works whatever Vitamin C's stock is)
+    vit_before = next(v for v in await shopify_admin.variants_with_inventory() if v["name"].startswith("Vitamin C"))["qty"]
     owner_agent.reset(owner)
-    reply, photos, cost, proposal = await owner_agent.ask(owner, "Vitamin C is sold out, add 40 units")
+    reply, photos, cost, proposal = await owner_agent.ask(owner, "Add 40 units of Vitamin C")
     print("agent reply:", reply.replace("\n", " | "), f"(${cost:.5f})")
     c["agente crea la propuesta"] = bool(proposal) and restock._PENDING[proposal].to_qty == restock._PENDING[proposal].from_qty + 40
     c["agente no dice que ya cambió"] = not re.search(r"\b(done|updated|added|restocked|listo|actualizado)\b", reply, re.I)
@@ -106,7 +108,7 @@ async def main() -> int:
     reply2, _, _, proposal2 = await owner_agent.ask("999", "add 40 units of Vitamin C")
     c["otro chat: el agente no tiene la herramienta"] = proposal2 is None
     c["Vitamin C sigue igual"] = next(v for v in await shopify_admin.variants_with_inventory()
-                                      if v["name"].startswith("Vitamin C"))["qty"] == 0
+                                      if v["name"].startswith("Vitamin C"))["qty"] == vit_before
 
     for k, v in c.items():
         print(("✅" if v else "❌"), k)

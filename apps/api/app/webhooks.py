@@ -84,7 +84,7 @@ async def _inventory_changed(payload: dict) -> None:
         return
     if not info or info["handle"] not in live:  # retired products are no longer sold: stay quiet
         return
-    await web_cache.refresh_products()  # the store shows the new stock (or "sold out") right away
+    web_cache.refresh_products_soon()  # the store shows the new stock (or "sold out") within ~20 s
     new, old = _level(info["total"]), _STOCK_STATE.get(item_id)
     _STOCK_STATE[item_id] = new
     if new == old:
