@@ -306,6 +306,10 @@ async def chat(conv: Conversation, text: str, mode: str | None, ref: str | None)
     tools_used: list[str] = []
     t0 = time.time()
     reply, stop, turn_cost = "", None, 0.0
+    # The model often writes its answer in the SAME response as its tool calls ("For oily skin I'd suggest…" +
+    # show_products) and then only the suggestions line after the results. Keep the text of every response in
+    # the turn, or the recommendation is lost and the visitor sees an empty bubble (found 2026-11-22).
+    texts: list[str] = []
     for _ in range(6):  # tool-loop guard
         resp = await client.messages.create(
             model=config.AGENT_MODEL,
@@ -339,7 +343,12 @@ async def chat(conv: Conversation, text: str, mode: str | None, ref: str | None)
         # keep the full assistant turn (thinking blocks included, unchanged) — required by Haiku 5.5
         conv.messages.append({"role": "assistant", "content": [b.model_dump(exclude_none=True) for b in resp.content]})
         tool_uses = [b for b in resp.content if b.type == "tool_use"]
-        if stop == "tool_use" and tool_uses:
+        part = "".join(b.text for b in resp.content if b.type == "text").strip()
+        if part:
+            texts.append(part)
+        # run requested tools even if the response says end_turn: an unanswered tool_use would also break the
+        # next request of this conversation (every tool_use needs its tool_result)
+        if tool_uses:
             results = []
             for b in tool_uses:
                 tools_used.append(b.name)
@@ -352,12 +361,21 @@ async def chat(conv: Conversation, text: str, mode: str | None, ref: str | None)
                                     "content": f"Tool error: {type(e).__name__}. Tell the visitor briefly and continue."})
             conv.messages.append({"role": "user", "content": results})
             continue
-        reply = "".join(b.text for b in resp.content if b.type == "text").strip()
         break
     else:
-        reply = reply or "Sorry — that took too many steps. Could you rephrase?"
-
-    reply, suggestions = split_suggestions(reply)
+        texts = texts or ["Sorry — that took too many steps. Could you rephrase?"]
+    if stop == "refusal":  # a refusal already set its own reply
+        reply, suggestions = split_suggestions(reply)
+    else:
+        # each response may end with its own suggestions line: strip it per part, drop repeated parts (the model
+        # sometimes restates its answer after the tool results) and keep the last suggestions offered
+        parts, suggestions = [], []
+        for t in texts:
+            body, sugg = split_suggestions(t)
+            if body and body not in parts:
+                parts.append(body)
+            suggestions = sugg or suggestions
+        reply = "\n\n".join(parts)
     latency = int((time.time() - t0) * 1000)
     await _log(conv, text, reply, actions, stop, latency, turn_cost)
     return {"conversation_id": conv.id, "reply": reply, "actions": actions, "mode": conv.mode, "tools_used": tools_used,

@@ -240,7 +240,7 @@ export function AgentChat() {
               <p key={i} className="rounded-xl bg-blush/30 px-3 py-2 text-xs text-clay">{m.text}</p>
             ) : (
               <div key={i} className="max-w-[92%] space-y-2">
-                <div className="rounded-2xl rounded-tl-sm bg-white/70 px-4 py-3"><Markdown text={m.text} /></div>
+                {m.text.trim() && <div className="rounded-2xl rounded-tl-sm bg-white/70 px-4 py-3"><Markdown text={m.text} /></div>}
                 {m.actions?.map((a, j) => a.type === "product_cards" ? (
                   <div key={j} className="flex gap-2 overflow-x-auto pb-1">
                     {a.cards.map((c) => (
