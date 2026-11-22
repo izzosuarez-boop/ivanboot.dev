@@ -350,3 +350,34 @@ toma un fotograma 1,5 s antes del final).
 - **Publicación:** `publish_explainer.py ai-agents --lang es`.
 - **Un archivo por idioma:** los navegadores no cambian de pista de audio dentro de un mismo archivo (solo Safari). El reproductor cambia de archivo y conserva la posición.
 - **Homófonos:** la transcripción de control también los detecta. "al agente" suena igual que "a la gente", así que se reformuló como "a nuestro agente".
+
+## 7. Video general de la sección AI Agents (2026-11-22, en curso)
+
+Guion aprobado: 6 tomas, unos 78 s, voz en inglés en primera persona ("I"), y versión en español.
+Script de montaje: `scripts/media/overview_assemble.py`.
+
+**Toma 1: Iván programando frente a las tres pantallas, con pantallas reales.**
+1. **Fotograma inicial.** `explainer_video.py ai-agents-overview coding --still` (Gemini 3 Pro Image, unos $0,14).
+   Usa como referencias la foto real de Iván y `scene.webp`, para que la oficina sea la misma de la portada.
+   Se revisa el parecido antes de seguir.
+2. **Clip de Omni de 6 s** con ese fotograma y la cámara fija ("LOCKED-OFF STATIC CAMERA"), unos $0,62.
+   Deriva medida: 1 px como máximo, así que las pantallas no hay que seguirlas.
+3. **Pantallas reales.** `overview_assemble.py coding` dibuja el contenido con Pillow (nuestro código escribiéndose y
+   un chat de agente respondiendo) y lo coloca en perspectiva sobre las esquinas medidas en el cuadro 0.
+   Después aplica desenfoque, el color de la toma, resplandor solo en lo brillante y grano.
+   El acercamiento lento también lo hace este script, sobre la imagen ya compuesta.
+
+**E11. La cara de Iván tapa el borde de la pantalla derecha.**
+- **Solución:** una máscara por cuadro. La toma tiene un etalonaje turquesa, así que en las pantallas el azul siempre
+  supera al rojo. La piel, la camisa e incluso la montura oscura de las gafas son más rojas que azules (`r > b + 8`).
+  Por fila, todo lo que queda a la derecha del primer píxel "cálido" va por delante.
+  El margen es de 3 px: con más, asoma el contenido inventado por la IA junto al perfil.
+- **Error encontrado:** el recuadro de la máscara empezaba 4 px por encima del de la pantalla. El índice negativo dejó
+  la máscara vacía y la pantalla tapaba la nariz. Calcula la máscara sobre el mismo recuadro que la pantalla.
+
+**E12. Las pantallas reemplazadas salían lavadas.**
+- **Causa:** el resplandor se calculaba sobre toda la imagen y aclaraba también el fondo.
+- **Solución:** llevar el fondo del lienzo exactamente al fondo medido en la toma, aplicar el resplandor solo a los
+  píxeles brillantes y comparar medianas con la pantalla original que no se toca (la izquierda).
+
+**E13. `loudnorm` sube el audio a 96 kHz.** Añade `-ar 48000` a la salida.
