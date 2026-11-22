@@ -344,3 +344,9 @@ toma un fotograma 1,5 s antes del final).
 **E9. Honestidad del guion.**
 - "Seconds later" se cambió por "Moments later", porque la reposición tarda entre 5 y 40 s en verse.
 - Cada pantalla que aparece es una grabación real.
+
+**E10. Versiones con otra voz.**
+- **Cómo se hacen:** `explainer_assemble.py all --lang es` reutiliza las mismas tomas y grabaciones; solo cambian la voz, los títulos y la tarjeta final.
+- **Publicación:** `publish_explainer.py ai-agents --lang es`.
+- **Un archivo por idioma:** los navegadores no cambian de pista de audio dentro de un mismo archivo (solo Safari). El reproductor cambia de archivo y conserva la posición.
+- **Homófonos:** la transcripción de control también los detecta. "al agente" suena igual que "a la gente", así que se reformuló como "a nuestro agente".
