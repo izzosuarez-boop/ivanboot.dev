@@ -6,12 +6,14 @@ export type ProjectStatus = "Live demo" | "Case study" | "In progress";
 export type Project = {
   title: string;
   status: ProjectStatus;
-  summary: string;
+  summary: string | string[];  // paragraphs; "[[link]]" places the link button inline
   problem: string;
   how: string;
   result: string;
   stack: string[];
   link?: { label: string; href: string };
+  demoHref?: string;            // makes the status badge a button that opens the live demo
+  video?: { media: string; title: string };  // key in portfolio-media.json, shown instead of screenshots
   image?: string | null;
 };
 
@@ -21,11 +23,13 @@ export type Section = {
   short: string;      // compact label for small screens
   pitch: string;      // headline inside the section
   intro: string;
-  video: { title: string; src: string | null; poster?: string | null };
+  video: { title: string; media?: string; src?: string | null };  // media: key in portfolio-media.json
   projects: Project[];
 };
 
 const STORE = "https://tienda.ivanboot.dev";
+// opens the store with the agent's chat already open and a greeting for visitors coming from the portfolio
+const STORE_CHAT = `${STORE}/?ref=portfolio&chat=1`;
 const REPO = "https://github.com/izzosuarez-boop/ivanboot.dev";
 
 export const sections: Section[] = [
@@ -37,17 +41,32 @@ export const sections: Section[] = [
     intro:
       "Beyond a chat: from asking for things to delegating the work. Today AI agents work for you — integrated " +
       "into your platforms and workflows, they act as a force multiplier.",
-    video: { title: "Two agents at work: the store's sales agent for shoppers, and the owner's back-office agent on Telegram", src: null },
+    video: { title: "Section overview video — coming soon" },
     projects: [
       {
         title: "Ardea Skin store agent",
         status: "Live demo",
-        summary: "A dual-mode agent inside a headless Shopify store: a skin advisor for shoppers and a technical guide for clients who want to know how the site works.",
-        problem: "A store chat must answer with live stock and prices, never invent medical advice, and stay cheap enough for a public page anyone can spam.",
+        summary: [
+          "A demo agent you can try live on the store I built for Shopify clients: [[link]]",
+          "Ideal as the first point of contact for customers who want to know more about your products and your "
+            + "site, and a powerful agent connected to your platform, your apps and third-party tools that simplifies "
+            + "running your business.",
+          "As part of my portfolio it also answers technical questions about the site, its structure and the "
+            + "technologies it was built with, without exposing sensitive or confidential information.",
+        ],
+        problem: "Users want a system that solves things, not a chat that answers with simple rules. The store owner "
+          + "wants an agent they can delegate work to, ask for information and trust to run the site by their "
+          + "guidelines: what a person would do today, handed to an AI agent, all in one place.",
         how: "Claude Haiku 5.5 with tools that read Shopify (catalog, stock, cart) and a cached system prompt. Complaints and medical questions are escalated to the owner with a reference code. Daily spend cap and per-visitor rate limits.",
-        result: "About $0.0002–0.001 per turn. Conversations, token usage and cost are logged in Supabase; a browser test checks the full flow.",
-        stack: ["Claude API", "Tool use", "FastAPI", "Shopify Storefront API", "Supabase", "Playwright"],
-        link: { label: "Try it in the store", href: STORE },
+        result: "About $0.0002–0.001 per turn; conversations, token usage and cost are logged in Supabase and a browser "
+          + "test checks the full flow. What it does today: recommends routines and adds products to the bag; on the "
+          + "owner's side, in Telegram, it restocks or adjusts stock (always after a Confirm tap), builds charts, sends "
+          + "a daily summary and a weekly report, remembers the conversation, and escalates complaints, order issues "
+          + "and medical questions from the store chat.",
+        stack: ["Claude API", "Tool use", "FastAPI", "Shopify Storefront API", "Shopify Admin API", "Telegram Bot API", "Supabase", "Playwright"],
+        link: { label: "Try it in the store", href: STORE_CHAT },
+        demoHref: STORE_CHAT,
+        video: { media: "ai-agents", title: "The store agent and the owner's Telegram agent, in 67 seconds" },
       },
       {
         title: "LLM integrations in production",

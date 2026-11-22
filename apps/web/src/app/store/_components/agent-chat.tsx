@@ -42,6 +42,7 @@ const T = {
   en: {
     open: "Ask Ardea", title: "Ardea Advisor", subtitle: "AI assistant · demo store",
     hello: "Hi! I can help you build a routine for your skin — or explain how this site and this chat were built. What would you like?",
+    helloPortfolio: "Hi! I see you're coming from my creator's portfolio. I'm here — ask me anything.",
     skin: "Help me with my skin", builder: "How is this site built?", placeholder: "Ask anything…", send: "Send",
     added: "Added to your bag", viewBag: "View bag", from: "from", soldOut: "Sold out", reference: "Reference",
     tools: { get_live_stock: "checked live stock", add_to_bag: "added to bag", show_products: "showed products", escalate_to_owner: "notified the store team", get_chat_stats: "read live stats" } as Record<string, string>,
@@ -50,6 +51,7 @@ const T = {
   es: {
     open: "Pregúntale a Ardea", title: "Asesora Ardea", subtitle: "Asistente con IA · tienda demo",
     hello: "¡Hola! Puedo ayudarte a armar una rutina para tu piel, o contarte cómo se construyó este sitio y este chat. ¿Qué prefieres?",
+    helloPortfolio: "¡Hola! Veo que vienes del portafolio de mi creador. Estoy aquí, pregúntame lo que quieras.",
     skin: "Ayúdame con mi piel", builder: "¿Cómo está construido este sitio?", placeholder: "Escribe tu pregunta…", send: "Enviar",
     added: "Agregado a tu bolsa", viewBag: "Ver bolsa", from: "desde", soldOut: "Agotado", reference: "Referencia",
     tools: { get_live_stock: "consultó stock en vivo", add_to_bag: "agregó a la bolsa", show_products: "mostró productos", escalate_to_owner: "avisó al equipo", get_chat_stats: "leyó estadísticas en vivo" } as Record<string, string>,
@@ -122,8 +124,13 @@ export function AgentChat() {
     try {
       const saved = JSON.parse(sessionStorage.getItem(STORE_KEY) || "null");
       if (saved) { setMsgs(saved.msgs ?? []); setConvId(saved.convId ?? null); setMode(saved.mode ?? null); setCost(saved.cost ?? 0); setRef(saved.ref ?? null); }
-      const r = new URLSearchParams(location.search).get("ref");
-      if (r) { setRef(r.slice(0, 40)); if (!saved?.mode && /upwork|workana|portfolio/i.test(r)) setMode("builder"); }
+      const q = new URLSearchParams(location.search);
+      const r = q.get("ref");
+      // ?chat=1 (the portfolio's "Live demo" button): open the chat at once, greet the visitor as coming from the
+      // portfolio and leave both options to them instead of preselecting "how it's built"
+      const openChat = q.get("chat") === "1";
+      if (r) { setRef(r.slice(0, 40)); if (!saved?.mode && !openChat && /upwork|workana|portfolio/i.test(r)) setMode("builder"); }
+      if (openChat) setOpen(true);
     } catch { /* storage may be blocked — chat still works */ }
   }, []);
   useEffect(() => {
@@ -222,7 +229,7 @@ export function AgentChat() {
           </header>
 
           <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4 text-[14px] leading-relaxed">
-            <div className="max-w-[88%] rounded-2xl rounded-tl-sm bg-white/70 px-4 py-3">{t.hello}</div>
+            <div className="max-w-[88%] rounded-2xl rounded-tl-sm bg-white/70 px-4 py-3">{ref && /portfolio/i.test(ref) ? t.helloPortfolio : t.hello}</div>
             {msgs.length === 0 && (
               <div className="flex flex-wrap gap-2">
                 {(["skin", "builder"] as Mode[]).map((m) => (

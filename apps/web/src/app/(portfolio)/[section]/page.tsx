@@ -16,13 +16,54 @@ export async function generateMetadata({ params }: PageProps<"/[section]">): Pro
   return s ? { title: `${s.label} — Iván`, description: s.pitch } : {};
 }
 
-function StatusBadge({ status }: { status: Project["status"] }) {
+const MEDIA = portfolioMedia as Record<string, ExplainerMedia>;
+
+function StatusBadge({ status, href }: { status: Project["status"]; href?: string }) {
   const style =
     status === "Live demo" ? "border-glow/40 bg-glow/10 text-glow"
       : status === "In progress" ? "border-lamp/40 bg-lamp/10 text-lamp"
         : "border-line text-muted";
+  if (href) {
+    // a live demo the visitor can open right away: a real button, not a label
+    return (
+      <a href={href} target="_blank" rel="noopener"
+        className="shrink-0 rounded-full border border-glow/60 bg-glow/15 px-3.5 py-1 text-xs font-medium text-glow shadow-[0_0_18px_-6px_var(--glow)] transition hover:bg-glow hover:text-night">
+        {status} <span aria-hidden>↗</span>
+      </a>
+    );
+  }
   return <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs ${style}`}>{status}</span>;
 }
+
+function LinkButton({ link }: { link: NonNullable<Project["link"]> }) {
+  return (
+    <a href={link.href} target="_blank" rel="noopener"
+      className="mx-1 inline-flex items-center gap-1.5 rounded-full border border-glow/50 px-3 py-0.5 align-baseline text-sm text-glow transition hover:bg-glow/10">
+      {link.label} <span aria-hidden>↗</span>
+    </a>
+  );
+}
+
+/** Summary paragraphs; "[[link]]" inside a paragraph places the project's link button right there. */
+function Summary({ p }: { p: Project }) {
+  const paras = Array.isArray(p.summary) ? p.summary : [p.summary];
+  return (
+    <div className="mt-3 space-y-3 leading-relaxed text-text-2">
+      {paras.map((para, k) => {
+        const [before, after] = para.split("[[link]]");
+        return (
+          <p key={k}>
+            {before}
+            {after !== undefined && p.link && <LinkButton link={p.link} />}
+            {after}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
+const linkInline = (p: Project) => (Array.isArray(p.summary) ? p.summary : [p.summary]).some((x) => x.includes("[[link]]"));
 
 function MediaFrame({ label, ratio = "aspect-video" }: { label: string; ratio?: string }) {
   return (
@@ -45,7 +86,7 @@ function ProjectCard({ p, flip }: { p: Project; flip: boolean }) {
           <h3 className="text-xl font-semibold tracking-tight">{p.title}</h3>
           <StatusBadge status={p.status} />
         </div>
-        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-text-2">{p.summary}</p>
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-text-2">{Array.isArray(p.summary) ? p.summary.join(" ") : p.summary}</p>
         <ul className="mt-4 flex flex-wrap gap-2">
           {p.stack.map((s) => <li key={s} className="rounded-md bg-ink-2 px-2 py-1 font-mono text-xs text-muted">{s}</li>)}
         </ul>
@@ -54,15 +95,19 @@ function ProjectCard({ p, flip }: { p: Project; flip: boolean }) {
   }
   return (
     <article className="grid items-start gap-6 md:grid-cols-2 md:gap-10">
-      <div className={flip ? "md:order-2" : ""}>
-        <MediaFrame label="Screenshots coming soon" ratio="aspect-[4/3]" />
+      <div className={`${flip ? "md:order-2" : ""} ${p.video ? "md:sticky md:top-24" : ""}`}>
+        {p.video && MEDIA[p.video.media] ? (
+          <ExplainerVideo media={MEDIA[p.video.media]} title={p.video.title} />
+        ) : (
+          <MediaFrame label="Screenshots coming soon" ratio="aspect-[4/3]" />
+        )}
       </div>
       <div>
         <div className="flex items-start justify-between gap-4">
           <h3 className="text-2xl font-semibold tracking-tight">{p.title}</h3>
-          <StatusBadge status={p.status} />
+          <StatusBadge status={p.status} href={p.demoHref} />
         </div>
-        <p className="mt-3 leading-relaxed text-text-2">{p.summary}</p>
+        <Summary p={p} />
         <dl className="mt-5 space-y-4 text-sm leading-relaxed">
           {([["The problem", p.problem], ["How I built it", p.how], ["Result", p.result]] as const).map(([k, v]) => (
             <div key={k}>
@@ -74,7 +119,7 @@ function ProjectCard({ p, flip }: { p: Project; flip: boolean }) {
         <ul className="mt-5 flex flex-wrap gap-2">
           {p.stack.map((s) => <li key={s} className="rounded-md bg-ink-2 px-2 py-1 font-mono text-xs text-muted">{s}</li>)}
         </ul>
-        {p.link && (
+        {p.link && !linkInline(p) && (
           <a href={p.link.href} target="_blank" rel="noopener" className="mt-5 inline-flex items-center gap-1.5 text-sm text-glow hover:underline">
             {p.link.label} <span aria-hidden>↗</span>
           </a>
@@ -99,7 +144,7 @@ async function SectionContent({ params }: { params: PageProps<"/[section]">["par
   const s = sections[i];
   const prev = sections[(i + sections.length - 1) % sections.length];
   const next = sections[(i + 1) % sections.length];
-  const media = (portfolioMedia as Record<string, ExplainerMedia>)[s.slug];
+  const media = s.video.media ? MEDIA[s.video.media] : undefined;
 
   return (
     <main className="relative z-0 px-4 pb-24 pt-[190px] sm:px-6">
