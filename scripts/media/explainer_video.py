@@ -34,6 +34,23 @@ SHOTS = {
                       "and reads with a curious, interested half-smile. The camera slowly dollies in from a medium "
                       "shot toward her. Calm, comfortable, everyday moment.",
         },
+        "office": {
+            "seconds": 7,
+            "prompt": "A confident businessman in his early forties, short dark hair, open-collar navy shirt under a "
+                      "charcoal blazer, sits at a sleek walnut desk in a modern private office in the evening; a large "
+                      "window behind him shows soft out-of-focus city lights. A desktop monitor stands on the desk, "
+                      "seen from its side so its screen is not visible. He picks up his smartphone from the desk, "
+                      "leans back slightly in his leather chair and starts typing a message with his thumb, focused "
+                      "and relaxed. The camera slowly pushes in from a medium shot.",
+        },
+        "closing": {
+            "seconds": 6,
+            "reference": "office",   # same man and office: a frame of the approved office shot is passed as reference
+            "prompt": "The same businessman from the reference image, in the same office and clothes. He reads his "
+                      "smartphone, gives a small satisfied smile and a slight nod, then sets the phone face down on "
+                      "the desk and leans back in his chair, relaxed, looking toward the window. The camera slowly "
+                      "pulls back to a medium-wide shot.",
+        },
     },
 }
 
@@ -41,9 +58,16 @@ SHOTS = {
 def shot(video: str, name: str, resolution: str = "1080p") -> None:
     s = SHOTS[video][name]
     prompt = f"{s['prompt']}\n\n{LOOK}\n{PHONE_RULE}\n{CLEAN}"
+    inputs = [{"type": "text", "text": prompt}]
+    if s.get("reference"):
+        ref = g.out_dir(f"portfolio-{video}") / f"{s['reference']}-ref.jpg"
+        if not ref.exists():
+            raise SystemExit(f"Missing {ref.name}: export a frame of the approved {s['reference']} shot first")
+        import base64
+        inputs.insert(0, {"type": "image", "data": base64.b64encode(ref.read_bytes()).decode(), "mime_type": "image/jpeg"})
     body = {
         "model": "gemini-omni-1.2-flash",
-        "input": [{"type": "text", "text": prompt}],
+        "input": inputs,
         "response_format": {"type": "video", "aspect_ratio": "16:9", "resolution": resolution,
                             "duration": f"{s['seconds']}s", "delivery": "uri"},
     }
