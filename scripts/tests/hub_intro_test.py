@@ -38,8 +38,7 @@ with sync_playwright() as p:
         pg.wait_for_timeout(1500)
         s = pg.evaluate(STATE)
         print(label, {k: s[k] for k in ("dur", "paused", "t")}, s["tracks"], s["src"][:70])
-        # the store's CDN files, served through this site's own /media/ path (PLAYBOOK E25)
-        c[f"[{label}] video vía /media/ (~74.6 s)"] = "/media/ai-agents-overview" in s["src"] and abs(s["dur"] - 74.6) < 0.6
+        c[f"[{label}] video del CDN (~74.6 s)"] = "cdn.shopify.com" in s["src"] and abs(s["dur"] - 74.6) < 0.6
         c[f"[{label}] arranca solo al verse"] = not s["paused"] and s["t"] > 0.5
         c[f"[{label}] subtítulos EN y ES"] = all(t["n"] > 10 for t in s["tracks"]) and len(s["tracks"]) == 2
         c[f"[{label}] sin selector de voz (solo inglés)"] = pg.locator("[role=group][aria-label=Voice]").count() == 0

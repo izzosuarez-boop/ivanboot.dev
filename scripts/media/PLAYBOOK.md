@@ -577,3 +577,19 @@ queda a la izquierda y el video a la derecha (debajo en pantallas estrechas).
     en condiciones normales, así que no se puede verificar aquí.
   - Al validar el Caddyfile en el VPS, "Valid configuration" no siempre es la última línea de la salida: hay que
     buscarla con grep, no con `tail -1`.
+- **E27. Lo que de verdad distinguía al portafolio: la lista `<source>` del HTML** (2026-11-23). El usuario aclaró
+  que en su iPhone los videos de la tienda siempre funcionan. Esos videos salen del mismo CDN de Shopify, con la
+  misma caché de un año y el mismo HTTP/3. Eso descarta las causas de E25 y E26 (dominio, caché) y la de HTTP/3
+  (se probó a desactivarlo durante unos minutos).
+  - Diferencia real: los reproductores de la tienda eligen el archivo en código y lo ponen como `src` tras montar.
+    El del portafolio mandaba en el HTML dos `<source>` (1080 con `media`, 720), que Safari empezaba a cargar antes
+    de que corriera el código de la página. En las recargas, la `<source>` de 720 fallaba unos 0,3 s después del
+    play automático.
+  - Cambio: `explainer-video.tsx` usa ahora un solo `src` elegido en el cliente (`useSyncExternalStore` con
+    `(min-width: 1100px)`: 1080 en pantallas anchas, 720 en el resto) y vuelve a pedir las URLs directas del CDN,
+    igual que la tienda.
+  - Revertido: el proxy `/media/` y el `no-store` de Caddy (el Caddyfile vuelve a su versión original), y los
+    cambios en los reproductores de la tienda, que no tenían ningún problema.
+  - Se queda: la recarga con dirección nueva como último recurso, ahora en `lib/use-video-recovery.ts`. Ya no se
+    dispara por error al cambiar a la voz en español: el elemento recién montado se comprueba 1,5 s después.
+  - Pendiente: confirmación en el iPhone del usuario, recargando varias veces `ivanboot.dev/?vdebug`.

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useVideoRecovery } from "@/lib/use-video-recovery";
 
 type Version = {
   poster: string;
@@ -53,13 +54,6 @@ const inFullScreen = (el: FsVideo) => !!document.fullscreenElement || !!el.webki
 const VIDEO_EVENTS = ["loadstart", "loadedmetadata", "canplay", "play", "playing", "pause", "waiting", "stalled",
   "suspend", "error", "abort", "emptied", "ended", "webkitbeginfullscreen", "webkitendfullscreen"] as const;
 
-// Videos and posters go through this site's own /media/ path (Caddy forwards it to the store's files on the
-// Shopify CDN): Safari on some iPhones never loaded them from cdn.shopify.com directly (2026-11-23)
-const SHOP_FILES = "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/";
-const local = (url: string) => (url.startsWith(SHOP_FILES) ? "/media/" + url.slice(SHOP_FILES.length) : url);
-// "&c=2": a new address for the videos, so the copies iPhones cached under the old one are never reused
-const localVideo = (url: string) => local(url) + (url.includes("?") ? "&c=2" : "?c=2");
-
 // Videos that already started by themselves. Module state survives client-side navigation and resets on a
 // full reload, which is exactly "autoplay the first time, or after reloading the page".
 const autoStarted = new Set<string>();
@@ -95,6 +89,13 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
   const voice: Lang = voiceChoice ?? (media.versions[detected] ? detected : "en");
   const subs: Subs = subsChoice ?? detected;
   const v = media.versions[voice] ?? media.versions.en;
+  // One file, picked on the client and set as the video's src, the way the store's players do it (they always
+  // played on the user's iPhone). The <source> list sent in the page's HTML started loading before the page's
+  // code ran and failed on reloads on iPhone Safari (2026-11-23, PLAYBOOK E27). Wide screens get 1080p,
+  // phones and small windows 720p (about half the size).
+  const wide = useSyncExternalStore(noop, () => window.matchMedia("(min-width: 1100px)").matches, () => null);
+  const [hi, lo] = [...v.sources].sort((a, b) => b.height - a.height);
+  const src = wide === null ? undefined : (wide || !lo ? hi : lo).url;
 
   // Subtitles are drawn by the page (the overlay below), not by the browser: Chrome on some Windows GPUs drops
   // native cues in full screen as soon as its control bar hides (reported 2026-11-22). The chosen track stays
@@ -163,62 +164,8 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
   const sleep = () => { window.clearTimeout(idle.current); setActive(false); };
   const lifted = active || paused;
 
-  // iPhone Safari refused the file on reloads (2026-11-23, PLAYBOOK E26): the first visit played, a reload
-  // failed every <source> within a second (networkState 3) or sat at 00:00 / 00:00, because Safari reused the
-  // pieces of the video it had cached and rejected them itself. The files are now sent with no-store and a
-  // changed address; as a last resort the player reloads them under a fresh address (nothing cached can
-  // match it) when every source is refused, or when not a single byte has arrived 3 s after play. A slow but
-  // moving download (progress events) is left alone. At most two such reloads per page.
-  useEffect(() => {
-    const el = video.current;
-    if (!el) return;
-    const WAIT = 3000;
-    let timer: number | undefined;
-    let tries = 0;
-    let moved = false;
-    const sources = Array.from(el.querySelectorAll("source"));
-    const reload = (why: string) => {
-      window.clearTimeout(timer);
-      if (tries >= 2) { note.current(`${why}: giving up (rs=${el.readyState} ns=${el.networkState})`); return; }
-      tries++;
-      const wanted = !el.paused || autoStarted.has(title);
-      const at = el.currentTime;
-      note.current(`${why}: reloading under a fresh address (${tries}/2)`);
-      const fresh = `r=${Date.now().toString(36)}`;
-      for (const s of sources) {
-        const u = s.getAttribute("src") ?? "";
-        s.src = u.replace(/([?&])r=[^&]*/, `$1${fresh}`) + (/[?&]r=/.test(u) ? "" : `${u.includes("?") ? "&" : "?"}${fresh}`);
-      }
-      el.load();
-      if (at) el.currentTime = at;
-      if (wanted) el.play().catch((err) => note.current(`play after reload refused: ${err?.name}`));
-    };
-    // the last <source> (no media condition) failing means none is left to try
-    const last = sources.at(-1);
-    const onSourceErr = () => window.setTimeout(() => { if (el.networkState === 3) reload("every source refused"); }, 0);
-    last?.addEventListener("error", onSourceErr);
-    if (el.networkState === 3) reload("every source refused"); // refused before this ran
-    const arm = () => { window.clearTimeout(timer); moved = false; timer = window.setTimeout(check, WAIT); };
-    function check() {
-      if (el!.paused || el!.readyState >= 2) return;
-      if (moved) { arm(); return; } // data is coming, just slowly
-      reload(`no data after ${WAIT / 1000} s`);
-    }
-    const onProgress = () => { moved = true; };
-    const onData = () => { if (el.readyState >= 2) window.clearTimeout(timer); };
-    el.addEventListener("play", arm);
-    el.addEventListener("progress", onProgress);
-    el.addEventListener("canplay", onData);
-    el.addEventListener("playing", onData);
-    return () => {
-      window.clearTimeout(timer);
-      last?.removeEventListener("error", onSourceErr);
-      el.removeEventListener("play", arm);
-      el.removeEventListener("progress", onProgress);
-      el.removeEventListener("canplay", onData);
-      el.removeEventListener("playing", onData);
-    };
-  }, [voice, title]);
+  // last resort if the browser still refuses the file: reload it under a fresh address (PLAYBOOK E26/E27)
+  useVideoRecovery(video, { key: src, wanted: () => autoStarted.has(title), note: (x) => note.current(x) });
 
   // ?vdebug: on-screen event log
   useEffect(() => {
@@ -235,25 +182,21 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
         `${ev.type === "loadstart" ? " " + x.currentSrc.split("/").pop()?.slice(0, 40) : ""}`);
     };
     for (const n of VIDEO_EVENTS) el.addEventListener(n, on);
-    // a file the browser refuses fires "error" on its <source>, not on the <video>
-    const sources = Array.from(el.querySelectorAll("source"));
-    const onSrcErr = (ev: Event) =>
-      note.current(`source error: ${(ev.currentTarget as HTMLSourceElement).src.split("/").pop()?.slice(0, 40)}`);
-    for (const s of sources) s.addEventListener("error", onSrcErr);
     note.current(`state on load: rs=${el.readyState} ns=${el.networkState} src=${el.currentSrc.split("/").pop()?.slice(0, 40) || "-"}`);
     const img = new Image();
     img.onload = () => note.current(`poster ok ${img.naturalWidth}x${img.naturalHeight}`);
     img.onerror = () => note.current("poster FAILED");
     img.src = el.poster;
-    fetch(el.currentSrc || sources.at(-1)?.src || "", { headers: { Range: "bytes=0-1" } })
-      .then((r) => note.current(`fetch video: ${r.status} ${r.headers.get("content-range") ?? ""}`))
-      .catch((err) => note.current(`fetch video FAILED: ${err?.message ?? err}`));
+    if (el.src) {
+      fetch(el.src, { headers: { Range: "bytes=0-1" } })
+        .then((r) => note.current(`fetch video: ${r.status} ${r.headers.get("content-range") ?? ""}`))
+        .catch((err) => note.current(`fetch video FAILED: ${err?.message ?? err}`));
+    }
     return () => {
-      for (const s of sources) s.removeEventListener("error", onSrcErr);
       for (const n of VIDEO_EVENTS) el.removeEventListener(n, on);
       note.current = () => {};
     };
-  }, [voice]);
+  }, [src]);
 
   useEffect(() => {
     const el = video.current as FsVideo | null;
@@ -308,7 +251,6 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
     setVoiceChoice(l);
   };
 
-  const [hi, lo] = [...v.sources].sort((a, b) => b.height - a.height);
   return (
     <figure>
       {/* Chrome greys out its own full screen button under controlsList="nofullscreen"; hidden here because the
@@ -356,12 +298,13 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
           </button>
         )}
         <video
-          key={voice} /* a new element per voice: <source> changes alone don't reload a video */
+          key={voice} /* a new element per voice: a clean start for the new file and its tracks */
           ref={video}
+          src={src}
           controls
           playsInline
           preload="metadata"
-          poster={local(v.poster)}
+          poster={v.poster}
           controlsList="nofullscreen" /* Chrome/Edge: the page's own button replaces it (Firefox keeps its own) */
           className="explainer block aspect-video w-full"
           aria-label={title}
@@ -385,9 +328,6 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
             if (r.play) void el.play().catch(() => {});
           }}
         >
-          {/* wide screens get 1080p, phones and small windows 720p (about half the size) */}
-          {lo && <source src={localVideo(hi.url)} type="video/mp4" media="(min-width: 1100px)" />}
-          <source src={localVideo((lo ?? hi).url)} type="video/mp4" />
           {/* no `default`: a default track would flash natively before the effect hides it */}
           <track kind="subtitles" srcLang="en" label="English" src={v.captions.en} />
           <track kind="subtitles" srcLang="es" label="Español" src={v.captions.es} />
