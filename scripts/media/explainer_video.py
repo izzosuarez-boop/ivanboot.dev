@@ -60,15 +60,18 @@ SHOTS = {
             "prompt": "Animate the reference image exactly as it is: the same man, the same office, the same desk, "
                       "monitors and lamp, the same framing. He is focused, working: he types fluidly on the keyboard "
                       "with both hands, glances from the main center monitor to the LEFT monitor and back (his head never moves toward the right monitor), and gives a tiny "
-                      "nod as if something just worked. LOCKED-OFF STATIC CAMERA on a tripod: no camera movement, "
+                      "nod as if something just worked. His face stays exactly as in the reference (same features, same "
+                      "facial hair) and he never turns toward the camera. LOCKED-OFF STATIC CAMERA on a tripod: no camera movement, "
                       "no zoom, no pan. The monitors stay exactly where they are, their screens steady and evenly "
                       "lit. Only the man moves.",
         },
         "requests": {
             "seconds": 10,
             "reference": "requests-still.png",   # approved still: over Iván's shoulder, main monitor in the middle
-            "prompt": "Animate the reference image exactly as it is: the same man seen from behind over his right "
-                      "shoulder, the same office, monitors and framing. He reads the center monitor attentively, "
+            "prompt": "Animate the reference image exactly as it is: the same man seen in profile from behind and "
+                      "to his right, the same office, monitors and framing. His face stays exactly as in the "
+                      "reference (same features, same facial hair); he keeps facing the center monitor in profile and "
+                      "NEVER turns his head toward the camera. He reads the center monitor attentively, "
                       "scrolls a little with the mouse, leans slightly forward with interest, then nods slowly as if "
                       "he already knows how to solve it. Small, natural movements only. The monitors and their "
                       "screens stay perfectly still. LOCKED-OFF STATIC CAMERA on a tripod: no camera movement, no "
@@ -147,6 +150,35 @@ STILLS = {
                 "the room falling off into darkness at the edges; the board is evenly lit so every note is clearly "
                 "visible. Camera: eye level, 35mm, medium-wide, sharp focus on the board and on her. Photorealistic, "
                 "natural skin texture. No readable text, no logos, no watermark, no other people."),
+        },
+        # v2 (user, 2026-11-22): facial hair like his real photo; 5a with a profile angle that keeps his likeness
+        "coding-v2": {
+            "refs": ["scripts/media/out/portfolio-ai-agents-overview/coding-still.png", "C:/Users/Trollo/Desktop/ivan.jpeg"],
+            "prompt": (
+                "Edit image 1. Keep EVERYTHING in it exactly the same: composition, framing, camera angle, room, "
+                "desk, monitors and their screens, lamp, lighting, colors, his pose, hands, shirt, glasses, hair and "
+                "face shape. Change ONLY his facial hair so it matches the man in image 2: the cheeks and the sides "
+                "of the face are clean-shaven smooth skin with no stubble; keep a thin, neat mustache, a short beard "
+                "on the chin, and a fine short line of beard along the lower edge of the jaw. Do NOT slim or reshape "
+                "the face: keep exactly the same full cheeks, the same soft rounded jaw and the same face volume as "
+                "in image 1. Same person, same identity. 16:9, photorealistic, no text."),
+        },
+        "requests-v2": {
+            "refs": ["C:/Users/Trollo/Desktop/ivan.jpeg", "scripts/media/out/portfolio-ai-agents-overview/coding-v2-still.png"],
+            "prompt": (
+                "Image 1 is the identity reference: this exact real man must be instantly recognizable: same face "
+                "shape, warm tan skin, short dark hair faded on the sides, thin dark metal rectangular glasses, a "
+                "thin neat mustache and a short beard on the chin, cheeks clean-shaven. Image 2 shows him in his home "
+                "office at night: keep the same room, desk, three monitors on arms, amber lamp, teal glow, the same "
+                "light beige button-up shirt and the same face as in image 2. "
+                "Create ONE single continuous cinematic photograph, 16:9, not a collage. The camera is behind him and "
+                "to his right, a bit higher, so we see his RIGHT PROFILE clearly (glasses, nose, mustache, chin "
+                "beard, ear), his right shoulder and arm in the lower right of the frame, and beyond him the CENTER "
+                "monitor large, sharp and unobstructed in the middle of the frame, showing a calm dark messaging app "
+                "as soft shapes; the other monitors partly visible at the edges. He is reading the center monitor, "
+                "one hand on the mouse. Lighting: cool teal screen glow on his face, warm amber rim light. "
+                "Photorealistic, 35mm, sharp focus on his profile and the screen. No readable words, no logos, no "
+                "watermark, no other people."),
         },
         "requests": {
             "refs": ["C:/Users/Trollo/Desktop/ivan.jpeg", "scripts/media/out/portfolio-ai-agents-overview/coding-still.png"],

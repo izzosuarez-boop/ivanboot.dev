@@ -442,3 +442,17 @@ Script de montaje: `scripts/media/overview_assemble.py`.
 - **Mensajes:** avatar con iniciales genéricas (no son clientes reales) y burbuja blanca. Cada mensaje entra abajo,
   deslizándose, empuja a los demás hacia arriba, y el más viejo desaparece antes de tocar el borde.
   Ancho máximo de texto: 500 px, para no tapar su cabeza cuando gira hacia la pantalla.
+
+**E18. Parecido de Iván y barba (correcciones del usuario).**
+- **Síntoma:** en la 5a (desde atrás, sobre el hombro) no se parecía. Con poca cara visible el modelo inventa, y
+  Omni lo deformaba más al girar la cabeza hacia la cámara.
+- **Solución:** encuadre de PERFIL desde atrás y a su derecha (`requests-v2`). Referencias: su foto real y el
+  fotograma de la toma 1, que sí se parece. En Omni: "NEVER turns his head toward the camera". Se generan 2
+  variantes y él elige ANTES de animar.
+- **Barba:** la quiere como en su foto real: bigote fino, barba corta en la barbilla y una línea fina en el borde de
+  la mandíbula, con los cachetes limpios. Se pide como edición del fotograma aprobado (`coding-v2`).
+  En el primer intento el modelo le afinó la cara; hay que añadir "Do NOT slim or reshape the face: keep the same
+  full cheeks…".
+- **Omni respetó el encuadre:** el clip nuevo de la toma 1 salió idéntico al anterior (0 px de diferencia), así que
+  las esquinas de las pantallas medidas antes siguieron sirviendo. Compruébalo siempre comparando el cuadro 0.
+- **Portada:** el usuario pidió dejar `scene.webp` como está.

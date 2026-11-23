@@ -896,7 +896,7 @@ REQ_AVATARS = [("LM", (242, 180, 92)), ("DK", (94, 234, 212)), ("SR", (167, 139,
 REQ_AT = (0.9, 3.5, 6.1, 8.7)
 REQ_SPEED = 0.813                    # the 10 s Omni clip, slowed to the length of the voice line
 REQ_DUR = 12.3
-REQ_BOX = (468, 652)             # left edge of the cards and bottom of the stack (over the main monitor)
+REQ_BOX = (272, 712)             # left edge of the cards and bottom of the stack (over the main monitor)
 
 
 def message_card(text: str, initials: str, color) -> Image.Image:
