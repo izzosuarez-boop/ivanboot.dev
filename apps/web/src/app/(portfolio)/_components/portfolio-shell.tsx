@@ -16,7 +16,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { sections } from "@/content/portfolio";
 import { site } from "@/lib/site";
 
-type Ring = { rot: number; R: number; cy: number; band: number };
+type Ring = { rot: number; R: number; cx: number; cy: number; band: number };
 type Viewport = { w: number; h: number };
 
 const STEP = 360 / sections.length;
@@ -28,24 +28,36 @@ const smooth = (lo: number, hi: number, x: number) => {
 };
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-export function hubGeometry({ w, h }: Viewport) {
-  const D = Math.min(w - 24, h - 84, 980);
+// Hub layout (2026-11-22): on wide screens the circle with the scene sits in the left half and the intro video in
+// the right half; on narrow screens the circle is on top and the video below it (the page scrolls).
+export const isWideHub = ({ w, h }: Viewport) => w >= 1024 && w >= h * 1.15;
+
+export function hubGeometry(vp: Viewport) {
+  const { w, h } = vp;
+  const wide = isWideHub(vp);
+  const D = wide ? Math.min(w * 0.46 - 24, h - 120, 860) : Math.min(w - 24, h * 0.62, 980);
   const R = D / 2;
-  return { R, cy: Math.max(76 + R, h / 2 + 22), band: clamp(D * 0.085, 40, 74) };
+  return {
+    R,
+    cx: wide ? w * 0.26 : w / 2,
+    cy: wide ? Math.max(76 + R, h / 2 + 22) : 76 + R,
+    band: clamp(D * 0.085, 40, 74),
+    wide,
+  };
 }
 
 export function sectionGeometry({ w }: Viewport) {
   const R = Math.max(w * 0.75, 300);
   const top = w < 640 ? 64 : 22;
-  return { R, cy: top + R, band: w < 640 ? 46 : 64 };
+  return { R, cx: w / 2, cy: top + R, band: w < 640 ? 46 : 64 };
 }
 
 function target(vp: Viewport, index: number, rot: number): Ring {
-  const g = index < 0 ? hubGeometry(vp) : sectionGeometry(vp);
+  const { R, cx, cy, band } = index < 0 ? hubGeometry(vp) : sectionGeometry(vp);
   const base = index < 0 ? 0 : -index * STEP;
   // nearest equivalent angle, so the ring always takes the short way round
   const r = base + 360 * Math.round((rot - base) / 360);
-  return { rot: r, ...g };
+  return { rot: r, R, cx, cy, band };
 }
 
 type Ctx = {
@@ -114,6 +126,7 @@ export function PortfolioShell({ children }: { children: React.ReactNode }) {
           apply({
             rot: from.rot + (to.rot - from.rot) * k,
             R: from.R + (to.R - from.R) * k,
+            cx: from.cx + (to.cx - from.cx) * k,
             cy: from.cy + (to.cy - from.cy) * k,
             band: from.band + (to.band - from.band) * k,
           });
@@ -152,17 +165,19 @@ export function PortfolioShell({ children }: { children: React.ReactNode }) {
     }
   }, [vp, index, apply, tween]);
 
-  // in a section the ring header scrolls away with the page
+  // in a section the ring header scrolls away with the page; so does the hub circle on narrow screens, where the
+  // intro video sits below it
+  const scrolls = index >= 0 || (vp !== null && !isWideHub(vp));
   useEffect(() => {
     const onScroll = () => {
       if (wrap.current && !busy.current) {
-        wrap.current.style.transform = index >= 0 ? `translateY(${-window.scrollY}px)` : "";
+        wrap.current.style.transform = scrolls ? `translateY(${-window.scrollY}px)` : "";
       }
     };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, [index]);
+  }, [scrolls]);
 
   const go = useCallback(
     async (next: string | null) => {
@@ -177,8 +192,9 @@ export function PortfolioShell({ children }: { children: React.ReactNode }) {
       };
       try {
         if (index < 0) {
-          // hub → section: turn the segment to the top, then grow into the header
+          // hub → section: turn the segment to the top, then grow into the header (moving to the middle)
           setLeavingFrom(pathname);
+          resetScroll();
           await tween({ ...ringRef.current!, rot: target(vp, nextIndex, ringRef.current!.rot).rot }, 750);
           router.push(path, { scroll: false });
           await tween(target(vp, nextIndex, ringRef.current!.rot), 1000);
@@ -281,8 +297,7 @@ function RingSvg({ vp, ring, active, onHover, go }: {
   vp: Viewport; ring: Ring; active: number; onHover: (i: number) => void; go: (s: string | null) => void;
 }) {
   const uid = useId().replace(/:/g, "");
-  const cx = vp.w / 2;
-  const { rot, R, cy, band } = ring;
+  const { rot, R, cx, cy, band } = ring;
   const rIn = R - band;
   const rMid = R - band / 2;
   const gap = ((3 / R) * 180) / Math.PI; // ~3px between segments at any size

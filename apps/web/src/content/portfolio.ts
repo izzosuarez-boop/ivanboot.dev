@@ -236,6 +236,14 @@ export const sections: Section[] = [
 export const sectionBySlug = (slug: string) => sections.find((s) => s.slug === slug);
 
 // About card (opened from the photo in the hub). Empty fields are hidden until filled in.
+// The hub's intro video, beside the circle (2026-11-22). `media` is its key in portfolio-media.json.
+export const hubIntro = {
+  eyebrow: "Start here",
+  title: "How I put AI to work for you and plug its tools into your workflows to make you more productive.",
+  videoTitle: "How AI agents fit into your work, in 70 seconds",
+  media: "ai-agents-overview",
+};
+
 export const about = {
   name: "Iván",
   role: "AI engineer & automation developer",

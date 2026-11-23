@@ -2,10 +2,21 @@
 
 import Image from "next/image";
 import { useRef } from "react";
-import { about, sections } from "@/content/portfolio";
+import { about, hubIntro, sections } from "@/content/portfolio";
+import portfolioMedia from "@/content/portfolio-media.json";
+import { ExplainerVideo, type ExplainerMedia } from "./explainer-video";
 import { hubGeometry, useShell, useShown } from "./portfolio-shell";
 
-// The middle of the hub: the desk scene inside the circle, and the About card it opens.
+const MEDIA = portfolioMedia as Record<string, ExplainerMedia>;
+// Until the intro video is published to the CDN, local development plays the review render (not in git).
+const DEV_INTRO: ExplainerMedia | undefined = process.env.NODE_ENV === "development" ? {
+  versions: { en: { poster: "/portfolio/dev/overview-poster.jpg", duration: 71,
+    sources: [{ url: "/portfolio/dev/overview-en.mp4", height: 1080 }],
+    captions: { en: "/portfolio/dev/none.vtt", es: "/portfolio/dev/none.vtt" } } },
+} : undefined;
+
+// The hub: the desk scene inside the circle (and the About card it opens), plus the intro video: beside the
+// circle on wide screens, below it on narrow ones.
 export function HubCenter() {
   const { vp, leaving, hovered, ringGrown } = useShell();
   const dialog = useRef<HTMLDialogElement>(null);
@@ -13,16 +24,18 @@ export function HubCenter() {
   const shown = useShown(() => (ringGrown() ? 1100 : 150));
   if (!vp) return null;
 
-  const { R, cy, band } = hubGeometry(vp);
+  const { R, cx, cy, band, wide } = hubGeometry(vp);
   const r = R - band - 16;
   const hint = hovered >= 0 ? sections[hovered].pitch : "Choose an area of work";
   const below = cy + R + 18;
+  const intro = MEDIA[hubIntro.media] ?? DEV_INTRO;
+  const visible = shown && !leaving;
 
   return (
     <>
       <div
-        className={`fixed z-0 transition-opacity duration-700 ${shown && !leaving ? "opacity-100" : "opacity-0"}`}
-        style={{ left: vp.w / 2 - r, top: cy - r, width: 2 * r, height: 2 * r }}
+        className={`absolute z-0 transition-opacity duration-700 ${visible ? "opacity-100" : "opacity-0"}`}
+        style={{ left: cx - r, top: cy - r, width: 2 * r, height: 2 * r }}
       >
         {/* soft light behind the scene: monitor glow and desk lamp */}
         <div
@@ -51,14 +64,33 @@ export function HubCenter() {
         </button>
       </div>
 
-      {below + 24 < vp.h && (
+      {(below + 24 < vp.h || !wide) && (
         <p
-          className={`fixed inset-x-4 z-0 text-center text-xs text-muted transition-opacity duration-500 sm:text-sm ${shown && !leaving ? "" : "opacity-0"}`}
-          style={{ top: below }}
+          className={`absolute z-0 text-center text-xs text-muted transition-opacity duration-500 sm:text-sm ${visible ? "" : "opacity-0"}`}
+          style={{ top: below, left: cx - R, width: 2 * R }}
         >
           {hint}
         </p>
       )}
+
+      <section
+        aria-label="Intro video"
+        // its box (and, on narrow screens, the space reserved above it for the circle) must not catch the ring's clicks
+        className={`pointer-events-none z-20 transition-opacity duration-700 ${visible ? "opacity-100" : "opacity-0"} ${
+          wide ? "absolute flex flex-col justify-center" : "relative px-4 pb-16"
+        }`}
+        style={wide ? { left: vp.w * 0.53, right: Math.max(32, vp.w * 0.04), top: 76, bottom: 32 }
+          : { paddingTop: below + 56 }}
+      >
+        <div className={`pointer-events-auto ${wide ? "mx-auto w-full max-w-[860px]" : "mx-auto max-w-2xl"}`}>
+          <p className="font-mono text-xs uppercase tracking-[0.2em] text-glow">{hubIntro.eyebrow}</p>
+          <h2 className="mt-3 font-serif text-2xl leading-snug sm:text-3xl xl:text-[2.1rem]">{hubIntro.title}</h2>
+          <div className="mt-6">
+            {intro ? <ExplainerVideo media={intro} title={hubIntro.videoTitle} />
+              : <div className="aspect-video rounded-2xl border border-line bg-ink-2" />}
+          </div>
+        </div>
+      </section>
 
       <dialog
         ref={dialog}

@@ -21,3 +21,6 @@ Thumbs.db
 scripts/images/out/
 scripts/media/out/
 scripts/shopify/out/
+
+# Local review renders for the hub intro video (published ones live on the Shopify CDN)
+apps/web/public/portfolio/dev/

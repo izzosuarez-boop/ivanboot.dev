@@ -27,7 +27,7 @@ def scene_opacity(pg) -> float:
 def run(pg, label: str, desktop: bool) -> dict[str, bool]:
     errors: list[str] = []
     pg.on("pageerror", lambda e: errors.append(str(e)))
-    pg.goto(BASE + "/", wait_until="networkidle")
+    pg.goto(BASE + "/", wait_until="load")  # the hub plays its intro video: the network never goes idle
     time.sleep(1.2)
     c: dict[str, bool] = {}
     c["6 segmentos"] = pg.locator("a.ring-seg").count() == 6
