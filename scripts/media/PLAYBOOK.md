@@ -558,3 +558,22 @@ queda a la izquierda y el video a la derecha (debajo en pantallas estrechas).
     restart caddy`). Un `reload` seguiría leyendo el archivo viejo.
   - `?vdebug` ahora también registra los errores de cada `<source>`, el póster y un `fetch` de prueba del video.
   - `section_ai_agents_test.py` necesita las dos URLs: `https://ivanboot.dev https://tienda.ivanboot.dev`.
+- **E26. Causa real del fallo en iPhone: la caché de Safari** (2026-11-23). Con `?vdebug` el usuario comparó una
+  primera visita, que reprodujo bien (póster ok, fetch 206, `playing`), con la recarga justo después, que falló:
+  todas las `<source>` rechazadas en menos de un segundo (`ns=3`) aunque el póster sí cargaba.
+  - Causa: el CDN de Shopify manda `Cache-Control: public, max-age=31557600`. Safari guarda los trozos (206) del
+    video y en la recarga los reutiliza y los rechaza él mismo. Eso explica el "a veces sí, a veces no": la
+    primera visita funciona y las siguientes no. No era el dominio (E25) ni el formato del archivo (H.264 High
+    3.1, igual que el video de Ardea).
+  - Arreglo:
+    - Caddy envía los `.mp4` de `/media/` con `Cache-Control: no-store` (`header @video { … defer }`); los pósters
+      conservan su caché.
+    - Las URLs de video llevan `&c=2` (`localVideo()`), para que las copias que los iPhone ya guardaron con la URL
+      vieja no se reutilicen nunca. Si alguna vez vuelve a pasar, basta con subir ese número.
+    - Último recurso en `explainer-video.tsx`: si todas las fuentes se rechazan, o a los 3 s de play no ha llegado ni
+      un byte, el reproductor recarga el video con una dirección nueva (`r=<marca de tiempo>`), como máximo 2 veces.
+      Sustituye a la recarga simple de E24, que reutilizaba la misma copia rota.
+  - Descartado: reproducir desde memoria (blob). El WebKit de Playwright en Windows no reproduce blobs ni siquiera
+    en condiciones normales, así que no se puede verificar aquí.
+  - Al validar el Caddyfile en el VPS, "Valid configuration" no siempre es la última línea de la salida: hay que
+    buscarla con grep, no con `tail -1`.

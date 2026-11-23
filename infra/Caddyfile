@@ -14,6 +14,13 @@ ivanboot.dev {
 	# The portfolio videos and posters, served from this domain: some iPhones never load them straight from
 	# cdn.shopify.com (2026-11-23, PLAYBOOK E25). Only the store's own files folder is reachable through here.
 	handle /media/* {
+		# iPhone Safari reused the cached pieces of a video on reload and rejected them (PLAYBOOK E26): videos
+		# are never stored by the browser (the CDN says one year); posters keep their cache
+		@video path *.mp4
+		header @video {
+			Cache-Control "no-store"
+			defer
+		}
 		uri replace /media/ /s/files/1/0834/6445/4396/files/ 1
 		reverse_proxy https://cdn.shopify.com {
 			header_up Host {upstream_hostport}

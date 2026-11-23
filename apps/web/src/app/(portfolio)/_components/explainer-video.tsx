@@ -57,6 +57,8 @@ const VIDEO_EVENTS = ["loadstart", "loadedmetadata", "canplay", "play", "playing
 // Shopify CDN): Safari on some iPhones never loaded them from cdn.shopify.com directly (2026-11-23)
 const SHOP_FILES = "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/";
 const local = (url: string) => (url.startsWith(SHOP_FILES) ? "/media/" + url.slice(SHOP_FILES.length) : url);
+// "&c=2": a new address for the videos, so the copies iPhones cached under the old one are never reused
+const localVideo = (url: string) => local(url) + (url.includes("?") ? "&c=2" : "?c=2");
 
 // Videos that already started by themselves. Module state survives client-side navigation and resets on a
 // full reload, which is exactly "autoplay the first time, or after reloading the page".
@@ -161,43 +163,62 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
   const sleep = () => { window.clearTimeout(idle.current); setActive(false); };
   const lifted = active || paused;
 
-  // iPhone Safari sometimes leaves a started video stuck at 00:00 / 00:00 (in "playing" state, no data ever
-  // arrives; reported 2026-11-23). If not a single byte has arrived 3 s after play, reload the file and try
-  // again, once per play press. A slow but moving download (progress events) is left alone: restarting it
-  // would only make a slow connection slower.
+  // iPhone Safari refused the file on reloads (2026-11-23, PLAYBOOK E26): the first visit played, a reload
+  // failed every <source> within a second (networkState 3) or sat at 00:00 / 00:00, because Safari reused the
+  // pieces of the video it had cached and rejected them itself. The files are now sent with no-store and a
+  // changed address; as a last resort the player reloads them under a fresh address (nothing cached can
+  // match it) when every source is refused, or when not a single byte has arrived 3 s after play. A slow but
+  // moving download (progress events) is left alone. At most two such reloads per page.
   useEffect(() => {
     const el = video.current;
     if (!el) return;
     const WAIT = 3000;
     let timer: number | undefined;
-    let retried = false;
+    let tries = 0;
     let moved = false;
+    const sources = Array.from(el.querySelectorAll("source"));
+    const reload = (why: string) => {
+      window.clearTimeout(timer);
+      if (tries >= 2) { note.current(`${why}: giving up (rs=${el.readyState} ns=${el.networkState})`); return; }
+      tries++;
+      const wanted = !el.paused || autoStarted.has(title);
+      const at = el.currentTime;
+      note.current(`${why}: reloading under a fresh address (${tries}/2)`);
+      const fresh = `r=${Date.now().toString(36)}`;
+      for (const s of sources) {
+        const u = s.getAttribute("src") ?? "";
+        s.src = u.replace(/([?&])r=[^&]*/, `$1${fresh}`) + (/[?&]r=/.test(u) ? "" : `${u.includes("?") ? "&" : "?"}${fresh}`);
+      }
+      el.load();
+      if (at) el.currentTime = at;
+      if (wanted) el.play().catch((err) => note.current(`play after reload refused: ${err?.name}`));
+    };
+    // the last <source> (no media condition) failing means none is left to try
+    const last = sources.at(-1);
+    const onSourceErr = () => window.setTimeout(() => { if (el.networkState === 3) reload("every source refused"); }, 0);
+    last?.addEventListener("error", onSourceErr);
+    if (el.networkState === 3) reload("every source refused"); // refused before this ran
     const arm = () => { window.clearTimeout(timer); moved = false; timer = window.setTimeout(check, WAIT); };
     function check() {
       if (el!.paused || el!.readyState >= 2) return;
       if (moved) { arm(); return; } // data is coming, just slowly
-      if (retried) { note.current(`still no data (rs=${el!.readyState} ns=${el!.networkState})`); return; }
-      retried = true;
-      note.current(`no data after ${WAIT / 1000} s (rs=${el!.readyState} ns=${el!.networkState}): reloading`);
-      const at = el!.currentTime;
-      el!.load();
-      if (at) el!.currentTime = at;
-      el!.play().catch((err) => note.current(`retry play refused: ${err?.name}`));
+      reload(`no data after ${WAIT / 1000} s`);
     }
     const onProgress = () => { moved = true; };
-    const onData = () => { if (el.readyState >= 2) { window.clearTimeout(timer); retried = false; } };
+    const onData = () => { if (el.readyState >= 2) window.clearTimeout(timer); };
     el.addEventListener("play", arm);
     el.addEventListener("progress", onProgress);
     el.addEventListener("canplay", onData);
     el.addEventListener("playing", onData);
     return () => {
       window.clearTimeout(timer);
+      last?.removeEventListener("error", onSourceErr);
       el.removeEventListener("play", arm);
       el.removeEventListener("progress", onProgress);
       el.removeEventListener("canplay", onData);
       el.removeEventListener("playing", onData);
     };
-  }, [voice]);
+  }, [voice, title]);
 
   // ?vdebug: on-screen event log
   useEffect(() => {
@@ -205,7 +226,7 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
     if (!el || !/[?&]vdebug/.test(location.search)) return;
     const t0 = performance.now();
     note.current = (s) =>
-      setLog((l) => [...(l ?? []).slice(-14), `${((performance.now() - t0) / 1000).toFixed(1)}s ${s}`]);
+      setLog((l) => [...(l ?? []).slice(-59), `${((performance.now() - t0) / 1000).toFixed(1)}s ${s}`]);
     note.current(`${navigator.userAgent.replace(/^Mozilla\/5\.0 /, "").slice(0, 90)} | ios=${isIOS()}`);
     const on = (ev: Event) => {
       const x = ev.currentTarget as HTMLVideoElement;
@@ -365,8 +386,8 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
           }}
         >
           {/* wide screens get 1080p, phones and small windows 720p (about half the size) */}
-          {lo && <source src={local(hi.url)} type="video/mp4" media="(min-width: 1100px)" />}
-          <source src={local((lo ?? hi).url)} type="video/mp4" />
+          {lo && <source src={localVideo(hi.url)} type="video/mp4" media="(min-width: 1100px)" />}
+          <source src={localVideo((lo ?? hi).url)} type="video/mp4" />
           {/* no `default`: a default track would flash natively before the effect hides it */}
           <track kind="subtitles" srcLang="en" label="English" src={v.captions.en} />
           <track kind="subtitles" srcLang="es" label="Español" src={v.captions.es} />
