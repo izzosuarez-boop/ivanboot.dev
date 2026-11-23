@@ -487,3 +487,18 @@ Script de montaje: `scripts/media/overview_assemble.py`.
 - **E21. Lo que va delante de la pantalla:** sirve "no negro" con luminancia de 70 o más. Con 34, el reflejo tenue de su
   mano en el vidrio tapaba el botón. La máscara se dilata 3 px más allá del borde de la pantalla; si no, queda una línea
   negra sobre su mano en el borde.
+
+**Publicado (2026-11-22) como video de la PORTADA, no de la sección.** El usuario cambió la portada: el círculo
+queda a la izquierda y el video a la derecha (debajo en pantallas estrechas).
+- **Toma 6:** el celular muestra la portada nueva con este mismo video en el reproductor (`capture_page()` contra
+  localhost con `reduced_motion` para que no arranque solo, y CSS para ocultar el indicador de Next). La posición del
+  botón se guarda junto a la captura.
+- **Voz solo en inglés; el español va en subtítulos** (decisión del usuario). `overview_assemble.py final`:
+  claqueta, 7 tomas, tarjeta "Ivan Dev" (`explainer_assemble.end_card()`), loudnorm, versiones de 1080 y 720, póster
+  con el cerebro y los logos, y los subtítulos.
+- **Subtítulos:** `write_cues()` (comando `cues`) parte cada frase de la voz en trozos de 84 caracteres como máximo,
+  cortando en la puntuación. Una cláusula más larga se corta ANTES de una conjunción ("and", "y", "o"…) cerca de la
+  mitad. Los límites se ajustan a las pausas reales de la voz.
+- **Publicación:** `publish_explainer.py ai-agents-overview`. Tests: `scripts/tests/hub_intro_test.py` (15/15 en
+  producción) y `explainer_playback_test.py`, que ahora mira solo el video de la sección (`article video.explainer`).
+- **Costo total del video:** unos $8,20 de Gemini (Omni e imágenes), más céntimos de voz.
