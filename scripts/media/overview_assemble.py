@@ -878,6 +878,100 @@ def phone_shot(lang: str = "en") -> Path:
     return out
 
 
+# ── shot 5a: client requests arrive, in first person, over Iván's main screen ───────────────────────────────
+# Generic initials (no real clients). Each new message slides in at the bottom and pushes the others up.
+REQUESTS = {
+    "en": ["I need several Odoo e-commerce sites built for my current clients.",
+           "I want AI to handle my emails, messages, inventory and invoicing.",
+           "I need a secure, automated CEO command center in our Google Workspace, with Looker Studio dashboards.",
+           "I need a Python web app that connects to a third-party API, processes the data and shows clear results."],
+    "es": ["Necesito varios sitios de comercio electrónico en Odoo para mis clientes actuales.",
+           "Quiero que la IA gestione mis correos, mensajes, inventario y facturación.",
+           "Necesito un centro de mando del CEO, seguro y automatizado, en nuestro Google Workspace, con paneles de "
+           "Looker Studio.",
+           "Necesito una app web en Python que se conecte a una API externa, procese los datos y muestre resultados "
+           "claros."],
+}
+REQ_AVATARS = [("LM", (242, 180, 92)), ("DK", (94, 234, 212)), ("SR", (167, 139, 250)), ("AT", (96, 165, 250))]
+REQ_AT = (0.9, 3.5, 6.1, 8.7)
+REQ_SPEED = 0.813                    # the 10 s Omni clip, slowed to the length of the voice line
+REQ_DUR = 12.3
+REQ_BOX = (468, 652)             # left edge of the cards and bottom of the stack (over the main monitor)
+
+
+def message_card(text: str, initials: str, color) -> Image.Image:
+    """Incoming message: avatar with initials + white bubble, soft shadow, 2x supersampled."""
+    S = 2
+    font, fb = f("segoeui.ttf", 27 * S), f("segoeuib.ttf", 24 * S)
+    lines = wrap_text(text, font, 500 * S)
+    lh = 37 * S
+    av = 58 * S
+    bw = int(max(font.getlength(x) for x in lines) + 48 * S)
+    bh = int(lh * len(lines) + 30 * S)
+    pad = 26 * S
+    w, h = av + 16 * S + bw + 2 * pad, max(av, bh) + 2 * pad
+    im = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    sh = Image.new("L", im.size, 0)
+    bx = pad + av + 16 * S
+    ImageDraw.Draw(sh).rounded_rectangle([bx, pad + 10 * S, bx + bw, pad + bh + 10 * S], 26 * S, fill=120)
+    im.paste(Image.new("RGBA", im.size, (0, 0, 0, 255)), (0, 0), sh.filter(ImageFilter.GaussianBlur(12 * S)))
+    d = ImageDraw.Draw(im)
+    ay = pad + bh - av                                           # avatar aligned with the bubble's last line
+    d.ellipse([pad, ay, pad + av, ay + av], fill=color + (255,))
+    tb = d.textbbox((0, 0), initials, font=fb)
+    d.text((pad + (av - (tb[2] - tb[0])) / 2 - tb[0], ay + (av - (tb[3] - tb[1])) / 2 - tb[1]), initials, font=fb,
+           fill=(12, 16, 20, 255))
+    d.rounded_rectangle([bx, pad, bx + bw, pad + bh], 26 * S, fill=(255, 255, 255, 248))
+    d.rounded_rectangle([bx, pad + bh - 30 * S, bx + 30 * S, pad + bh], 6 * S, fill=(255, 255, 255, 248))  # flat corner by the avatar
+    for k, line in enumerate(lines):
+        d.text((bx + 24 * S, pad + 14 * S + k * lh), line, font=font, fill=(22, 26, 32, 255))
+    return im.resize((w // S, h // S), Image.LANCZOS)
+
+
+def requests_shot(lang: str = "en") -> Path:
+    src = latest("requests-[0-9]*.mp4")
+    cards = [message_card(t, *REQ_AVATARS[k]) for k, t in enumerate(REQUESTS[lang])]
+    out = WORK / f"requests-composite-{lang}.mp4"
+    enc = subprocess.Popen([g.ffmpeg(), "-loglevel", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24",
+                            "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-crf", "15",
+                            "-preset", "slow", "-pix_fmt", "yuv420p", str(out)], stdin=subprocess.PIPE)
+    dec = subprocess.Popen([g.ffmpeg(), "-loglevel", "error", "-i", str(src), "-vf",
+                            f"setpts=PTS/{REQ_SPEED},fps={FPS},scale={W}:{H}", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
+                           stdout=subprocess.PIPE)
+    x_left, y_base = REQ_BOX
+    for i in range(int(REQ_DUR * FPS)):
+        buf = dec.stdout.read(W * H * 3)
+        if len(buf) == W * H * 3:
+            fr = np.frombuffer(buf, np.uint8).reshape(H, W, 3)
+        t = i / FPS
+        img = Image.fromarray(fr).convert("RGBA")
+        # stack from the newest (bottom) up; each arrival slides in and pushes the rest with an ease
+        visible = [k for k, t0 in enumerate(REQ_AT) if t >= t0]
+        y = y_base
+        for k in reversed(visible):
+            c = cards[k]
+            u = ease((t - REQ_AT[k]) / 0.45)
+            if k == visible[-1]:
+                y_card = y - c.height * u                            # the newest grows the stack as it slides in
+                xo = int((1 - u) * 40)
+            else:
+                y_card = y - c.height
+                xo = 0
+            a = np.asarray(c, np.float32)
+            fade = np.clip((y_card - 20) / 70.0, 0, 1)                # leaving at the top: gone before the edge
+            a[..., 3] *= (u if k == visible[-1] else 1.0) * fade
+            img.alpha_composite(Image.fromarray(a.clip(0, 255).astype(np.uint8)), (int(x_left + xo), int(y_card)))
+            y = y_card + 14
+        frame = push_in(img.convert("RGB"), t, REQ_DUR, z1=1.05, focus=(REQ_BOX[0] + 330, 360))
+        enc.stdin.write(np.asarray(frame).tobytes())
+        if i in (40, 120, 200, 280, 360):
+            frame.save(WORK / f"rq_{lang}_{i:03d}.jpg", quality=92)
+    dec.stdout.close(); dec.wait()
+    enc.stdin.close(); enc.wait()
+    print(f"shot 5a ({lang}) ->", out.name)
+    return out
+
+
 # ── samples for review ─────────────────────────────────────────────────────────────────────────────────────
 VOICE = {
     "en": {
@@ -889,12 +983,16 @@ VOICE = {
                  "content creation.",
         "phone": "All of this in one place: an AI agent you can talk to like a person, and hand tasks it completes "
                  "in seconds.",
+        "requests": "The integration and the hard part are on me. You don't need to have it all figured out: tell me "
+                    "what you need, or the idea you have in mind, and I'll design the architecture and the integration "
+                    "around you,",
     },
 }
 SHOTS = [("coding", "coding-composite.mp4", "coding-[0-9]*.mp4"),
          ("whiteboard", "whiteboard-composite-{lang}.mp4", "whiteboard-room.wav"),
          ("logos", "logos-composite.mp4", "logos-room.wav"),
-         ("phone", "phone-composite-{lang}.mp4", "phone-[0-9]*.mp4")]
+         ("phone", "phone-composite-{lang}.mp4", "phone-[0-9]*.mp4"),
+         ("requests", "requests-composite-{lang}.mp4", "requests-[0-9]*.mp4")]
 
 
 def sample(lang: str = "en", upto: int = 2) -> Path:
@@ -933,4 +1031,4 @@ def sample(lang: str = "en", upto: int = 2) -> Path:
 
 if __name__ == "__main__":
     cmd, args = sys.argv[1], sys.argv[2:]
-    {"coding": coding, "whiteboard": whiteboard, "logos": logos_shot, "phone": phone_shot, "sample": sample}[cmd](*args)
+    {"coding": coding, "whiteboard": whiteboard, "logos": logos_shot, "phone": phone_shot, "requests": requests_shot, "sample": sample}[cmd](*args)

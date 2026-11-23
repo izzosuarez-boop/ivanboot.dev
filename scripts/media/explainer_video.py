@@ -64,6 +64,16 @@ SHOTS = {
                       "no zoom, no pan. The monitors stay exactly where they are, their screens steady and evenly "
                       "lit. Only the man moves.",
         },
+        "requests": {
+            "seconds": 10,
+            "reference": "requests-still.png",   # approved still: over Iván's shoulder, main monitor in the middle
+            "prompt": "Animate the reference image exactly as it is: the same man seen from behind over his right "
+                      "shoulder, the same office, monitors and framing. He reads the center monitor attentively, "
+                      "scrolls a little with the mouse, leans slightly forward with interest, then nods slowly as if "
+                      "he already knows how to solve it. Small, natural movements only. The monitors and their "
+                      "screens stay perfectly still. LOCKED-OFF STATIC CAMERA on a tripod: no camera movement, no "
+                      "zoom, no pan.",
+        },
         "phone": {
             "seconds": 8,
             "reference": "phone-still.png",   # approved still: shop owner holding his phone, screen toward him
@@ -137,6 +147,22 @@ STILLS = {
                 "the room falling off into darkness at the edges; the board is evenly lit so every note is clearly "
                 "visible. Camera: eye level, 35mm, medium-wide, sharp focus on the board and on her. Photorealistic, "
                 "natural skin texture. No readable text, no logos, no watermark, no other people."),
+        },
+        "requests": {
+            "refs": ["C:/Users/Trollo/Desktop/ivan.jpeg", "scripts/media/out/portfolio-ai-agents-overview/coding-still.png"],
+            "prompt": (
+                "Reference 1 is the identity reference: this exact real man (short dark hair, thin dark metal "
+                "rectangular glasses, light beige button-up shirt). Reference 2 is his home office at night: keep the "
+                "same room, the same walnut desk, the same three slim monitors on arms, the same amber desk lamp and "
+                "teal glow. Create ONE single continuous cinematic photograph, 16:9, not a collage, seen from BEHIND "
+                "him and slightly to his right, over his right shoulder: the back and right side of his head with the "
+                "right temple of his glasses, his right shoulder and arm, in the lower right of the frame, slightly "
+                "soft. He sits facing the monitors, relaxed, one hand on the mouse, reading. In front of him the "
+                "center monitor is large and sharp in the middle of the frame, a clean evenly lit rectangle with "
+                "thin black bezels and visible corners, showing a calm dark messaging app with a list of "
+                "conversations as soft shapes; the left and right monitors are partly visible at the edges. "
+                "Lighting: cool teal-cyan screen glow on him, warm amber rim light from the lamp, the room falling off "
+                "into darkness. Photorealistic, 35mm. No readable words, no logos, no watermark, no other people."),
         },
         "phone": {
             "refs": ["apps/web/public/portfolio/scene.webp"],

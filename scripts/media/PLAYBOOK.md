@@ -434,3 +434,11 @@ Script de montaje: `scripts/media/overview_assemble.py`.
   cámaras, con un suavizado de 7 cuadros. Se movía hasta 30 px.
 - **Encuadre:** nunca encima de su cara (x ≥ 1405). El acercamiento se centra arriba (y = 140) para no sacar los
   globos de la pantalla. Una "|" en el texto fuerza el salto de línea, para que el número no quede separado de su nombre.
+
+**Toma 5a: llegan peticiones de clientes, en primera persona, sobre la pantalla de Iván.**
+- **Fotograma** por encima de su hombro (`requests --still`, con su foto y `coding-still.png` como referencias para
+  que sea la misma oficina, $0,14). **Clip de Omni de 10 s** con cámara fija ($1,04), estirado a 12,3 s
+  (`setpts=PTS/0.813`) para cubrir la voz. Con movimientos sutiles no se nota.
+- **Mensajes:** avatar con iniciales genéricas (no son clientes reales) y burbuja blanca. Cada mensaje entra abajo,
+  deslizándose, empuja a los demás hacia arriba, y el más viejo desaparece antes de tocar el borde.
+  Ancho máximo de texto: 500 px, para no tapar su cabeza cuando gira hacia la pantalla.
