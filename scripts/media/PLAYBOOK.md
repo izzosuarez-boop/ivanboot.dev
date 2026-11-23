@@ -615,3 +615,13 @@ queda a la izquierda y el video a la derecha (debajo en pantallas estrechas).
   - En iOS no se muestra el botón propio de pantalla completa: Safari ya tiene el suyo y esa esquina es la del
     altavoz.
   - En escritorio y Android no cambia nada.
+- **E30. Registro `?vdebug` retirado y Mi Browser** (2026-11-23).
+  - Resuelto el iPhone (E28/E29), se quitó el registro en pantalla `?vdebug` de `explainer-video.tsx` y la opción
+    `note` de `useVideoRecovery`. Las notas de E24 a E28 que lo mencionan describen cómo se diagnosticó.
+  - Mi Browser (Xiaomi/Redmi) pintaba el círculo del inicio gris claro: su modo oscuro forzado aclara los rellenos
+    SVG oscuros. El layout del portafolio declara `viewport = { colorScheme: "dark" }`
+    (`<meta name="color-scheme" content="dark">`). Chromium y el WebView de Android no oscurecen páginas que
+    dicen ser oscuras. La tienda es clara y no lleva esa etiqueta.
+  - Mi Browser también pone su propio reproductor encima del video y tapa los subtítulos y botones de la página.
+    Prueba en `ivanboot.dev/v/mi.html`: cuatro variantes (como ahora, sin controles del navegador, atributos x5,
+    subtítulos nativos) más un sector del círculo. Pendiente de las capturas del usuario.

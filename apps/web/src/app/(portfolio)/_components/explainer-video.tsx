@@ -51,10 +51,6 @@ const isIOS = () =>
 type FsVideo = HTMLVideoElement & { webkitDisplayingFullscreen?: boolean };
 const inFullScreen = (el: FsVideo) => !!document.fullscreenElement || !!el.webkitDisplayingFullscreen;
 
-// ?vdebug in the address shows what the player is doing under it (for phones where there are no dev tools)
-const VIDEO_EVENTS = ["loadstart", "loadedmetadata", "canplay", "play", "playing", "pause", "waiting", "stalled",
-  "suspend", "error", "abort", "emptied", "ended", "webkitbeginfullscreen", "webkitendfullscreen"] as const;
-
 // Videos that already started by themselves. Module state survives client-side navigation and resets on a
 // full reload, which is exactly "autoplay the first time, or after reloading the page".
 const autoStarted = new Set<string>();
@@ -81,8 +77,6 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
   const [full, setFull] = useState(false);
   const [active, setActive] = useState(false);
   const [paused, setPaused] = useState(true);
-  const [log, setLog] = useState<string[] | null>(null);
-  const note = useRef<(s: string) => void>(() => {});
   const detected = useSyncExternalStore(noop, browserLang, () => "en" as const);
   // iPhone/iPad: Safari draws its own controls over the picture and takes every tap in its top corners
   // (expand at top left, speaker at top right), so the page's buttons there never got the tap (2026-11-23)
@@ -183,38 +177,7 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
   const lifted = active || paused;
 
   // last resort if the browser still refuses the file: reload it under a fresh address (PLAYBOOK E26/E27)
-  useVideoRecovery(video, { key: src, wanted: () => autoStarted.has(title), note: (x) => note.current(x) });
-
-  // ?vdebug: on-screen event log
-  useEffect(() => {
-    const el = video.current as FsVideo | null;
-    if (!el || !/[?&]vdebug/.test(location.search)) return;
-    const t0 = performance.now();
-    note.current = (s) =>
-      setLog((l) => [...(l ?? []).slice(-59), `${((performance.now() - t0) / 1000).toFixed(1)}s ${s}`]);
-    note.current(`${navigator.userAgent.replace(/^Mozilla\/5\.0 /, "").slice(0, 90)} | ios=${isIOS()}`);
-    const on = (ev: Event) => {
-      const x = ev.currentTarget as HTMLVideoElement;
-      note.current(`${ev.type} t=${x.currentTime.toFixed(1)} rs=${x.readyState} ns=${x.networkState}` +
-        `${x.muted ? " muted" : ""}${x.error ? ` ERR${x.error.code} ${x.error.message}` : ""}` +
-        `${ev.type === "loadstart" ? " " + x.currentSrc.split("/").pop()?.slice(0, 40) : ""}`);
-    };
-    for (const n of VIDEO_EVENTS) el.addEventListener(n, on);
-    note.current(`state on load: rs=${el.readyState} ns=${el.networkState} src=${el.currentSrc.split("/").pop()?.slice(0, 40) || "-"}`);
-    const img = new Image();
-    img.onload = () => note.current(`poster ok ${img.naturalWidth}x${img.naturalHeight}`);
-    img.onerror = () => note.current("poster FAILED");
-    img.src = el.poster;
-    if (el.src) {
-      fetch(el.src, { headers: { Range: "bytes=0-1" } })
-        .then((r) => note.current(`fetch video: ${r.status} ${r.headers.get("content-range") ?? ""}`))
-        .catch((err) => note.current(`fetch video FAILED: ${err?.message ?? err}`));
-    }
-    return () => {
-      for (const n of VIDEO_EVENTS) el.removeEventListener(n, on);
-      note.current = () => {};
-    };
-  }, [src]);
+  useVideoRecovery(video, { key: src, wanted: () => autoStarted.has(title) });
 
   useEffect(() => {
     const el = video.current as FsVideo | null;
@@ -231,28 +194,25 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
             el.muted = true;
             setMuted(true);
             // some browsers block even muted autoplay (iPhone in Low Power Mode, data saver); controls still work
-            el.play().catch((err) => note.current(`autoplay muted refused: ${err?.name}`));
+            el.play().catch(() => {});
           };
-          note.current(`autostart (${isIOS() ? "muted, iOS" : "with sound"})`);
           if (isIOS()) muted();
           else {
             el.muted = false;
-            el.play().catch((err) => {
-              note.current(`autoplay with sound refused: ${err?.name}`);
+            el.play().catch(() => {
               // the visitor may have pressed play meanwhile: don't touch a video that is already playing
               if (el.paused) muted();
             });
           }
         } else if (e.intersectionRatio <= 0.5 && !el.paused && !inFullScreen(el)) {
           // (in full screen the page's copy of the player can read as off screen, iPhone especially)
-          note.current(`paused: ${Math.round(e.intersectionRatio * 100)}% visible`);
           el.pause(); // from here on, only the visitor's play button resumes it
         }
       },
       { threshold: [0, 0.25, 0.5, 0.75, 0.9, 0.98, 1] },
     );
     io.observe(el);
-    const onHide = () => { if (document.hidden) { note.current("paused: tab hidden"); el.pause(); } };
+    const onHide = () => { if (document.hidden) el.pause(); };
     document.addEventListener("visibilitychange", onHide);
     return () => {
       io.disconnect();
@@ -387,11 +347,6 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
           <Switch label="Subtitles" options={["en", "es", "off"] as Subs[]} value={subs} onChange={setSubsChoice} />
         </span>
       </figcaption>
-      {log && (
-        <pre data-vdebug className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap break-all rounded-lg border border-line bg-ink-2 p-3 font-mono text-[11px] leading-snug text-text-2">
-          {log.join("\n")}
-        </pre>
-      )}
     </figure>
   );
 }

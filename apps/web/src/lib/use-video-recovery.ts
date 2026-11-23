@@ -7,16 +7,15 @@ import { useEffect, type RefObject } from "react";
  * Works with a src attribute or with <source> children.
  *
  * `key`: re-arm when the file changes (a new src, a new voice); `wanted`: whether it should start playing
- * after the reload even if it is paused right now (e.g. its autoplay already fired); `note`: debug log.
+ * after the reload even if it is paused right now (e.g. its autoplay already fired).
  */
 export function useVideoRecovery(
   ref: RefObject<HTMLVideoElement | null>,
-  { key, wanted, note }: { key: unknown; wanted?: () => boolean; note?: (s: string) => void },
+  { key, wanted }: { key: unknown; wanted?: () => boolean },
 ) {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const log = (s: string) => note?.(s);
     const WAIT = 3000;
     let timer: number | undefined;
     let tries = 0;
@@ -26,37 +25,36 @@ export function useVideoRecovery(
     const fresh = (u: string, tag: string) =>
       /[?&]r=/.test(u) ? u.replace(/([?&])r=[^&]*/, `$1${tag}`) : `${u}${u.includes("?") ? "&" : "?"}${tag}`;
 
-    const reload = (why: string) => {
+    const reload = () => {
       window.clearTimeout(timer);
-      if (tries >= 2) { log(`${why}: giving up (rs=${el.readyState} ns=${el.networkState})`); return; }
+      if (tries >= 2) return;
       tries++;
       const play = !el.paused || !!wanted?.();
       const at = el.currentTime;
-      log(`${why}: reloading under a fresh address (${tries}/2)`);
       const tag = `r=${Date.now().toString(36)}`;
       const own = el.getAttribute("src");
       if (own) el.src = fresh(own, tag);
       else for (const s of sources) s.src = fresh(s.getAttribute("src") ?? "", tag);
       el.load();
       if (at) el.currentTime = at;
-      if (play) el.play().catch((err) => log(`play after reload refused: ${err?.name}`));
+      if (play) el.play().catch(() => {});
     };
 
     // every source gone (the last <source> carries no media condition) or the video's own src failed
     const refused = () => el.networkState === 3 && el.readyState === 0 && hasFile();
-    const onErr = () => window.setTimeout(() => { if (refused()) reload("every source refused"); }, 0);
+    const onErr = () => window.setTimeout(() => { if (refused()) reload(); }, 0);
     const last = sources.at(-1);
     last?.addEventListener("error", onErr);
     el.addEventListener("error", onErr);
     // refused before this ran? Checked a moment later: a freshly mounted <video> also reads networkState 3
-    // for an instant before it starts loading (reported by ?vdebug on the Spanish voice switch)
-    const early = window.setTimeout(() => { if (refused()) reload("every source refused"); }, 1500);
+    // for an instant before it starts loading (seen on the Spanish voice switch)
+    const early = window.setTimeout(() => { if (refused()) reload(); }, 1500);
 
     const arm = () => { window.clearTimeout(timer); moved = false; timer = window.setTimeout(check, WAIT); };
     function check() {
       if (el!.paused || el!.readyState >= 2) return;
       if (moved) { arm(); return; } // data is coming, just slowly
-      reload(`no data after ${WAIT / 1000} s`);
+      reload();
     }
     const onProgress = () => { moved = true; };
     const onData = () => { if (el.readyState >= 2) window.clearTimeout(timer); };
@@ -74,6 +72,6 @@ export function useVideoRecovery(
       el.removeEventListener("canplay", onData);
       el.removeEventListener("playing", onData);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- wanted/note are read live; key re-arms it
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- wanted is read live; key re-arms it
   }, [ref, key]);
 }
