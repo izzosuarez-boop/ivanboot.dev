@@ -456,3 +456,14 @@ Script de montaje: `scripts/media/overview_assemble.py`.
 - **Omni respetó el encuadre:** el clip nuevo de la toma 1 salió idéntico al anterior (0 px de diferencia), así que
   las esquinas de las pantallas medidas antes siguieron sirviendo. Compruébalo siempre comparando el cuadro 0.
 - **Portada:** el usuario pidió dejar `scene.webp` como está.
+
+**Toma 5b: las tres preguntas clave como títulos, todo con código.**
+- Continúa la 5a sin corte. El último cuadro de `requests-composite-<lang>.mp4` se desenfoca (hasta 22 px) y se
+  oscurece un 58 %, con un acercamiento lento alrededor del mismo punto que la 5a (que ya termina en 1,05).
+- En `sample()`, los planos en `JOINED` no llevan fundido con el plano anterior.
+- **Títulos:** Fraunces (la serif del sitio). Se usa el tamaño más grande que deja cada pregunta en una sola línea.
+  La pregunta actual va en blanco, las anteriores bajan al 50 % y la última va en turquesa. Encima, un encabezado
+  espaciado en turquesa.
+- **Sincronía automática:** `speech_segments()` detecta los tramos hablados de la voz de cada idioma (pausas de al
+  menos 0,1 s, umbral −38 dB). El 1.º es el encabezado y el 2.º, 3.º y 4.º son las preguntas. La versión en
+  español se sincroniza sola.

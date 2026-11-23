@@ -972,6 +972,123 @@ def requests_shot(lang: str = "en") -> Path:
     return out
 
 
+# ── shot 5b: the three key questions, as titles over the 5a scene going out of focus ─────────────────────
+# Continues 5a without a cut: its last frame blurs and darkens while the questions come in, each one when the voice
+# asks it. Timings come from the pauses of that language's voice line, so the ES version syncs by itself.
+QUESTIONS = {
+    "en": ("THE KEY QUESTIONS",
+           ["How do I make my workflow more productive?",
+            "How do I make my products and services more appealing?",
+            "And above all: how does AI grow my profits?"]),
+    "es": ("LAS PREGUNTAS CLAVE",
+           ["¿Cómo hago más productivo mi flujo de trabajo?",
+            "¿Cómo hago mis productos y servicios más atractivos?",
+            "Y sobre todo: ¿cómo hace crecer la IA mis ganancias?"]),
+}
+
+
+def speech_segments(wav: Path, min_pause: float = 0.1) -> list[tuple[float, float]]:
+    """(start, end) of each spoken stretch, split at pauses of at least `min_pause` s."""
+    raw = subprocess.run([g.ffmpeg(), "-v", "error", "-i", str(wav), "-ac", "1", "-ar", "16000", "-f", "f32le", "-"],
+                         capture_output=True, check=True).stdout
+    a = np.frombuffer(raw, np.float32)
+    hop = 160
+    db = 20 * np.log10(np.array([np.sqrt(np.mean(a[i:i + hop] ** 2)) for i in range(0, len(a) - hop, hop)]) + 1e-9)
+    loud = db >= db.max() - 38
+    segs, start, quiet_run = [], None, 0
+    for k, on in enumerate(loud):
+        if on:
+            if start is None:
+                start = k
+            quiet_run = 0
+        elif start is not None:
+            quiet_run += 1
+            if quiet_run >= int(min_pause * 100):
+                segs.append((start / 100, (k - quiet_run + 1) / 100)); start = None; quiet_run = 0
+    if start is not None:
+        segs.append((start / 100, len(loud) / 100))
+    return segs
+
+
+def last_frame(path: Path) -> np.ndarray:
+    fr = None
+    for fr in frames(path):
+        pass
+    return fr
+
+
+def questions_shot(lang: str = "en") -> Path:
+    header, qs = QUESTIONS[lang]
+    voice = WORK / f"v-questions-{lang}.wav"
+    if not voice.exists():
+        g.tts_line("portfolio", VOICE[lang]["questions"], voice, "Charon")
+    segs = speech_segments(voice)
+    # header, Q1, Q2, then Q3 may be split in two ("And above all" / "how does AI…"): Q3 starts at the 4th stretch
+    starts = [s for s, _ in segs]
+    if len(starts) < 4:
+        raise SystemExit(f"expected at least 4 spoken stretches, got {segs}")
+    t_head, t_q = starts[0], starts[1:4]
+    dur_voice = segs[-1][1]
+    dur = round(dur_voice + VOICE_OFFSET + 0.9, 2)
+    print(f"5b ({lang}): header {t_head:.2f}s, questions at {[round(x, 2) for x in t_q]}, shot {dur}s")
+    bg = Image.fromarray(last_frame(WORK / f"requests-composite-{lang}.mp4"))
+    small = f("consolab.ttf", 26)
+    maxw = 1760
+    for size in range(62, 44, -2):                                 # one line per question when it fits
+        title = f("Fraunces.ttf", size)
+        if all(title.getlength(q) <= maxw for q in qs):
+            break
+    blocks = [wrap_text(q, title, maxw) for q in qs]
+    lh = int(size * 1.26)
+    gap = 46
+    total = 60 + sum(len(b) * lh for b in blocks) + gap * (len(blocks) - 1)
+    y0 = (H - total) // 2
+    out = WORK / f"questions-composite-{lang}.mp4"
+    enc = subprocess.Popen([g.ffmpeg(), "-loglevel", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24",
+                            "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-crf", "15",
+                            "-preset", "slow", "-pix_fmt", "yuv420p", str(out)], stdin=subprocess.PIPE)
+    for i in range(int(dur * FPS)):
+        t = i / FPS
+        tv = t - VOICE_OFFSET                                       # voice time
+        # background: 5a's last frame, a slow continuing push-in, going out of focus and dark
+        k = ease(t / 0.9)
+        z = 1.0 + 0.035 * (t / dur)          # 5a's frame is already pushed in to 1.05 around the same point
+        x0, y0b = 602 * (1 - 1 / z), 360 * (1 - 1 / z)
+        b = bg.resize((W, H), Image.LANCZOS, box=(x0, y0b, x0 + W / z, y0b + H / z))
+        if k > 0:
+            b = b.filter(ImageFilter.GaussianBlur(22 * k))
+        a = np.asarray(b, np.float32) * (1 - 0.58 * k)
+        img = Image.fromarray(a.clip(0, 255).astype(np.uint8)).convert("RGBA")
+        layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        d = ImageDraw.Draw(layer)
+        # header (letter-spaced, teal)
+        p = ease((tv - t_head + 0.15) / 0.5)
+        if p > 0:
+            spaced = " ".join(header)
+            tw = small.getlength(spaced)
+            d.text(((W - tw) / 2, y0 + (1 - p) * 16), spaced, font=small, fill=GLOW + (int(255 * p),))
+        y = y0 + 60
+        for qi, lines in enumerate(blocks):
+            p = ease((tv - t_q[qi] + 0.1) / 0.55)
+            if p > 0:
+                newest = qi == len(blocks) - 1 or tv < t_q[qi + 1] - 0.1
+                last = qi == len(blocks) - 1
+                dim = 1.0 if newest else 0.5                         # earlier questions step back
+                color = GLOW if last else (240, 243, 246)
+                for li, line in enumerate(lines):
+                    tw = title.getlength(line)
+                    d.text(((W - tw) / 2, y + li * lh + (1 - p) * 26), line, font=title,
+                           fill=color + (int(255 * p * dim),))
+            y += len(lines) * lh + gap
+        img.alpha_composite(layer)
+        enc.stdin.write(np.asarray(img.convert("RGB")).tobytes())
+        if i in (20, 90, 180, 300, int(dur * FPS) - 5):
+            img.convert("RGB").save(WORK / f"q_{lang}_{i:03d}.jpg", quality=92)
+    enc.stdin.close(); enc.wait()
+    print(f"shot 5b ({lang}) ->", out.name)
+    return out
+
+
 # ── samples for review ─────────────────────────────────────────────────────────────────────────────────────
 VOICE = {
     "en": {
@@ -986,13 +1103,17 @@ VOICE = {
         "requests": "The integration and the hard part are on me. You don't need to have it all figured out: tell me "
                     "what you need, or the idea you have in mind, and I'll design the architecture and the integration "
                     "around you,",
+        "questions": "answering the key questions: How do I make my workflow more productive? How do I make my "
+                     "products and services more appealing? And above all: how does AI grow my profits?",
     },
 }
 SHOTS = [("coding", "coding-composite.mp4", "coding-[0-9]*.mp4"),
          ("whiteboard", "whiteboard-composite-{lang}.mp4", "whiteboard-room.wav"),
          ("logos", "logos-composite.mp4", "logos-room.wav"),
          ("phone", "phone-composite-{lang}.mp4", "phone-[0-9]*.mp4"),
-         ("requests", "requests-composite-{lang}.mp4", "requests-[0-9]*.mp4")]
+         ("requests", "requests-composite-{lang}.mp4", "requests-[0-9]*.mp4"),
+         ("questions", "questions-composite-{lang}.mp4", "logos-room.wav")]
+JOINED = {"questions"}       # continues the previous shot without a cut: no fade between them
 
 
 def sample(lang: str = "en", upto: int = 2) -> Path:
@@ -1009,7 +1130,10 @@ def sample(lang: str = "en", upto: int = 2) -> Path:
             g.tts_line("portfolio", VOICE[lang][key], voice, "Charon")
         d = g.media_seconds(shot)
         ins += ["-i", str(shot), "-i", str(latest(raw)), "-i", str(voice)]
-        vf.append(f"[{k}:v]setsar=1,fade=t=in:st=0:d=0.25,fade=t=out:st={d - 0.35:.2f}:d=0.35[v{n}]")
+        nxt = SHOTS[n][0] if n < upto else None
+        fin = "" if key in JOINED else "fade=t=in:st=0:d=0.25,"
+        fout = "" if nxt in JOINED else f"fade=t=out:st={d - 0.35:.2f}:d=0.35,"
+        vf.append(f"[{k}:v]setsar=1,{fin}{fout}null[v{n}]")
         ms, vs = int(t0 * 1000), int((t0 + 0.35) * 1000)
         af.append(f"[{k + 1}:a]aresample=48000,volume=0.30,afade=t=in:d=0.3,afade=t=out:st={d - 0.5:.2f}:d=0.5,adelay={ms}|{ms}[r{n}]")
         af.append(f"[{k + 2}:a]aresample=48000,adelay={vs}|{vs}[s{n}]")
@@ -1031,4 +1155,4 @@ def sample(lang: str = "en", upto: int = 2) -> Path:
 
 if __name__ == "__main__":
     cmd, args = sys.argv[1], sys.argv[2:]
-    {"coding": coding, "whiteboard": whiteboard, "logos": logos_shot, "phone": phone_shot, "requests": requests_shot, "sample": sample}[cmd](*args)
+    {"coding": coding, "whiteboard": whiteboard, "logos": logos_shot, "phone": phone_shot, "requests": requests_shot, "questions": questions_shot, "sample": sample}[cmd](*args)
