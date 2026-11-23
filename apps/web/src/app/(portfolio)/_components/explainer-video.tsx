@@ -84,6 +84,9 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
   const [log, setLog] = useState<string[] | null>(null);
   const note = useRef<(s: string) => void>(() => {});
   const detected = useSyncExternalStore(noop, browserLang, () => "en" as const);
+  // iPhone/iPad: Safari draws its own controls over the picture and takes every tap in its top corners
+  // (expand at top left, speaker at top right), so the page's buttons there never got the tap (2026-11-23)
+  const ios = useSyncExternalStore(noop, isIOS, () => false);
   const [voiceChoice, setVoiceChoice] = useState<Lang | null>(null);
   const [subsChoice, setSubsChoice] = useState<Subs | null>(null);
   const voices = (Object.keys(media.versions) as Lang[]).filter((l) => media.versions[l]);
@@ -285,6 +288,7 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
       >
       {/* the 16:9 box: the subtitles sit inside the picture, also when a 5:4 or 21:9 screen letterboxes it */}
       <div className={`@container relative ${full ? "w-[min(100vw,calc(100vh*16/9))]" : "w-full"}`}>
+        {!ios && (
         <button
           type="button"
           onClick={toggleFull}
@@ -300,7 +304,8 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
               : <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />}
           </svg>
         </button>
-        {muted && (
+        )}
+        {muted && !ios && (
           <button
             type="button"
             onClick={() => {
@@ -363,6 +368,18 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
         )}
       </div>
       </div>
+      {muted && ios && (
+        <button
+          type="button"
+          onClick={() => {
+            const el = video.current;
+            if (el) { el.muted = false; void el.play().catch(() => {}); }
+          }}
+          className="mt-3 inline-flex items-center gap-2 rounded-full border border-glow/60 bg-glow/10 px-4 py-2 text-sm text-glow transition hover:bg-glow/20"
+        >
+          🔊 Tap for sound
+        </button>
+      )}
       <figcaption className="mt-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 text-sm text-muted">
         <span>{title}</span>
         <span className="flex flex-wrap items-center gap-x-5 gap-y-2">

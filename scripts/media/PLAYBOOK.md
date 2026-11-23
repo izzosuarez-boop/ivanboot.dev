@@ -608,3 +608,10 @@ queda a la izquierda y el video a la derecha (debajo en pantallas estrechas).
     (`src` único elegido en el cliente y recarga con dirección nueva como último recurso) es inofensivo y se queda.
   - La carpeta de videos del VPS se queda (Caddy `handle_path /v/*`, volumen `../media:/srv/media:ro`), para
     pruebas o para alojar videos fuera de Shopify. Ahora mismo solo contiene los archivos de esta prueba.
+- **E29. iPhone: botones de la página encima del video** (2026-11-23). Safari en iPhone dibuja sus propios controles
+  sobre la imagen y se lleva los toques de sus esquinas superiores: ampliar arriba a la izquierda, altavoz arriba a
+  la derecha. "Tap for sound" (arriba a la izquierda) se veía, pero no respondía.
+  - En iOS (`isIOS()` vía `useSyncExternalStore`), "Tap for sound" va debajo del video, encima de la leyenda.
+  - En iOS no se muestra el botón propio de pantalla completa: Safari ya tiene el suyo y esa esquina es la del
+    altavoz.
+  - En escritorio y Android no cambia nada.
