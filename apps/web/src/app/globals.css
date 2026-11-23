@@ -76,10 +76,16 @@ body {
 .ring-seg:focus-visible .ring-band { stroke-width: 2; }
 .ring-seg[data-active] .ring-band { fill: rgba(94, 234, 212, 0.1); stroke: rgba(94, 234, 212, 0.45); }
 
+/* The hub's intro video: subtitles 50% bigger in the page (user request, 2026-11-22); full screen keeps the
+   standard size, which already reads well there */
+/* (a variable on the element: compound selectors like .x:fullscreen::cue are dropped by the CSS build) */
+video.explainer.cues-lg { --cue-size: 1.08em; }
+video.explainer.cues-lg:fullscreen { --cue-size: 0.72em; }
+
 /* Explainer video subtitles (native text tracks: also styled in full screen) */
 video.explainer::cue {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
-  font-size: 0.72em;
+  font-size: var(--cue-size, 0.72em);
   line-height: 1.4;
   color: #fff;
   background: rgba(9, 11, 14, 0.78);

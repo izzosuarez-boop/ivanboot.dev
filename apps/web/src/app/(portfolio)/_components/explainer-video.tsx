@@ -55,7 +55,9 @@ const autoStarted = new Set<string>();
  *   - only one explainer plays at a time.
  *  Browsers refuse autoplay WITH sound until the visitor has interacted with the page (a direct visit or a
  *  reload), so it tries with sound first and falls back to muted playback plus a "Tap for sound" button. */
-export function ExplainerVideo({ media, title }: { media: ExplainerMedia; title: string }) {
+export function ExplainerVideo({ media, title, largeCues = false }: {
+  media: ExplainerMedia; title: string; largeCues?: boolean; // largeCues: subtitles 50% bigger outside full screen
+}) {
   const video = useRef<HTMLVideoElement>(null);
   const resume = useRef<{ frac: number; play: boolean } | null>(null);
   const [muted, setMuted] = useState(false);
@@ -142,7 +144,7 @@ export function ExplainerVideo({ media, title }: { media: ExplainerMedia; title:
           playsInline
           preload="metadata"
           poster={v.poster}
-          className="explainer aspect-video w-full"
+          className={`explainer aspect-video w-full ${largeCues ? "cues-lg" : ""}`}
           aria-label={title}
           onVolumeChange={(e) => setMuted(e.currentTarget.muted)}
           onPlay={(e) => {

@@ -79,7 +79,7 @@ export function HubCenter() {
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-glow">{hubIntro.eyebrow}</p>
           <h2 className="mt-3 font-serif text-2xl leading-snug sm:text-3xl xl:text-[2.1rem]">{hubIntro.title}</h2>
           <div className="mt-6">
-            {intro ? <ExplainerVideo media={intro} title={hubIntro.videoTitle} />
+            {intro ? <ExplainerVideo media={intro} title={hubIntro.videoTitle} largeCues />
               : <div className="aspect-video rounded-2xl border border-line bg-ink-2" />}
           </div>
         </div>

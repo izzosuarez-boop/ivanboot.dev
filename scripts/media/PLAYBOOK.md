@@ -502,3 +502,7 @@ queda a la izquierda y el video a la derecha (debajo en pantallas estrechas).
 - **Publicación:** `publish_explainer.py ai-agents-overview`. Tests: `scripts/tests/hub_intro_test.py` (15/15 en
   producción) y `explainer_playback_test.py`, que ahora mira solo el video de la sección (`article video.explainer`).
 - **Costo total del video:** unos $8,20 de Gemini (Omni e imágenes), más céntimos de voz.
+- **Subtítulos de la portada un 50 % más grandes dentro de la página** (`largeCues`, clase `cues-lg`: 1,08em; en pantalla
+  completa vuelven a 0,72em). **E22:** el build de CSS (Tailwind v4 / Lightning CSS) DESCARTA en silencio reglas como
+  `video.x.cues-lg::cue` y `…:fullscreen::cue`. Usa una variable en el elemento (`--cue-size`) que lee la regla base
+  `video.explainer::cue { font-size: var(--cue-size, 0.72em) }`. Comprueba siempre la hoja de estilos servida.
