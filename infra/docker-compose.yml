@@ -12,6 +12,8 @@ services:
       - "443:443/udp" # HTTP/3
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # videos hosted on the VPS itself, served at ivanboot.dev/v/ (outside the repo: deploys never touch it)
+      - ../media:/srv/media:ro
       - caddy_data:/data # TLS certificates: keep across rebuilds (Let's Encrypt rate limits)
       - caddy_config:/config
     depends_on:

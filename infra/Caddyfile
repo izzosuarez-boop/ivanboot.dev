@@ -11,7 +11,15 @@
 
 ivanboot.dev {
 	import common
-	reverse_proxy web:3000
+	# Videos hosted on the VPS itself (/opt/ivanboot/media, mounted read-only). 2026-11-23: testing whether
+	# iPhone Safari plays the portfolio videos from here (PLAYBOOK E28)
+	handle_path /v/* {
+		root * /srv/media
+		file_server
+	}
+	handle {
+		reverse_proxy web:3000
+	}
 }
 
 www.ivanboot.dev {
