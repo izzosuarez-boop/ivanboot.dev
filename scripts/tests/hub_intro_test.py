@@ -47,6 +47,8 @@ with sync_playwright() as p:
             # visible once the control bar would have hidden (Chrome dropped native cues there on some GPUs)
             pg.mouse.move(vb["x"] + 100, vb["y"] + 100)
             pg.get_by_role("button", name="Full screen").click()
+            # seek so the check lands inside a cue (12.5–17.0 s), not in a pause between sentences
+            pg.evaluate("() => { document.querySelector('video.explainer').currentTime = 9; }")
             pg.wait_for_timeout(5000)
             fs = pg.evaluate("""() => { const c = document.querySelector('[data-cue]'), v = document.querySelector('video.explainer');
               const r = c && c.getBoundingClientRect(), b = v.getBoundingClientRect();
