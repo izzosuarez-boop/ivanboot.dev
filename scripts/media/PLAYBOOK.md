@@ -467,3 +467,23 @@ Script de montaje: `scripts/media/overview_assemble.py`.
 - **Sincronía automática:** `speech_segments()` detecta los tramos hablados de la voz de cada idioma (pausas de al
   menos 0,1 s, umbral −38 dB). El 1.º es el encabezado y el 2.º, 3.º y 4.º son las preguntas. La versión en
   español se sincroniza sola.
+
+**Toma 6: alejarse del video hasta un celular en el que una empresaria toca "Hire me on Upwork".**
+- **Fotograma** con el celular en un soporte de escritorio, en horizontal y con la pantalla NEGRA ($0,14), y **clip de
+  Omni de 7 s** con cámara fija ($0,73). Con el celular quieto no hace falta seguirlo; la pantalla se mide una vez.
+- **E19. Primer clip descartado:** ella agarraba el borde superior del celular en vez de tocar el vidrio. El prompt que
+  funcionó: mano desde abajo a la derecha, solo el índice extendido, toca el VIDRIO en la zona superior derecha
+  "a little below its top edge", "never grabs the phone or its edge". En el segundo clip el dedo cae sobre el botón (4,0 s).
+- **Composición (`viewer_shot`):**
+  - Una cámara virtual sobre el clip (zoom y centro con fotogramas clave) hace el alejamiento, un plano abierto, el
+    acercamiento al celular para el toque y la vuelta al plano abierto.
+  - La pantalla se dibuja en el espacio de salida, así que siempre se ve nítida. Primero muestra el último cuadro de
+    la 5b, con barras negras como un video a pantalla completa en horizontal, que se desenfoca al alejarse. Después,
+    la página real capturada con Playwright (844×390 @3x).
+- **E20. Alejamiento:** si el centro de la cámara se interpola en el espacio del clip, el celular salta a una esquina
+  mientras el zoom sigue siendo enorme. Hay que interpolar la posición del celular EN LA SALIDA (del centro a su lugar
+  final). En t=0, las esquinas del contenido coinciden con el cuadro, para empalmar con la 5b, y se ajustan a la
+  pantalla real en 0,35 s.
+- **E21. Lo que va delante de la pantalla:** sirve "no negro" con luminancia de 70 o más. Con 34, el reflejo tenue de su
+  mano en el vidrio tapaba el botón. La máscara se dilata 3 px más allá del borde de la pantalla; si no, queda una línea
+  negra sobre su mano en el borde.

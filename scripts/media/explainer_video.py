@@ -65,6 +65,20 @@ SHOTS = {
                       "no zoom, no pan. The monitors stay exactly where they are, their screens steady and evenly "
                       "lit. Only the man moves.",
         },
+        "viewer": {
+            "seconds": 7,
+            "reference": "viewer-still.png",   # approved still: business owner, phone on a desk stand, black screen
+            "prompt": "Animate the reference image exactly as it is: the same woman, office, desk, phone on its "
+                      "stand and framing. For the first three seconds she sits still, watching the phone screen "
+                      "attentively. Then she leans in slightly and brings her right hand up from the desk, from the "
+                      "lower right, with only her index finger extended, and touches the GLASS of the screen with the "
+                      "tip of that finger in the upper-right area of the screen, a little below its top edge: a "
+                      "single short press on the screen itself, like pressing a button in an app; her hand stays "
+                      "below the top edge of the phone and never grabs the phone or its edge. Then she pulls her hand "
+                      "back to the desk and sits back with a small satisfied smile. The phone never moves in its stand and "
+                      "its screen stays completely black. LOCKED-OFF STATIC CAMERA on a tripod: no camera movement, "
+                      "no zoom, no pan.",
+        },
         "requests": {
             "seconds": 10,
             "reference": "requests-still.png",   # approved still: over Iván's shoulder, main monitor in the middle
@@ -195,6 +209,22 @@ STILLS = {
                 "conversations as soft shapes; the left and right monitors are partly visible at the edges. "
                 "Lighting: cool teal-cyan screen glow on him, warm amber rim light from the lamp, the room falling off "
                 "into darkness. Photorealistic, 35mm. No readable words, no logos, no watermark, no other people."),
+        },
+        "viewer": {
+            "refs": ["apps/web/public/portfolio/scene.webp"],
+            "prompt": (
+                "The reference image only sets the look: night-time mood, warm amber lamp light, a cool teal ambient "
+                "glow, the same color grading. Its place and its man must NOT appear. "
+                "Create ONE single continuous cinematic photograph, 16:9, not a collage. A business owner, a woman in "
+                "her early forties with shoulder-length dark hair and a navy blazer, sits at the desk of her modern "
+                "office in the evening, city lights softly out of focus through the window. On the desk in front of "
+                "her a smartphone stands in a small desk stand, in LANDSCAPE orientation, its screen facing her and "
+                "angled so the camera sees the whole screen clearly. The screen is completely BLACK, off, a clean "
+                "glossy black rectangle with thin bezels and visible corners; nothing on it. The camera is behind "
+                "her and slightly to her right, at her shoulder height: her right shoulder and the side of her head "
+                "are in the right foreground, softly out of focus, and the phone on its stand is sharp in the center "
+                "of the frame, about a third of the frame wide, with nothing in front of it. A coffee cup and a "
+                "notebook on the desk. Photorealistic, 35mm. No readable text, no logos, no watermark, no other people."),
         },
         "phone": {
             "refs": ["apps/web/public/portfolio/scene.webp"],

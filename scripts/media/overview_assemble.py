@@ -1089,6 +1089,134 @@ def questions_shot(lang: str = "en") -> Path:
     return out
 
 
+# ── shot 6: pull out of the video into a phone; a business owner watching it taps "Hire me on Upwork" ─────────
+# The phone stands still on a desk stand with a black screen (Omni, locked-off camera). Everything on the screen is
+# ours: first 5b's last frame (the video itself, playing full screen) shrinking and going soft as we pull out, then
+# the real portfolio page (captured with Playwright at 844x390 @3x). Anything not black over the screen (her finger,
+# the stand's lip) stays in front.
+VIEW_Q = [(581, 793), (848, 772), (864, 895), (600, 919)]   # screen corners on the clip (camera and phone static)
+VIEW_TAP = 4.0               # her fingertip presses the glass on the button (measured on viewer-202559)
+VIEW_DUR = 7.0
+PAGE_BTN = (663.8, 16, 156.2, 36)  # "Hire me on Upwork" box on the 844x390 page (CSS px)
+
+
+def capture_page(path: Path) -> None:
+    from playwright.sync_api import sync_playwright
+    with sync_playwright() as p:
+        b = p.chromium.launch(channel="chrome")
+        pg = b.new_page(viewport={"width": 844, "height": 390}, device_scale_factor=3, is_mobile=True, has_touch=True)
+        pg.goto("https://ivanboot.dev/ai-agents", wait_until="load")
+        pg.wait_for_timeout(3500)
+        pg.screenshot(path=str(path))
+        b.close()
+
+
+def cam_keys(t: float) -> tuple[float, tuple[float, float]]:
+    """Virtual camera on the clip: zoom and center. Pull-out, a look at her, a push-in for the tap, back out."""
+    sc = np.mean(VIEW_Q, axis=0)
+    z0 = H / (np.mean([VIEW_Q[3][1] - VIEW_Q[0][1], VIEW_Q[2][1] - VIEW_Q[1][1]]))
+    wide, phone = (1.5, (1080.0, 600.0)), (2.0, (760.0, 822.0))
+    keys = [(0.0, (z0, tuple(sc))), (1.9, wide), (2.6, wide), (VIEW_TAP - 0.05, phone), (VIEW_TAP + 0.6, phone),
+            (6.4, wide), (VIEW_DUR, wide)]
+    for n, ((t0, a), (t1, b)) in enumerate(zip(keys, keys[1:])):
+        if t <= t1:
+            u = ease((t - t0) / (t1 - t0)) if t1 > t0 else 1.0
+            z = float(np.exp(np.log(a[0]) + (np.log(b[0]) - np.log(a[0])) * u))
+            if n == 0:
+                # pull-out: the screen glides on the OUTPUT from the frame center to where it ends up, so it never
+                # jumps to a corner while the zoom is still huge
+                end = ((sc[0] - b[1][0]) * b[0] + W / 2, (sc[1] - b[1][1]) * b[0] + H / 2)
+                px, py = W / 2 + (end[0] - W / 2) * u, H / 2 + (end[1] - H / 2) * u
+                return z, (sc[0] - (px - W / 2) / z, sc[1] - (py - H / 2) / z)
+            return z, (a[1][0] + (b[1][0] - a[1][0]) * u, a[1][1] + (b[1][1] - a[1][1]) * u)
+    return keys[-1][1][0], keys[-1][1][1]
+
+
+def viewer_shot(lang: str = "en") -> Path:
+    src = latest("viewer-[0-9]*.mp4")
+    page_path = WORK / "page-landscape.png"
+    if not page_path.exists():
+        capture_page(page_path)
+    page = Image.open(page_path).convert("RGB")
+    PW, PH = page.size
+    # 5b's last frame, played "full screen" on the landscape phone: 16:9 centered with black side bars
+    vid = Image.fromarray(last_frame(WORK / f"questions-composite-{lang}.mp4"))
+    vw = int(PH * 16 / 9)
+    bar = (PW - vw) // 2
+    # where the 16:9 picture must be at t=0 (filling the output) -> the whole screen canvas sits a bit wider
+    sx = W / vw
+    full_q = [(-bar * sx, 0), (W + bar * sx, 0), (W + bar * sx, H), (-bar * sx, H)]
+    scr_mask = Image.new("L", (W, H), 0)
+    ImageDraw.Draw(scr_mask).polygon(VIEW_Q, fill=255)
+    # occluders use the full screen area (the bezel edge in front of the picture is physically right, and a smaller
+    # mask left a strip of picture over her hand at the edge); reflections stay off the bright bezel
+    omask = np.asarray(scr_mask.filter(ImageFilter.MaxFilter(7)), np.float32) / 255.0   # a bit past the edge
+    smask = np.asarray(scr_mask.filter(ImageFilter.MinFilter(5)), np.float32) / 255.0
+    bx, by, bw, bh = (v * 3 for v in PAGE_BTN)
+    btn_c = (bx + bw / 2, by + bh / 2)
+    out = WORK / f"viewer-composite-{lang}.mp4"
+    enc = subprocess.Popen([g.ffmpeg(), "-loglevel", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24",
+                            "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-crf", "15",
+                            "-preset", "slow", "-pix_fmt", "yuv420p", str(out)], stdin=subprocess.PIPE)
+    for i, fr in enumerate(frames(src)):
+        t = i / FPS
+        if t >= VIEW_DUR:
+            break
+        z, (cx, cy) = cam_keys(t)
+        box = (cx - W / (2 * z), cy - H / (2 * z), cx + W / (2 * z), cy + H / (2 * z))
+
+        def cam(p):                                                  # clip px -> output px
+            return ((p[0] - box[0]) * z, (p[1] - box[1]) * z)
+        src_img = Image.fromarray(fr)
+        bg = np.asarray(src_img.transform((W, H), Image.EXTENT, box, Image.BICUBIC), np.float32)
+        # what the screen shows
+        canvas = Image.new("RGB", (PW, PH), (0, 0, 0))
+        k_page = ease((t - 2.25) / 0.35)
+        if k_page < 1:
+            blur = 9 * ease(t / 1.6)                                  # the picture goes soft as it recedes
+            v = vid.filter(ImageFilter.GaussianBlur(blur)) if blur > 0.2 else vid
+            canvas.paste(v.resize((vw, PH), Image.LANCZOS), (bar, 0))
+        if k_page > 0:
+            pg = page.copy()
+            if t >= VIEW_TAP - 0.02:                                  # the press: button darkens, a ripple spreads
+                u = (t - VIEW_TAP) / 1.1                               # long enough to see it as her hand leaves
+                d = ImageDraw.Draw(pg, "RGBA")
+                if u < 0.3:
+                    d.rounded_rectangle([bx, by, bx + bw, by + bh], bh / 2, fill=(0, 0, 0, 70))
+                if 0 <= u <= 1:
+                    r = 40 + 380 * ease(u)
+                    d.ellipse([btn_c[0] - r, btn_c[1] - r, btn_c[0] + r, btn_c[1] + r],
+                              outline=GLOW + (int(220 * (1 - u)),), width=10)
+            canvas = Image.blend(canvas, pg, k_page) if k_page < 1 else pg
+        # screen corners in the output: exactly the frame at t=0, then the true (camera-mapped) screen
+        true_q = [cam(p) for p in VIEW_Q]
+        s = ease(t / 0.35)                      # snap to the true screen while it still overflows the frame
+        q_out = [(fx + (tx - fx) * s, fy + (ty - fy) * s) for (fx, fy), (tx, ty) in zip(full_q, true_q)]
+        cfs = coeffs([(0, 0), (PW, 0), (PW, PH), (0, PH)], q_out)
+        content = np.asarray(canvas.transform((W, H), Image.PERSPECTIVE, cfs, Image.BICUBIC), np.float32)
+        alpha = np.asarray(Image.new("L", (PW, PH), 255).transform((W, H), Image.PERSPECTIVE, cfs, Image.BILINEAR),
+                           np.float32) / 255.0
+        # in front of the screen: whatever isn't black on the clip's screen (finger, stand), once the phone is in frame
+        lum = fr.mean(2)
+        occ_src = np.clip((lum - 70) / 30, 0, 1) * omask           # lit skin/metal; the dim reflections on the glass are not in front
+        occ = np.asarray(Image.fromarray((occ_src * 255).astype(np.uint8)).transform((W, H), Image.EXTENT, box,
+                                                                                       Image.BILINEAR), np.float32) / 255.0
+        occ *= ease((t - 1.2) / 0.6)
+        # the glass: the clip's faint reflections stay on top of the picture
+        refl = np.asarray(Image.fromarray((fr * smask[..., None]).astype(np.uint8)).transform((W, H), Image.EXTENT, box,
+                                                                                                Image.BILINEAR), np.float32)
+        a = (alpha * (1 - occ))[..., None]
+        g_in = ease(t / 1.0)                    # starts identical to 5b's last frame, then becomes a lit screen
+        img = bg * (1 - a) + (content * (1 - 0.06 * g_in) + refl * 0.5 * g_in) * a
+        frame = Image.fromarray(np.clip(img, 0, 255).astype(np.uint8))
+        enc.stdin.write(np.asarray(frame).tobytes())
+        if i in (0, 15, 30, 57, 80, 112, 121, 135, 200):
+            frame.save(WORK / f"vw_{lang}_{i:03d}.jpg", quality=92)
+    enc.stdin.close(); enc.wait()
+    print(f"shot 6 ({lang}) ->", out.name)
+    return out
+
+
 # ── samples for review ─────────────────────────────────────────────────────────────────────────────────────
 VOICE = {
     "en": {
@@ -1105,6 +1233,7 @@ VOICE = {
                     "around you,",
         "questions": "answering the key questions: How do I make my workflow more productive? How do I make my "
                      "products and services more appealing? And above all: how does AI grow my profits?",
+        "viewer": "So... will you get into the AI race, or stay out?",
     },
 }
 SHOTS = [("coding", "coding-composite.mp4", "coding-[0-9]*.mp4"),
@@ -1112,8 +1241,9 @@ SHOTS = [("coding", "coding-composite.mp4", "coding-[0-9]*.mp4"),
          ("logos", "logos-composite.mp4", "logos-room.wav"),
          ("phone", "phone-composite-{lang}.mp4", "phone-[0-9]*.mp4"),
          ("requests", "requests-composite-{lang}.mp4", "requests-[0-9]*.mp4"),
-         ("questions", "questions-composite-{lang}.mp4", "logos-room.wav")]
-JOINED = {"questions"}       # continues the previous shot without a cut: no fade between them
+         ("questions", "questions-composite-{lang}.mp4", "logos-room.wav"),
+         ("viewer", "viewer-composite-{lang}.mp4", "viewer-[0-9]*.mp4")]
+JOINED = {"questions", "viewer"}       # continues the previous shot without a cut: no fade between them
 
 
 def sample(lang: str = "en", upto: int = 2) -> Path:
@@ -1155,4 +1285,4 @@ def sample(lang: str = "en", upto: int = 2) -> Path:
 
 if __name__ == "__main__":
     cmd, args = sys.argv[1], sys.argv[2:]
-    {"coding": coding, "whiteboard": whiteboard, "logos": logos_shot, "phone": phone_shot, "requests": requests_shot, "questions": questions_shot, "sample": sample}[cmd](*args)
+    {"coding": coding, "whiteboard": whiteboard, "logos": logos_shot, "phone": phone_shot, "requests": requests_shot, "questions": questions_shot, "viewer": viewer_shot, "sample": sample}[cmd](*args)
