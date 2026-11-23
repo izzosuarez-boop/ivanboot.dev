@@ -1092,23 +1092,32 @@ def questions_shot(lang: str = "en") -> Path:
 # ── shot 6: pull out of the video into a phone; a business owner watching it taps "Hire me on Upwork" ─────────
 # The phone stands still on a desk stand with a black screen (Omni, locked-off camera). Everything on the screen is
 # ours: first 5b's last frame (the video itself, playing full screen) shrinking and going soft as we pull out, then
-# the real portfolio page (captured with Playwright at 844x390 @3x). Anything not black over the screen (her finger,
+# the real hub page with this very video in its player (captured with Playwright at 844x390 @3x). Anything not black over the screen (her finger,
 # the stand's lip) stays in front.
 VIEW_Q = [(581, 793), (848, 772), (864, 895), (600, 919)]   # screen corners on the clip (camera and phone static)
 VIEW_TAP = 4.0               # her fingertip presses the glass on the button (measured on viewer-202559)
 VIEW_DUR = 7.0
-PAGE_BTN = (663.8, 16, 156.2, 36)  # "Hire me on Upwork" box on the 844x390 page (CSS px)
 
 
-def capture_page(path: Path) -> None:
+def capture_page(path: Path, base: str = "http://localhost:3100") -> dict:
+    """The hub as a visitor sees it on a phone in landscape right after watching the intro: scrolled to the video
+    player (poster showing), "Hire me on Upwork" fixed at the top right. Saves the button's box next to the PNG."""
+    import json
     from playwright.sync_api import sync_playwright
     with sync_playwright() as p:
         b = p.chromium.launch(channel="chrome")
-        pg = b.new_page(viewport={"width": 844, "height": 390}, device_scale_factor=3, is_mobile=True, has_touch=True)
-        pg.goto("https://ivanboot.dev/ai-agents", wait_until="load")
-        pg.wait_for_timeout(3500)
+        pg = b.new_page(viewport={"width": 844, "height": 390}, device_scale_factor=3, is_mobile=True, has_touch=True,
+                        reduced_motion="reduce")                # the player must not start by itself in the capture
+        pg.goto(base + "/", wait_until="load")
+        pg.add_style_tag(content="nextjs-portal{display:none!important}")   # dev-server badge
+        pg.wait_for_timeout(2500)
+        pg.evaluate("() => document.querySelector('video.explainer').scrollIntoView({block: 'center'})")
+        pg.wait_for_timeout(1200)
         pg.screenshot(path=str(path))
+        box = pg.get_by_role("link", name="Hire me on Upwork").first.bounding_box()
         b.close()
+    path.with_suffix(".json").write_text(json.dumps(box), encoding="utf-8")
+    return box
 
 
 def cam_keys(t: float) -> tuple[float, tuple[float, float]]:
@@ -1134,10 +1143,12 @@ def cam_keys(t: float) -> tuple[float, tuple[float, float]]:
 
 def viewer_shot(lang: str = "en") -> Path:
     src = latest("viewer-[0-9]*.mp4")
-    page_path = WORK / "page-landscape.png"
+    import json
+    page_path = WORK / "page-hub-landscape.png"
     if not page_path.exists():
         capture_page(page_path)
     page = Image.open(page_path).convert("RGB")
+    btn = json.loads(page_path.with_suffix(".json").read_text())
     PW, PH = page.size
     # 5b's last frame, played "full screen" on the landscape phone: 16:9 centered with black side bars
     vid = Image.fromarray(last_frame(WORK / f"questions-composite-{lang}.mp4"))
@@ -1152,7 +1163,7 @@ def viewer_shot(lang: str = "en") -> Path:
     # mask left a strip of picture over her hand at the edge); reflections stay off the bright bezel
     omask = np.asarray(scr_mask.filter(ImageFilter.MaxFilter(7)), np.float32) / 255.0   # a bit past the edge
     smask = np.asarray(scr_mask.filter(ImageFilter.MinFilter(5)), np.float32) / 255.0
-    bx, by, bw, bh = (v * 3 for v in PAGE_BTN)
+    bx, by, bw, bh = (btn[k] * 3 for k in ("x", "y", "width", "height"))
     btn_c = (bx + bw / 2, by + bh / 2)
     out = WORK / f"viewer-composite-{lang}.mp4"
     enc = subprocess.Popen([g.ffmpeg(), "-loglevel", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24",
@@ -1283,6 +1294,151 @@ def sample(lang: str = "en", upto: int = 2) -> Path:
     return out
 
 
+# ── the finished video: intro + 7 shots + end card, web encodes, poster and EN/ES captions ──────────────────
+# Voice in English only (user decision): Spanish exists as subtitles.
+VOICE_ES = {
+    "coding": "Hoy la IA nos obliga a cambiar la forma en que trabajamos para ser competitivos.",
+    "whiteboard": "La pregunta que todos deberíamos hacernos no es si usar o no la IA en el trabajo, sino dónde y "
+                  "cómo integrarla para que tenga sentido y aumente la productividad.",
+    "logos": "Integrarla a tu flujo de trabajo es, en esencia, delegar tareas repetitivas y trabajo que requiere "
+             "atención 24/7, conectada a las herramientas que usas a diario: tu correo, inventario, facturación, "
+             "video y creación de contenido.",
+    "phone": "Todo esto en un mismo lugar: un agente de IA con el que puedes conversar como si fuera una persona y "
+             "asignarle tareas que ejecuta en segundos.",
+    "requests": "La integración y el trabajo difícil corren por mi cuenta. No necesitas tenerlo todo claro: dime lo "
+                "que necesitas o la idea que tienes en mente, y diseñaré la arquitectura y la integración a tu medida,",
+    "questions": "respondiendo las preguntas clave: ¿Cómo hago más productivo mi flujo de trabajo? ¿Cómo hago mis "
+                 "productos y servicios más atractivos? Y sobre todo: ¿cómo hace crecer la IA mis ganancias?",
+    "viewer": "Entonces… ¿entrarás o te quedarás fuera de la carrera de la IA?",
+}
+SLUG = "ai-agents-overview"
+CARD_DUR = 3.2
+POSTER_AT = ("logos", 13.0)          # the brain with every tool around it
+MAX_CUE = 84                         # characters: two lines in the player
+
+
+def cue_chunks(text: str) -> list[str]:
+    """Split a voice line into short subtitle chunks at punctuation, merged up to MAX_CUE characters."""
+    import re
+    parts = [p.strip() for p in re.split(r"(?<=[.?!:;,…])\s+", text.replace("...", "…")) if p.strip()]
+    out, cur = [], ""
+    for p in parts:
+        if cur and len(cur) + 1 + len(p) > MAX_CUE:
+            out.append(cur); cur = p
+        else:
+            cur = (cur + " " + p).strip()
+    if cur:
+        out.append(cur)
+    # a single clause longer than MAX_CUE: break it before a conjunction near the middle ("… tasks / and work …"),
+    # otherwise at the word nearest the middle
+    joins = {"and", "or", "but", "so", "y", "o", "sino", "pero", "que"}
+    fixed = []
+    for c in out:
+        while len(c) > MAX_CUE:
+            words = c.split()
+            pos, acc = [], 0
+            for w_ in words:
+                pos.append(acc); acc += len(w_) + 1
+            cand = [k for k in range(1, len(words)) if words[k].lower() in joins and 0.3 < pos[k] / len(c) < 0.7]
+            pool = cand or range(1, len(words))
+            k = min(pool, key=lambda k: abs(pos[k] - len(c) / 2))
+            fixed.append(" ".join(words[:k])); c = " ".join(words[k:])
+        fixed.append(c)
+    return fixed
+
+
+def timed_cues(text: str, start: float, voice: Path, end_cap: float) -> list[dict]:
+    """Chunks timed by their share of characters, each boundary snapped to the nearest real pause in the voice."""
+    chunks = cue_chunks(text)
+    segs = speech_segments(voice)
+    dur = segs[-1][1]
+    pauses = [(a[1] + b[0]) / 2 for a, b in zip(segs, segs[1:])]
+    total = sum(len(c) for c in chunks)
+    bounds, acc = [0.0], 0
+    for c in chunks[:-1]:
+        acc += len(c)
+        est = dur * acc / total
+        near = min(pauses, key=lambda p: abs(p - est)) if pauses else est
+        bounds.append(near if abs(near - est) < 0.8 and near > bounds[-1] + 0.6 else est)
+    bounds.append(dur)
+    cues = []
+    for k, c in enumerate(chunks):
+        a, b = start + bounds[k], start + bounds[k + 1] + (0.35 if k == len(chunks) - 1 else 0)
+        cues.append({"start": round(a, 2), "end": round(min(b, end_cap), 2), "text": c})
+    return cues
+
+
+def write_cues() -> dict:
+    """EN/ES captions timed to the voice lines (Spanish: the translation of the same lines)."""
+    import json
+    t0, placed = 2.0, []
+    for key, comp, _ in SHOTS:
+        placed.append((key, t0 + VOICE_OFFSET, WORK / f"v-{key}-en.wav"))
+        t0 += g.media_seconds(WORK / comp.format(lang="en"))
+    total = t0 + CARD_DUR
+    cues = {"duration": round(total, 2), "en": [], "es": []}
+    for i, (key, at, voice) in enumerate(placed):
+        cap = placed[i + 1][1] - 0.05 if i + 1 < len(placed) else total
+        cues["en"] += timed_cues(VOICE["en"][key], at, voice, cap)
+        cues["es"] += timed_cues(VOICE_ES[key], at, voice, cap)
+    path = g.ROOT / f"apps/web/src/content/video-cues/{SLUG}.json"
+    path.write_text(json.dumps(cues, indent=1, ensure_ascii=False) + chr(10), encoding="utf-8", newline=chr(10))
+    return cues
+
+
+def final() -> Path:
+    import json
+    sys.path.insert(0, str(HERE))
+    import explainer_assemble as ea
+    intro = HERE / "out/brand/intro-by-ivan-dev.mp4"
+    card_png = WORK / "end-card.png"
+    ea.end_card().save(card_png)
+    ins = ["-i", str(intro)]
+    vf = [f"[0:v]fps={FPS},scale={W}:{H},setsar=1[v0]"]
+    af = ["[0:a]aresample=48000[a0]"]
+    mix = ["[a0]"]
+    t0, k, placed = 2.0, 1, []
+    starts = {}
+    for n, (key, comp, raw) in enumerate(SHOTS, 1):
+        shot = WORK / comp.format(lang="en")
+        voice = WORK / f"v-{key}-en.wav"
+        d = g.media_seconds(shot)
+        ins += ["-i", str(shot), "-i", str(latest(raw)), "-i", str(voice)]
+        nxt = SHOTS[n][0] if n < len(SHOTS) else None
+        fin = "" if key in JOINED else "fade=t=in:st=0:d=0.25,"
+        fout = "" if nxt in JOINED else f"fade=t=out:st={d - 0.35:.2f}:d=0.35,"
+        vf.append(f"[{k}:v]setsar=1,{fin}{fout}null[v{n}]")
+        ms, vs = int(t0 * 1000), int((t0 + VOICE_OFFSET) * 1000)
+        af.append(f"[{k + 1}:a]aresample=48000,volume=0.30,afade=t=in:d=0.3,afade=t=out:st={d - 0.5:.2f}:d=0.5,adelay={ms}|{ms}[r{n}]")
+        af.append(f"[{k + 2}:a]aresample=48000,adelay={vs}|{vs}[s{n}]")
+        mix += [f"[r{n}]", f"[s{n}]"]
+        placed.append((key, t0 + VOICE_OFFSET, voice))
+        starts[key] = t0
+        t0 += d
+        k += 3
+    n_card = len(SHOTS) + 1
+    ins += ["-loop", "1", "-t", f"{CARD_DUR}", "-i", str(card_png)]
+    vf.append(f"[{k}:v]fps={FPS},scale={W}:{H},setsar=1,format=yuv420p,fade=t=in:st=0:d=0.4[v{n_card}]")
+    total = t0 + CARD_DUR
+    graph = ";".join(vf + ["".join(f"[v{i}]" for i in range(n_card + 1)) + f"concat=n={n_card + 1}:v=1:a=0[v]"] + af +
+                     ["".join(mix) + f"amix=inputs={len(mix)}:normalize=0:duration=longest,apad,atrim=0:{total:.2f},"
+                      "loudnorm=I=-16:TP=-1.5:LRA=11[a]"])
+    master = WORK / f"{SLUG}-explainer.mp4"
+    subprocess.run([g.ffmpeg(), "-loglevel", "error", "-y", *ins, "-filter_complex", graph, "-map", "[v]", "-map", "[a]",
+                    "-c:v", "libx264", "-crf", "17", "-preset", "slow", "-pix_fmt", "yuv420p", "-c:a", "aac",
+                    "-b:a", "160k", "-ar", "48000", "-movflags", "+faststart", str(master)], check=True)
+    for height, scale in ((1080, "scale=1920:-2"), (720, "scale=1280:-2")):   # the published web encodes
+        subprocess.run([g.ffmpeg(), "-y", "-loglevel", "error", "-i", str(master), "-vf", scale, "-c:v", "libx264",
+                        "-crf", "23", "-preset", "slow", "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart",
+                        str(WORK / f"{SLUG}-explainer-{height}.mp4")], check=True)
+    pk, pt = POSTER_AT
+    subprocess.run([g.ffmpeg(), "-y", "-loglevel", "error", "-ss", f"{starts[pk] + pt:.2f}", "-i", str(master),
+                    "-frames:v", "1", "-q:v", "3", str(WORK / f"{SLUG}-poster.jpg")], check=True)
+    cues = write_cues()
+    print(f"final -> {master.name} ({total:.1f}s), web encodes, poster, {len(cues['en'])} EN / {len(cues['es'])} ES cues")
+    return master
+
+
 if __name__ == "__main__":
     cmd, args = sys.argv[1], sys.argv[2:]
-    {"coding": coding, "whiteboard": whiteboard, "logos": logos_shot, "phone": phone_shot, "requests": requests_shot, "questions": questions_shot, "viewer": viewer_shot, "sample": sample}[cmd](*args)
+    {"coding": coding, "whiteboard": whiteboard, "logos": logos_shot, "phone": phone_shot, "requests": requests_shot, "questions": questions_shot, "viewer": viewer_shot, "sample": sample, "final": final, "cues": write_cues}[cmd](*args)

@@ -42,5 +42,29 @@
         }
       }
     }
+  },
+  "ai-agents-overview": {
+    "versions": {
+      "en": {
+        "poster": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/ai-agents-overview-poster.jpg?v=1795400271",
+        "duration": 74.6,
+        "sources": [
+          {
+            "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/ai-agents-overview-explainer-1080.mp4?v=1795400280",
+            "height": 1080,
+            "id": "gid://shopify/GenericFile/46877382476028"
+          },
+          {
+            "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/ai-agents-overview-explainer-720.mp4?v=1795400287",
+            "height": 720,
+            "id": "gid://shopify/GenericFile/46877384474876"
+          }
+        ],
+        "captions": {
+          "en": "/portfolio/captions/ai-agents-overview.en.vtt",
+          "es": "/portfolio/captions/ai-agents-overview.es.vtt"
+        }
+      }
+    }
   }
 }

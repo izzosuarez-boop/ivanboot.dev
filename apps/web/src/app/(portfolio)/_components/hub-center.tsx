@@ -8,13 +8,6 @@ import { ExplainerVideo, type ExplainerMedia } from "./explainer-video";
 import { hubGeometry, useShell, useShown } from "./portfolio-shell";
 
 const MEDIA = portfolioMedia as Record<string, ExplainerMedia>;
-// Until the intro video is published to the CDN, local development plays the review render (not in git).
-const DEV_INTRO: ExplainerMedia | undefined = process.env.NODE_ENV === "development" ? {
-  versions: { en: { poster: "/portfolio/dev/overview-poster.jpg", duration: 71,
-    sources: [{ url: "/portfolio/dev/overview-en.mp4", height: 1080 }],
-    captions: { en: "/portfolio/dev/none.vtt", es: "/portfolio/dev/none.vtt" } } },
-} : undefined;
-
 // The hub: the desk scene inside the circle (and the About card it opens), plus the intro video: beside the
 // circle on wide screens, below it on narrow ones.
 export function HubCenter() {
@@ -28,7 +21,7 @@ export function HubCenter() {
   const r = R - band - 16;
   const hint = hovered >= 0 ? sections[hovered].pitch : "Choose an area of work";
   const below = cy + R + 18;
-  const intro = MEDIA[hubIntro.media] ?? DEV_INTRO;
+  const intro = MEDIA[hubIntro.media];
   const visible = shown && !leaving;
 
   return (
