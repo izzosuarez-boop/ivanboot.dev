@@ -23,7 +23,8 @@ export type Section = {
   short: string;      // compact label for small screens
   pitch: string;      // headline inside the section
   intro: string;
-  video: { title: string; media?: string; src?: string | null };  // media: key in portfolio-media.json
+  // big section video above the projects; media: key in portfolio-media.json. Leave it out to show no panel at all
+  video?: { title: string; media?: string; src?: string | null };
   projects: Project[];
 };
 
@@ -41,7 +42,7 @@ export const sections: Section[] = [
     intro:
       "Beyond a chat: from asking for things to delegating the work. Today AI agents work for you — integrated " +
       "into your platforms and workflows, they act as a force multiplier.",
-    video: { title: "Section overview video — coming soon" },
+    // no section video for now (user, 2026-11-23): the empty panel is gone until the new overview video exists
     projects: [
       {
         title: "Ardea Skin store agent",

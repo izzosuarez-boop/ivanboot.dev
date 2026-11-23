@@ -28,7 +28,8 @@ def run(p, label: str, locale: str, viewport: dict, mobile: bool) -> dict[str, b
     page = ctx.new_page()
     errors: list[str] = []
     page.on("pageerror", lambda e: errors.append(str(e)))
-    page.goto(BASE + "/ai-agents", wait_until="networkidle")
+    page.goto(BASE + "/ai-agents", wait_until="load")
+    page.wait_for_timeout(2500)  # the client swaps to the browser-language voice after hydration
     page.wait_for_function("document.querySelector('video.explainer')?.readyState >= 1", timeout=30000)
     c: dict[str, bool] = {}
     s = page.evaluate(STATE)

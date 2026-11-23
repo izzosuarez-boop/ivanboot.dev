@@ -144,7 +144,7 @@ async function SectionContent({ params }: { params: PageProps<"/[section]">["par
   const s = sections[i];
   const prev = sections[(i + sections.length - 1) % sections.length];
   const next = sections[(i + 1) % sections.length];
-  const media = s.video.media ? MEDIA[s.video.media] : undefined;
+  const media = s.video?.media ? MEDIA[s.video.media] : undefined;
 
   return (
     <main className="relative z-0 px-4 pb-24 pt-[190px] sm:px-6">
@@ -157,18 +157,20 @@ async function SectionContent({ params }: { params: PageProps<"/[section]">["par
           <p className="mt-5 text-text-2 sm:text-lg">{s.intro}</p>
         </header>
 
-        <section aria-label="Explainer video" className="mt-14">
-          {media ? (
-            <ExplainerVideo media={media} title={s.video.title} />
-          ) : (
-            <>
-              <MediaFrame label="Explainer video · coming soon" />
-              <p className="mt-3 text-center text-sm text-muted">{s.video.title}</p>
-            </>
-          )}
-        </section>
+        {s.video && (
+          <section aria-label="Explainer video" className="mt-14">
+            {media ? (
+              <ExplainerVideo media={media} title={s.video.title} />
+            ) : (
+              <>
+                <MediaFrame label="Explainer video · coming soon" />
+                <p className="mt-3 text-center text-sm text-muted">{s.video.title}</p>
+              </>
+            )}
+          </section>
+        )}
 
-        <section aria-label="Projects" className="mt-20 space-y-16 sm:space-y-24">
+        <section aria-label="Projects" className={`${s.video ? "mt-20" : "mt-14"} space-y-16 sm:space-y-24`}>
           {s.projects.map((p, k) => <ProjectCard key={p.title} p={p} flip={k % 2 === 1} />)}
         </section>
 

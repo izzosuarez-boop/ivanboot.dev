@@ -17,7 +17,7 @@ with sync_playwright() as p:
     for loc in ("en-US", "es-ES"):
         pg = b.new_page(viewport={"width": 1366, "height": 860}, locale=loc)
         errs = []; pg.on("pageerror", lambda e: errs.append(str(e)))
-        pg.goto(STORE + "/?ref=portfolio&chat=1", wait_until="networkidle"); pg.wait_for_timeout(800)
+        pg.goto(STORE + "/?ref=portfolio&chat=1", wait_until="load"); pg.wait_for_timeout(800)
         dlg = pg.locator("section[role=dialog]")
         hello = dlg.locator(".rounded-tl-sm").first.inner_text() if dlg.count() else ""
         btns = dlg.locator("button[data-mode]")
@@ -29,14 +29,14 @@ with sync_playwright() as p:
         print(loc, "->", hello)
         pg.close()
     pg = b.new_page(viewport={"width": 1440, "height": 900})
-    pg.goto(BASE + "/ai-agents", wait_until="networkidle"); pg.wait_for_timeout(1500)
+    pg.goto(BASE + "/ai-agents", wait_until="load"); pg.wait_for_timeout(1500)
     card = pg.locator("article").filter(has_text="Ardea Skin store agent")
     c["video dentro de la ficha"] = card.locator("video.explainer").count() == 1
     badge = card.get_by_role("link", name="Live demo")
     c["badge es botón al chat"] = badge.count() == 1 and "chat=1" in (badge.get_attribute("href") or "")
     inline = card.locator("p").filter(has_text="A demo agent you can try live").get_by_role("link", name="Try it in the store")
     c["botón 'Try it' en el texto"] = inline.count() == 1
-    c["video principal = próximamente"] = pg.locator("section[aria-label='Explainer video'] video").count() == 0
+    c["sin panel de video de sección"] = pg.locator("section[aria-label='Explainer video']").count() == 0
     card.scroll_into_view_if_needed(); pg.wait_for_timeout(500)
     pass
     b.close()

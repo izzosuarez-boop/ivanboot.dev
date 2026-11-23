@@ -28,11 +28,13 @@ def to_top(pg):
 
 with sync_playwright() as p:
     b = p.chromium.launch(channel="chrome")
-    pg = b.new_page(viewport={"width": 1440, "height": 900})
+    # 600 px tall: since the section panel is gone (2026-11-23) the card video starts high enough to be fully
+    # in view on a 900 px screen; here it starts out of view, which is what the first checks need
+    pg = b.new_page(viewport={"width": 1440, "height": 600})
     errs = []
     pg.on("pageerror", lambda e: errs.append(str(e)))
     c = {}
-    pg.goto(BASE + "/ai-agents", wait_until="networkidle")
+    pg.goto(BASE + "/ai-agents", wait_until="load")
     pg.wait_for_timeout(2500)
     c["tarjeta LLM eliminada"] = pg.get_by_text("LLM integrations in production").count() == 0
     c["un solo proyecto con video"] = pg.locator("article video.explainer").count() == 1
