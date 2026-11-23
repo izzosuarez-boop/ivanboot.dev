@@ -41,6 +41,18 @@ function Switch<T extends string>({ label, options, value, onChange }: {
   );
 }
 
+// iPhone/iPad Safari never lets a page start a video WITH sound by itself: try muted straight away there, so a
+// refused attempt can't race the visitor's own tap on play
+const isIOS = () =>
+  /iP(hone|od|ad)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+type FsVideo = HTMLVideoElement & { webkitDisplayingFullscreen?: boolean };
+const inFullScreen = (el: FsVideo) => !!document.fullscreenElement || !!el.webkitDisplayingFullscreen;
+
+// ?vdebug in the address shows what the player is doing under it (for phones where there are no dev tools)
+const VIDEO_EVENTS = ["loadstart", "loadedmetadata", "canplay", "play", "playing", "pause", "waiting", "stalled",
+  "suspend", "error", "abort", "emptied", "ended", "webkitbeginfullscreen", "webkitendfullscreen"] as const;
+
 // Videos that already started by themselves. Module state survives client-side navigation and resets on a
 // full reload, which is exactly "autoplay the first time, or after reloading the page".
 const autoStarted = new Set<string>();
@@ -67,6 +79,8 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
   const [full, setFull] = useState(false);
   const [active, setActive] = useState(false);
   const [paused, setPaused] = useState(true);
+  const [log, setLog] = useState<string[] | null>(null);
+  const note = useRef<(s: string) => void>(() => {});
   const detected = useSyncExternalStore(noop, browserLang, () => "en" as const);
   const [voiceChoice, setVoiceChoice] = useState<Lang | null>(null);
   const [subsChoice, setSubsChoice] = useState<Subs | null>(null);
@@ -142,8 +156,67 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
   const sleep = () => { window.clearTimeout(idle.current); setActive(false); };
   const lifted = active || paused;
 
+  // iPhone Safari sometimes leaves a started video stuck at 00:00 / 00:00 (in "playing" state, no data ever
+  // arrives; reported 2026-11-23). If not a single byte has arrived 3 s after play, reload the file and try
+  // again, once per play press. A slow but moving download (progress events) is left alone: restarting it
+  // would only make a slow connection slower.
   useEffect(() => {
     const el = video.current;
+    if (!el) return;
+    const WAIT = 3000;
+    let timer: number | undefined;
+    let retried = false;
+    let moved = false;
+    const arm = () => { window.clearTimeout(timer); moved = false; timer = window.setTimeout(check, WAIT); };
+    function check() {
+      if (el!.paused || el!.readyState >= 2) return;
+      if (moved) { arm(); return; } // data is coming, just slowly
+      if (retried) { note.current(`still no data (rs=${el!.readyState} ns=${el!.networkState})`); return; }
+      retried = true;
+      note.current(`no data after ${WAIT / 1000} s (rs=${el!.readyState} ns=${el!.networkState}): reloading`);
+      const at = el!.currentTime;
+      el!.load();
+      if (at) el!.currentTime = at;
+      el!.play().catch((err) => note.current(`retry play refused: ${err?.name}`));
+    }
+    const onProgress = () => { moved = true; };
+    const onData = () => { if (el.readyState >= 2) { window.clearTimeout(timer); retried = false; } };
+    el.addEventListener("play", arm);
+    el.addEventListener("progress", onProgress);
+    el.addEventListener("canplay", onData);
+    el.addEventListener("playing", onData);
+    return () => {
+      window.clearTimeout(timer);
+      el.removeEventListener("play", arm);
+      el.removeEventListener("progress", onProgress);
+      el.removeEventListener("canplay", onData);
+      el.removeEventListener("playing", onData);
+    };
+  }, [voice]);
+
+  // ?vdebug: on-screen event log
+  useEffect(() => {
+    const el = video.current as FsVideo | null;
+    if (!el || !/[?&]vdebug/.test(location.search)) return;
+    const t0 = performance.now();
+    note.current = (s) =>
+      setLog((l) => [...(l ?? []).slice(-14), `${((performance.now() - t0) / 1000).toFixed(1)}s ${s}`]);
+    note.current(`${navigator.userAgent.replace(/^Mozilla\/5\.0 /, "").slice(0, 90)} | ios=${isIOS()}`);
+    const on = (ev: Event) => {
+      const x = ev.currentTarget as HTMLVideoElement;
+      note.current(`${ev.type} t=${x.currentTime.toFixed(1)} rs=${x.readyState} ns=${x.networkState}` +
+        `${x.muted ? " muted" : ""}${x.error ? ` ERR${x.error.code} ${x.error.message}` : ""}` +
+        `${ev.type === "loadstart" ? " " + x.currentSrc.split("/").pop()?.slice(0, 40) : ""}`);
+    };
+    for (const n of VIDEO_EVENTS) el.addEventListener(n, on);
+    return () => {
+      for (const n of VIDEO_EVENTS) el.removeEventListener(n, on);
+      note.current = () => {};
+    };
+  }, [voice]);
+
+  useEffect(() => {
+    const el = video.current as FsVideo | null;
     if (!el) return;
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const io = new IntersectionObserver(
@@ -153,20 +226,32 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
         const fully = e.intersectionRatio >= target * 0.98;
         if (fully && !autoStarted.has(title) && !reduceMotion) {
           autoStarted.add(title);
-          el.muted = false;
-          el.play().catch(() => {
+          const muted = () => {
             el.muted = true;
             setMuted(true);
-            el.play().catch(() => {}); // some browsers block even muted autoplay (data saver); controls still work
-          });
-        } else if (e.intersectionRatio <= 0.5 && !el.paused) {
+            // some browsers block even muted autoplay (iPhone in Low Power Mode, data saver); controls still work
+            el.play().catch((err) => note.current(`autoplay muted refused: ${err?.name}`));
+          };
+          note.current(`autostart (${isIOS() ? "muted, iOS" : "with sound"})`);
+          if (isIOS()) muted();
+          else {
+            el.muted = false;
+            el.play().catch((err) => {
+              note.current(`autoplay with sound refused: ${err?.name}`);
+              // the visitor may have pressed play meanwhile: don't touch a video that is already playing
+              if (el.paused) muted();
+            });
+          }
+        } else if (e.intersectionRatio <= 0.5 && !el.paused && !inFullScreen(el)) {
+          // (in full screen the page's copy of the player can read as off screen, iPhone especially)
+          note.current(`paused: ${Math.round(e.intersectionRatio * 100)}% visible`);
           el.pause(); // from here on, only the visitor's play button resumes it
         }
       },
       { threshold: [0, 0.25, 0.5, 0.75, 0.9, 0.98, 1] },
     );
     io.observe(el);
-    const onHide = () => { if (document.hidden) el.pause(); };
+    const onHide = () => { if (document.hidden) { note.current("paused: tab hidden"); el.pause(); } };
     document.addEventListener("visibilitychange", onHide);
     return () => {
       io.disconnect();
@@ -294,6 +379,11 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
           <Switch label="Subtitles" options={["en", "es", "off"] as Subs[]} value={subs} onChange={setSubsChoice} />
         </span>
       </figcaption>
+      {log && (
+        <pre data-vdebug className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap break-all rounded-lg border border-line bg-ink-2 p-3 font-mono text-[11px] leading-snug text-text-2">
+          {log.join("\n")}
+        </pre>
+      )}
     </figure>
   );
 }

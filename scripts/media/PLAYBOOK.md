@@ -527,3 +527,20 @@ queda a la izquierda y el video a la derecha (debajo en pantallas estrechas).
     la pista pasa a `showing` y la pinta el navegador con la regla `::cue`.
   - Tests: `hub_intro_test.py` comprueba la pantalla completa (17/17) y `explainer_video_test.py` lee el texto de
     `[data-cue]`.
+- **E24. iPhone: el video a veces se queda en 00:00 / 00:00** (2026-11-23). En Safari de iPhone el video quedaba
+  "reproduciendo" sin que llegara ningún dato. El archivo y el CDN están bien: H.264 High, `moov` al principio y
+  respuestas 206 correctas. Por eso el reproductor se protege solo:
+  - Vigilante: si a los 3 s de darle a play no ha llegado ni un byte (ni un evento `progress`), recarga el archivo
+    (`load()`) y vuelve a reproducir. Lo hace una vez por cada pulsación. Una descarga lenta pero en marcha se deja
+    en paz.
+  - En iOS el arranque automático va directamente sin sonido: Safari nunca acepta arrancar con sonido, y ese intento
+    rechazado podía cruzarse con el toque del visitante.
+  - La regla "pausar si se ve la mitad o menos" no actúa en pantalla completa, porque en iPhone la copia del
+    reproductor en la página puede contar como fuera de vista.
+  - Diagnóstico: con `?vdebug` en la dirección (p. ej. `ivanboot.dev/?vdebug`) aparece bajo el video un registro
+    de eventos (readyState, networkState, errores, rechazos de play). Sirve para pedir un pantallazo desde un móvil
+    sin herramientas de desarrollo.
+  - Prueba local: un servidor que deja colgada la primera petición y redirige la segunda al CDN. Con eso, el video se
+    recupera solo a los ~6 s.
+  - Mi Browser (Xiaomi): pone su propio reproductor encima del video, que tapa nuestros subtítulos y botones, y su
+    modo oscuro aclara los rellenos SVG del círculo. No se reproduce con el modo oscuro forzado de Chrome. Pendiente.
