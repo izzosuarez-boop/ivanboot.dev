@@ -53,6 +53,11 @@ const inFullScreen = (el: FsVideo) => !!document.fullscreenElement || !!el.webki
 const VIDEO_EVENTS = ["loadstart", "loadedmetadata", "canplay", "play", "playing", "pause", "waiting", "stalled",
   "suspend", "error", "abort", "emptied", "ended", "webkitbeginfullscreen", "webkitendfullscreen"] as const;
 
+// Videos and posters go through this site's own /media/ path (Caddy forwards it to the store's files on the
+// Shopify CDN): Safari on some iPhones never loaded them from cdn.shopify.com directly (2026-11-23)
+const SHOP_FILES = "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/";
+const local = (url: string) => (url.startsWith(SHOP_FILES) ? "/media/" + url.slice(SHOP_FILES.length) : url);
+
 // Videos that already started by themselves. Module state survives client-side navigation and resets on a
 // full reload, which is exactly "autoplay the first time, or after reloading the page".
 const autoStarted = new Set<string>();
@@ -209,7 +214,21 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
         `${ev.type === "loadstart" ? " " + x.currentSrc.split("/").pop()?.slice(0, 40) : ""}`);
     };
     for (const n of VIDEO_EVENTS) el.addEventListener(n, on);
+    // a file the browser refuses fires "error" on its <source>, not on the <video>
+    const sources = Array.from(el.querySelectorAll("source"));
+    const onSrcErr = (ev: Event) =>
+      note.current(`source error: ${(ev.currentTarget as HTMLSourceElement).src.split("/").pop()?.slice(0, 40)}`);
+    for (const s of sources) s.addEventListener("error", onSrcErr);
+    note.current(`state on load: rs=${el.readyState} ns=${el.networkState} src=${el.currentSrc.split("/").pop()?.slice(0, 40) || "-"}`);
+    const img = new Image();
+    img.onload = () => note.current(`poster ok ${img.naturalWidth}x${img.naturalHeight}`);
+    img.onerror = () => note.current("poster FAILED");
+    img.src = el.poster;
+    fetch(el.currentSrc || sources.at(-1)?.src || "", { headers: { Range: "bytes=0-1" } })
+      .then((r) => note.current(`fetch video: ${r.status} ${r.headers.get("content-range") ?? ""}`))
+      .catch((err) => note.current(`fetch video FAILED: ${err?.message ?? err}`));
     return () => {
+      for (const s of sources) s.removeEventListener("error", onSrcErr);
       for (const n of VIDEO_EVENTS) el.removeEventListener(n, on);
       note.current = () => {};
     };
@@ -321,7 +340,7 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
           controls
           playsInline
           preload="metadata"
-          poster={v.poster}
+          poster={local(v.poster)}
           controlsList="nofullscreen" /* Chrome/Edge: the page's own button replaces it (Firefox keeps its own) */
           className="explainer block aspect-video w-full"
           aria-label={title}
@@ -346,8 +365,8 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
           }}
         >
           {/* wide screens get 1080p, phones and small windows 720p (about half the size) */}
-          {lo && <source src={hi.url} type="video/mp4" media="(min-width: 1100px)" />}
-          <source src={(lo ?? hi).url} type="video/mp4" />
+          {lo && <source src={local(hi.url)} type="video/mp4" media="(min-width: 1100px)" />}
+          <source src={local((lo ?? hi).url)} type="video/mp4" />
           {/* no `default`: a default track would flash natively before the effect hides it */}
           <track kind="subtitles" srcLang="en" label="English" src={v.captions.en} />
           <track kind="subtitles" srcLang="es" label="Español" src={v.captions.es} />

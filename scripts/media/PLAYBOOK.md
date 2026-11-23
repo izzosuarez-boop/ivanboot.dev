@@ -544,3 +544,17 @@ queda a la izquierda y el video a la derecha (debajo en pantallas estrechas).
     recupera solo a los ~6 s.
   - Mi Browser (Xiaomi): pone su propio reproductor encima del video, que tapa nuestros subtítulos y botones, y su
     modo oscuro aclara los rellenos SVG del círculo. No se reproduce con el modo oscuro forzado de Chrome. Pendiente.
+- **E25. Los videos y pósters del portafolio se sirven desde `ivanboot.dev/media/`** (2026-11-23). El registro
+  `?vdebug` del iPhone del usuario mostró `ns=3` (NETWORK_NO_SOURCE) en menos de un segundo, también tras recargar.
+  Safari descartaba el archivo de `cdn.shopify.com` y además no pintaba el póster: no era una descarga lenta.
+  - Caddy (`infra/Caddyfile`, bloque `handle /media/*`) reenvía solo la carpeta de archivos de la tienda
+    (`/s/files/1/0834/6445/4396/files/`) y quita las cabeceras propias del CDN (CSP `sandbox`, Report-To, NEL, Link).
+    Los rangos (206) pasan tal cual.
+  - `explainer-video.tsx` reescribe las URLs del CDN con `local()`; `portfolio-media.json` sigue guardando las
+    originales.
+  - Como Caddy monta el Caddyfile como archivo, tras desplegar un cambio hay que validarlo
+    (`docker run --rm -v $PWD/infra/Caddyfile:/etc/caddy/Caddyfile:ro caddy:2-alpine caddy validate --config
+    /etc/caddy/Caddyfile --adapter caddyfile`) y reiniciar Caddy (`docker compose -f infra/docker-compose.yml
+    restart caddy`). Un `reload` seguiría leyendo el archivo viejo.
+  - `?vdebug` ahora también registra los errores de cada `<source>`, el póster y un `fetch` de prueba del video.
+  - `section_ai_agents_test.py` necesita las dos URLs: `https://ivanboot.dev https://tienda.ivanboot.dev`.

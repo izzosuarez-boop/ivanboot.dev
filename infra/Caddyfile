@@ -11,7 +11,23 @@
 
 ivanboot.dev {
 	import common
-	reverse_proxy web:3000
+	# The portfolio videos and posters, served from this domain: some iPhones never load them straight from
+	# cdn.shopify.com (2026-11-23, PLAYBOOK E25). Only the store's own files folder is reachable through here.
+	handle /media/* {
+		uri replace /media/ /s/files/1/0834/6445/4396/files/ 1
+		reverse_proxy https://cdn.shopify.com {
+			header_up Host {upstream_hostport}
+			header_down -Content-Security-Policy
+			header_down -Reporting-Endpoints
+			header_down -Report-To
+			header_down -Nel
+			header_down -Link
+			header_down -Set-Cookie
+		}
+	}
+	handle {
+		reverse_proxy web:3000
+	}
 }
 
 www.ivanboot.dev {
