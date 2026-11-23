@@ -43,23 +43,24 @@ def run(p, label: str, locale: str, viewport: dict, mobile: bool) -> dict[str, b
     s = page.evaluate(STATE)
     c["se reproduce"] = not s["paused"] and s["t"] > 4.0
     want = "es" if locale.startswith("es") else "en"
-    showing = [t["lang"] for t in s["tracks"] if t["mode"] == "showing"]
+    showing = [t["lang"] for t in s["tracks"] if t["mode"] == "hidden"]  # loaded, drawn by the page
     c[f"idioma por defecto = {want}"] = showing == [want]
     # browsers only fetch the track being shown; the other loads when switched to
-    c["subtítulos cargados (9 cues)"] = all(t["n"] == 9 for t in s["tracks"] if t["mode"] == "showing")
-    cue = next((t["cue"] for t in s["tracks"] if t["mode"] == "showing"), None) or ""
+    c["subtítulos cargados (9 cues)"] = all(t["n"] == 9 for t in s["tracks"] if t["mode"] == "hidden")
+    cue = page.evaluate("() => document.querySelector('[data-cue]')?.innerText || ''")  # the page's own overlay
     c["cue correcto en pantalla"] = cue.startswith("¿Eres cliente?" if want == "es" else "Are you a customer?")
     other = "en" if want == "es" else "es"
     page.get_by_role("group", name="Subtitles").get_by_role("button", name=other.upper(), exact=True).click()
     page.wait_for_timeout(600)
     s = page.evaluate(STATE)
-    c[f"cambiar a {other.upper()}"] = [t["lang"] for t in s["tracks"] if t["mode"] == "showing"] == [other]
-    c[f"{other.upper()} cargado al cambiar"] = all(t["n"] == 9 for t in s["tracks"] if t["mode"] == "showing")
+    c[f"cambiar a {other.upper()}"] = [t["lang"] for t in s["tracks"] if t["mode"] == "hidden"] == [other]
+    c[f"{other.upper()} cargado al cambiar"] = all(t["n"] == 9 for t in s["tracks"] if t["mode"] == "hidden")
     page.locator("video.explainer").screenshot(path=f"{label.replace(' ', '_')}_player.png")
     page.get_by_role("group", name="Subtitles").get_by_role("button", name="Off", exact=True).click()
     page.wait_for_timeout(400)
     s = page.evaluate(STATE)
-    c["Off oculta subtítulos"] = not any(t["mode"] == "showing" for t in s["tracks"])
+    c["Off oculta subtítulos"] = (not any(t["mode"] in ("hidden", "showing") for t in s["tracks"])
+                                  and page.locator("[data-cue]").count() == 0)
 
     # voice switch: other language file, same relative position, keeps playing
     page.evaluate("() => { const v = document.querySelector('video.explainer'); v.currentTime = 20; }")

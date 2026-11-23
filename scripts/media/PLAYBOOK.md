@@ -506,3 +506,24 @@ queda a la izquierda y el video a la derecha (debajo en pantallas estrechas).
   completa vuelven a 0,72em). **E22:** el build de CSS (Tailwind v4 / Lightning CSS) DESCARTA en silencio reglas como
   `video.x.cues-lg::cue` y `…:fullscreen::cue`. Usa una variable en el elemento (`--cue-size`) que lee la regla base
   `video.explainer::cue { font-size: var(--cue-size, 0.72em) }`. Comprueba siempre la hoja de estilos servida.
+- **E23. Los subtítulos los dibuja la página, no el navegador** (desde 2026-11-23). En el monitor del usuario (1280×1024,
+  Chrome con aceleración por hardware en Windows), los subtítulos nativos DESAPARECÍAN en pantalla completa en cuanto
+  se ocultaba la barra de controles, y volvían al mover el mouse. Chrome pasa el video a un plano directo de la GPU y
+  los cues se quedan fuera. No se reproduce con Playwright, que usa otra configuración de GPU, aunque se ponga la ventana
+  en pantalla completa real con CDP (`Browser.setWindowBounds` `windowState: fullscreen`). Solución en
+  `explainer-video.tsx`:
+  - La pista elegida queda en modo `hidden`: se carga y lanza `cuechange`, pero no se pinta. El texto va en un `<div
+    data-cue>` encima del video, dentro de una caja 16:9.
+  - Tamaño en `cqw`: `2.03cqw` es el estándar (5 % de la altura × 0.72) y `3.04cqw` el grande de la portada dentro de la
+    página. Mínimos de 11 y 13 px.
+  - El subtítulo sube a 74 px mientras la barra está visible (movimiento del puntero, ~2,6 s, o video en pausa) y baja al
+    4,5 % cuando se oculta.
+  - La pantalla completa la pide un botón propio (arriba a la derecha, o doble clic) sobre la CAJA del reproductor, no
+    sobre el `<video>`. `controlsList="nofullscreen"` quita el botón nativo en Chrome/Edge.
+  - Chrome deja ese botón nativo en gris. Se oculta con `video.explainer::-webkit-media-controls-fullscreen-button`
+    dentro de un `<style href precedence>` del componente, porque el build de CSS también descarta ese pseudo-elemento
+    (mismo problema que E22).
+  - Respaldo: si el propio `<video>` entra en pantalla completa (botón de Firefox, iPhone con `webkitEnterFullscreen`),
+    la pista pasa a `showing` y la pinta el navegador con la regla `::cue`.
+  - Tests: `hub_intro_test.py` comprueba la pantalla completa (17/17) y `explainer_video_test.py` lee el texto de
+    `[data-cue]`.

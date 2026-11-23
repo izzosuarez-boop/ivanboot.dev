@@ -42,6 +42,21 @@ with sync_playwright() as p:
         c[f"[{label}] arranca solo al verse"] = not s["paused"] and s["t"] > 0.5
         c[f"[{label}] subtítulos EN y ES"] = all(t["n"] > 10 for t in s["tracks"]) and len(s["tracks"]) == 2
         c[f"[{label}] sin selector de voz (solo inglés)"] = pg.locator("[role=group][aria-label=Voice]").count() == 0
+        if label == "desktop":
+            # full screen goes to the player box (video + the page's own subtitles), and the subtitles stay
+            # visible once the control bar would have hidden (Chrome dropped native cues there on some GPUs)
+            pg.mouse.move(vb["x"] + 100, vb["y"] + 100)
+            pg.get_by_role("button", name="Full screen").click()
+            pg.wait_for_timeout(5000)
+            fs = pg.evaluate("""() => { const c = document.querySelector('[data-cue]'), v = document.querySelector('video.explainer');
+              const r = c && c.getBoundingClientRect(), b = v.getBoundingClientRect();
+              return {el: document.fullscreenElement?.tagName, cue: !!c, inside: !!r && r.bottom <= b.bottom && r.top >= b.top,
+                      native: [...v.textTracks].some(t => t.mode === 'showing')}; }""")
+            print("fullscreen", fs)
+            c[f"[{label}] pantalla completa del reproductor"] = fs["el"] == "DIV"
+            c[f"[{label}] subtítulos visibles en pantalla completa"] = fs["cue"] and fs["inside"] and not fs["native"]
+            pg.evaluate("() => document.exitFullscreen()")
+            pg.wait_for_timeout(500)
         if label == "móvil":
             pg.evaluate("() => window.scrollTo(0, 0)")
             pg.wait_for_timeout(500)

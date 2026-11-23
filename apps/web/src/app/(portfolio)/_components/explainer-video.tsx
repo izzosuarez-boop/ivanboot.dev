@@ -59,8 +59,14 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
   media: ExplainerMedia; title: string; largeCues?: boolean; // largeCues: subtitles 50% bigger outside full screen
 }) {
   const video = useRef<HTMLVideoElement>(null);
+  const stage = useRef<HTMLDivElement>(null);
+  const idle = useRef<number | undefined>(undefined);
   const resume = useRef<{ frac: number; play: boolean } | null>(null);
   const [muted, setMuted] = useState(false);
+  const [cue, setCue] = useState("");
+  const [full, setFull] = useState(false);
+  const [active, setActive] = useState(false);
+  const [paused, setPaused] = useState(true);
   const detected = useSyncExternalStore(noop, browserLang, () => "en" as const);
   const [voiceChoice, setVoiceChoice] = useState<Lang | null>(null);
   const [subsChoice, setSubsChoice] = useState<Subs | null>(null);
@@ -69,16 +75,72 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
   const subs: Subs = subsChoice ?? detected;
   const v = media.versions[voice] ?? media.versions.en;
 
+  // Subtitles are drawn by the page (the overlay below), not by the browser: Chrome on some Windows GPUs drops
+  // native cues in full screen as soon as its control bar hides (reported 2026-11-22). The chosen track stays
+  // "hidden" (loaded, fires cuechange, not painted). Only when the <video> itself goes full screen (Firefox and
+  // iPhone, where the page's own full screen button isn't used) does it switch to native "showing".
   useEffect(() => {
-    const el = video.current;
+    const el = video.current as (HTMLVideoElement & { webkitDisplayingFullscreen?: boolean }) | null;
     if (!el) return;
+    let track: TextTrack | null = null;
+    const show = () => {
+      const c = track?.activeCues;
+      setCue(c && c.length ? Array.from(c).map((x) => (x as VTTCue).text).join("\n") : "");
+    };
     const apply = () => {
-      for (const t of Array.from(el.textTracks)) t.mode = t.language === subs ? "showing" : "disabled";
+      const nativeFull = document.fullscreenElement === el || !!el.webkitDisplayingFullscreen;
+      track?.removeEventListener("cuechange", show);
+      track = null;
+      for (const t of Array.from(el.textTracks)) {
+        const on = t.language === subs;
+        t.mode = on ? (nativeFull ? "showing" : "hidden") : "disabled";
+        if (on) track = t;
+      }
+      track?.addEventListener("cuechange", show);
+      show();
     };
     apply();
     el.textTracks.addEventListener("addtrack", apply); // tracks can register after the effect runs
-    return () => el.textTracks.removeEventListener("addtrack", apply);
+    document.addEventListener("fullscreenchange", apply);
+    el.addEventListener("webkitbeginfullscreen", apply);
+    el.addEventListener("webkitendfullscreen", apply);
+    return () => {
+      track?.removeEventListener("cuechange", show);
+      el.textTracks.removeEventListener("addtrack", apply);
+      document.removeEventListener("fullscreenchange", apply);
+      el.removeEventListener("webkitbeginfullscreen", apply);
+      el.removeEventListener("webkitendfullscreen", apply);
+    };
   }, [subs, voice]);
+
+  useEffect(() => {
+    const onFull = () => setFull(!!stage.current && document.fullscreenElement === stage.current);
+    document.addEventListener("fullscreenchange", onFull);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFull);
+      window.clearTimeout(idle.current);
+    };
+  }, []);
+
+  // Full screen on the player box (video + subtitles), not on the bare <video>
+  const toggleFull = () => {
+    const box = stage.current;
+    const el = video.current as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null;
+    if (!box || !el) return;
+    if (document.fullscreenElement) { void document.exitFullscreen().catch(() => {}); return; }
+    if (typeof box.requestFullscreen === "function") void box.requestFullscreen().catch(() => {});
+    else el.webkitEnterFullscreen?.(); // iPhone: only the video itself can go full screen (native subtitles)
+  };
+
+  // Follows the native control bar (shown on pointer movement, hidden ~2.5 s later while playing) so the
+  // subtitles move above it instead of being covered
+  const wake = () => {
+    setActive(true);
+    window.clearTimeout(idle.current);
+    idle.current = window.setTimeout(() => setActive(false), 2600);
+  };
+  const sleep = () => { window.clearTimeout(idle.current); setActive(false); };
+  const lifted = active || paused;
 
   useEffect(() => {
     const el = video.current;
@@ -124,7 +186,38 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
   const [hi, lo] = [...v.sources].sort((a, b) => b.height - a.height);
   return (
     <figure>
-      <div className="relative overflow-hidden rounded-2xl border border-line bg-black shadow-[0_30px_80px_-40px_rgba(94,234,212,0.25)]">
+      {/* Chrome greys out its own full screen button under controlsList="nofullscreen"; hidden here because the
+          CSS build drops vendor pseudo-elements it doesn't know (same pitfall as ::cue). React hoists and
+          dedupes it across players. */}
+      <style href="explainer-video-controls" precedence="default">
+        {"video.explainer::-webkit-media-controls-fullscreen-button{display:none}"}
+      </style>
+      <div
+        ref={stage}
+        onPointerMove={wake}
+        onPointerDown={wake}
+        onPointerLeave={sleep}
+        className={full
+          ? "flex items-center justify-center bg-black"
+          : "relative overflow-hidden rounded-2xl border border-line bg-black shadow-[0_30px_80px_-40px_rgba(94,234,212,0.25)]"}
+      >
+      {/* the 16:9 box: the subtitles sit inside the picture, also when a 5:4 or 21:9 screen letterboxes it */}
+      <div className={`@container relative ${full ? "w-[min(100vw,calc(100vh*16/9))]" : "w-full"}`}>
+        <button
+          type="button"
+          onClick={toggleFull}
+          aria-label={full ? "Exit full screen" : "Full screen"}
+          title={full ? "Exit full screen" : "Full screen"}
+          className={`absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full border border-line bg-night/75 text-text-2 backdrop-blur transition hover:text-glow focus-visible:opacity-100 ${
+            lifted ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            {full
+              ? <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />
+              : <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />}
+          </svg>
+        </button>
         {muted && (
           <button
             type="button"
@@ -144,10 +237,14 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
           playsInline
           preload="metadata"
           poster={v.poster}
-          className={`explainer aspect-video w-full ${largeCues ? "cues-lg" : ""}`}
+          controlsList="nofullscreen" /* Chrome/Edge: the page's own button replaces it (Firefox keeps its own) */
+          className="explainer block aspect-video w-full"
           aria-label={title}
+          onDoubleClick={(e) => { e.preventDefault(); toggleFull(); }}
           onVolumeChange={(e) => setMuted(e.currentTarget.muted)}
+          onPause={() => setPaused(true)}
           onPlay={(e) => {
+            setPaused(false);
             const me = e.currentTarget;
             for (const other of Array.from(document.querySelectorAll<HTMLVideoElement>("video.explainer"))) {
               if (other !== me && !other.paused) other.pause();
@@ -166,9 +263,29 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
           {/* wide screens get 1080p, phones and small windows 720p (about half the size) */}
           {lo && <source src={hi.url} type="video/mp4" media="(min-width: 1100px)" />}
           <source src={(lo ?? hi).url} type="video/mp4" />
-          <track kind="subtitles" srcLang="en" label="English" src={v.captions.en} default={subs === "en"} />
-          <track kind="subtitles" srcLang="es" label="Español" src={v.captions.es} default={subs === "es"} />
+          {/* no `default`: a default track would flash natively before the effect hides it */}
+          <track kind="subtitles" srcLang="en" label="English" src={v.captions.en} />
+          <track kind="subtitles" srcLang="es" label="Español" src={v.captions.es} />
         </video>
+        {cue && (
+          <div
+            aria-hidden /* the same text is in the captions file; screen readers get the video's own tracks */
+            data-cue
+            className="pointer-events-none absolute inset-x-0 flex justify-center px-[11%] text-center transition-[bottom] duration-200"
+            style={{ bottom: lifted ? 74 : "4.5%" }}
+          >
+            {/* sizes match the browser's own rendering (5% of the picture height x 0.72); the hub asks for 50%
+                more inside the page, full screen keeps the standard size */}
+            <p className={`whitespace-pre-line leading-[1.45] text-white ${
+              largeCues && !full ? "text-[max(13px,3.04cqw)]" : "text-[max(11px,2.03cqw)]"
+            }`}>
+              <span className="bg-[rgba(9,11,14,0.78)] px-[0.35em] py-[0.08em] [box-decoration-break:clone] [-webkit-box-decoration-break:clone]">
+                {cue}
+              </span>
+            </p>
+          </div>
+        )}
+      </div>
       </div>
       <figcaption className="mt-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 text-sm text-muted">
         <span>{title}</span>
