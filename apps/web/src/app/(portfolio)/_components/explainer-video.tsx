@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useVideoRecovery } from "@/lib/use-video-recovery";
+import { attachSubtitles } from "@/lib/vtt";
 
 type Version = {
   poster: string;
@@ -96,6 +97,20 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
   const wide = useSyncExternalStore(noop, () => window.matchMedia("(min-width: 1100px)").matches, () => null);
   const [hi, lo] = [...v.sources].sort((a, b) => b.height - a.height);
   const src = wide === null ? undefined : (wide || !lo ? hi : lo).url;
+
+  // The subtitle tracks are created by script (lib/vtt.ts), never as <track src> children: those made iPhone
+  // Safari fail the whole video with error 4 (2026-11-23, PLAYBOOK E28). Runs before the effect below so its
+  // first apply() already sees them.
+  useEffect(() => {
+    const el = video.current;
+    if (!el) return;
+    const ctrl = new AbortController();
+    attachSubtitles(el, [
+      { lang: "en", label: "English", url: v.captions.en },
+      { lang: "es", label: "Español", url: v.captions.es },
+    ], ctrl.signal);
+    return () => ctrl.abort();
+  }, [voice, v.captions.en, v.captions.es]);
 
   // Subtitles are drawn by the page (the overlay below), not by the browser: Chrome on some Windows GPUs drops
   // native cues in full screen as soon as its control bar hides (reported 2026-11-22). The chosen track stays
@@ -327,11 +342,7 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
             el.currentTime = r.frac * el.duration; // the two voices differ slightly in length: same relative point
             if (r.play) void el.play().catch(() => {});
           }}
-        >
-          {/* no `default`: a default track would flash natively before the effect hides it */}
-          <track kind="subtitles" srcLang="en" label="English" src={v.captions.en} />
-          <track kind="subtitles" srcLang="es" label="Español" src={v.captions.es} />
-        </video>
+        />
         {cue && (
           <div
             aria-hidden /* the same text is in the captions file; screen readers get the video's own tracks */

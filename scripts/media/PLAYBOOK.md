@@ -593,3 +593,18 @@ queda a la izquierda y el video a la derecha (debajo en pantallas estrechas).
   - Se queda: la recarga con dirección nueva como último recurso, ahora en `lib/use-video-recovery.ts`. Ya no se
     dispara por error al cambiar a la voz en español: el elemento recién montado se comprueba 1,5 s después.
   - Pendiente: confirmación en el iPhone del usuario, recargando varias veces `ivanboot.dev/?vdebug`.
+- **E28. CAUSA CONFIRMADA: las pistas `<track>` rompen el video en iPhone** (2026-11-23). Pruebas en el iPhone del
+  usuario (iOS 18.7, Safari) con páginas servidas desde el VPS (`/opt/ivanboot/media`, en `ivanboot.dev/v/`):
+  - `ivanboot.dev/v/` (`index.html`): el mismo archivo desde Shopify y desde el VPS, sin audio y recodificado.
+    Todo ✅ las tres veces. No era Shopify ni el archivo.
+  - `ivanboot.dev/v/prueba2.html`: el reproductor por partes. Con sonido ✅, con preload=metadata y póster ✅,
+    con `<track src>` ❌ ERROR 4 (MEDIA_ERR_SRC_NOT_SUPPORTED, `ns=3` sin metadatos) y todo junto ❌. Con
+    subtítulos creados por JavaScript (`addTextTrack` + `VTTCue`) ✅.
+  - Arreglo: `lib/vtt.ts` (`parseVtt` y `attachSubtitles`) descarga el `.vtt` y crea las pistas por script.
+    `explainer-video.tsx` ya no tiene ningún `<track>`. El resto, que lee `textTracks`, `cuechange`,
+    hidden/showing y la superposición propia, no cambia.
+  - Regla para cualquier video futuro: **nunca `<track src>`**. Los subtítulos siempre van con `attachSubtitles()`.
+  - E24 a E27 fueron diagnósticos equivocados (caché, dominio, HTTP/3, lista `<source>`). Lo que queda de ellos
+    (`src` único elegido en el cliente y recarga con dirección nueva como último recurso) es inofensivo y se queda.
+  - La carpeta de videos del VPS se queda (Caddy `handle_path /v/*`, volumen `../media:/srv/media:ro`), para
+    pruebas o para alojar videos fuera de Shopify. Ahora mismo solo contiene los archivos de esta prueba.
