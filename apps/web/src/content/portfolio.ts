@@ -111,15 +111,6 @@ export const sections: Section[] = [
         loop: { media: "loop-sale", label: "The price monitor hits the target, the client accepts on the phone, sale complete" },
       },
       {
-        title: "Fleet of headless Linux workers",
-        status: "Case study",
-        summary: "Nine Ubuntu servers running desktop-automation workers 24/7 (computer vision and OCR on a virtual display), each with its own network egress.",
-        problem: "Unattended machines fail silently: a config edited but never applied, a tunnel that swallows its own transport, a worker that dies at 3 a.m.",
-        how: "Clone-don't-rebuild setup scripts, per-machine SOCKS5 egress through tun2socks with pinned routes, systemd units and a watchdog.",
-        result: "A new machine in about 45 minutes; a dead worker restored in 3–4 seconds; a catalog of real failures, each caught by hitting it.",
-        stack: ["Linux", "systemd", "Networking", "iptables", "Computer vision"],
-      },
-      {
         title: "Social media automation",
         status: "In progress",
         summary: "Scheduled posts and replies generated from the catalog and approved by a person before publishing.",
