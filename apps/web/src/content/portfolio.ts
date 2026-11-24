@@ -35,7 +35,6 @@ export type Section = {
 const STORE = "https://tienda.ivanboot.dev";
 // opens the store with the agent's chat already open and a greeting for visitors coming from the portfolio
 const STORE_CHAT = `${STORE}/?ref=portfolio&chat=1`;
-const REPO = "https://github.com/izzosuarez-boop/ivanboot.dev";
 
 export const sections: Section[] = [
   {
@@ -161,53 +160,53 @@ export const sections: Section[] = [
     slug: "ai-media-shopify",  // merged from "ai-media" and "web-shopify" 2026-11-23 (user)
     label: "AI Media & Shopify",
     short: "Media & Shopify",
-    pitch: "Custom Shopify storefronts, with product photos and videos made by AI.",
+    // headline, intro and the two cards rewritten by the user (2026-11-24); photography, category videos and
+    // the VPS setup cards were removed
+    pitch: "AI-generated media: meaningful production that sells ideas.",
     intro:
-      "Headless Shopify with a custom Next.js frontend: Shopify keeps payments, inventory and checkout; the experience " +
-      "is fully yours. The product photos, videos and voice are generated with one art direction and checked in code, " +
-      "not by eye alone.",
+      "AI content is worth making when its meaning reaches your customers and users in a way that is consistent and " +
+      "easy to understand, while what you communicate builds an identity of your own.",
     // how the portfolio's AI content is made: idea, consistency, corrections, code, Ardea Skin, social media, budget
     video: { media: "media-overview", title: "How the content is made: idea, consistency, real corrections and a budget under $25, in 143 seconds" },
     projects: [
       {
-        title: "Ardea Skin — headless Shopify store",
+        title: "AI & Social Media: from idea to product",
+        status: "Case study",
+        summary: "Content creation has become one of the fastest-growing fields of recent years. Today, beyond what gets "
+          + "made, what gives content its value is what it conveys and how that message is understood by the people it reaches.",
+        problem: "Making content keeps getting easier, so social networks, media outlets and websites flood people with more "
+          + "information than they can take in. Selling an idea through your site is not the same when twenty other places "
+          + "are trying to do it too. That is why, more than ever, what matters is not the medium that carries the idea but "
+          + "the idea itself: presented so it is easy to understand and digest, and so it builds an identity people "
+          + "remember in the medium and long term.",
+        how: "Every video on this site follows a structure built to convey one idea and what I want to sell. I used "
+          + "Google's AI models (Gemini Omni and its Flash version, plus Gemini for images and voice), Seedance and "
+          + "DaVinci AI, and coding tools like Claude Opus 5.5. That last part matters: a good result comes from a solid "
+          + "base and a model that drives the whole creative process during development. Code doesn't replace the AI; "
+          + "it complements it.",
+        result: "Videos with an intent and an idea behind them. This site exists to sell my portfolio and my skills to "
+          + "anyone who needs to build, improve, or simply find talent for their projects, and that is what every video "
+          + "tries to convey: a problem, its solution and my role in it, while showing what I can do.",
+        stack: ["Gemini Omni", "Gemini image", "Gemini TTS", "Seedance", "DaVinci AI", "Claude Opus 5.5", "ffmpeg", "Playwright"],
+      },
+      {
+        title: "Ardea Skin: a Shopify store with an identity of its own",
         status: "Live demo",
         summary: "A working store for a fictional skincare brand: real catalog, cart and Shopify checkout in test mode, with an AI advisor built in.",
-        problem: "Show both sides a client needs: solid Shopify integration and a frontend that does not look like every other theme.",
-        how: "Next.js 16 with server-side Storefront API calls (private token never reaches the browser), cached product data, host-based routing for two sites in one app.",
-        result: "Instant static shells with live stock streamed in; a burst of visitors costs one Shopify request.",
-        stack: ["Shopify Storefront API", "Next.js 16", "React 19", "Tailwind", "TypeScript"],
+        problem: "Every client wants something made to their taste. Most online stores offer useful features, but cast "
+          + "from a mold made for everyone. That is where the need comes from: building an identity of its own on top of "
+          + "a site, one that represents what the client wants to sell to their users.",
+        how: "Frontend: Next.js 16, React 19, TypeScript and Tailwind 4, the same app that serves this portfolio, so "
+          + "there is one codebase and one deploy. Shopify handles the catalog, inventory, checkout, orders, and the "
+          + "images and videos (from its own CDN). The chat agent runs on Claude Haiku 5.5, with measured costs and "
+          + "per-visitor limits against spam. Supabase (managed Postgres) stores the chat conversations, the token cost "
+          + "of every message, the escalated cases and the date of the last reports, so none is sent twice. A Telegram "
+          + "integration runs the store from outside, with an AI agent between the two.",
+        result: "A site made to measure for a potential client. The products are demos, but it shows an identity that "
+          + "carries into every part of the store and every new product, making the store much simpler and more "
+          + "automated to run without losing the human touch users look for.",
+        stack: ["Shopify Storefront API", "Next.js 16", "React 19", "Tailwind 4", "TypeScript", "Claude API", "Supabase", "Telegram"],
         link: { label: "Open the store", href: STORE },
-      },
-      {
-        title: "Ardea Skin product photography",
-        status: "Live demo",
-        summary: "Thirteen product photos and three category covers for a fictional brand, with one shared art direction and a different scene per category.",
-        problem: "Generated packshots tend to look like a pharmacy, misspell labels or come out as collages.",
-        how: "A written art direction (heavy glass, champagne-gold metal, printed lettering, travertine), approved references, labels cropped and zoomed letter by letter, and a detector that flags collages.",
-        result: "About $0.14 per image; a wrong “130 ML” fixed by editing only that text and verified with a pixel diff.",
-        stack: ["Gemini image", "Python", "Pillow", "Shopify Files"],
-        link: { label: "See them in the store", href: STORE },
-      },
-      {
-        title: "Category videos with narration",
-        status: "Live demo",
-        summary: "15-second how-to videos with the real product, narration and burned-in captions.",
-        problem: "The bottle in a generated video must be the real one, and the voice must say exactly the script, in sync with the image.",
-        how: "Approved photo as video reference, one narration line per caption, transcription back to text to check the voice, assembly with ffmpeg.",
-        result: "About $1.70–1.90 per category; the whole demo's media budget was roughly $10.",
-        stack: ["Gemini video", "Gemini TTS", "ffmpeg", "Python"],
-        link: { label: "Watch in the store", href: STORE },
-      },
-      {
-        title: "One-VPS production setup",
-        status: "Live demo",
-        summary: "The whole site — portfolio, store and API — on one Linux server with Docker Compose and automatic HTTPS.",
-        problem: "Keep hosting cheap and simple without giving up HTTPS, zero-downtime-ish deploys and a smoke test.",
-        how: "Caddy reverse proxy with Let's Encrypt and HTTP/3, Next.js and FastAPI containers, one-command deploy that builds on the server and checks the result.",
-        result: "Deploys in one command; media served from Shopify's CDN, not the server.",
-        stack: ["Docker Compose", "Caddy", "Linux", "Let's Encrypt"],
-        link: { label: "Source code", href: REPO },
       },
     ],
   },
