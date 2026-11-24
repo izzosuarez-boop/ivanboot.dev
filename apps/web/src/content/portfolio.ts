@@ -79,7 +79,7 @@ export const sections: Section[] = [
     label: "Web Scraping, Software Automation & Data",
     ring: "Scraping, Automation & Data",
     short: "Automation",
-    pitch: "Bots that do the routine work, automate your work end to end and only interrupt you when needed.",
+    pitch: "Bots that do the routine work and automate your work from start to finish.",
     intro:
       "Today, more than ever, it is possible to build workflows with minimal human intervention. Software works " +
       "24/7; a person can't. Delegate everything you can automate to software or AI agents: systematic work, " +
