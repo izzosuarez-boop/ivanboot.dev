@@ -24,9 +24,3 @@ scripts/shopify/out/
 
 # Local review renders for the hub intro video (published ones live on the Shopify CDN)
 apps/web/public/portfolio/dev/
-
-# venta_kamas: payout details, sales log and the logged-in browser profile stay local
-venta_kamas/datos_venta.json
-venta_kamas/servidores.json
-venta_kamas/ventas.csv
-venta_kamas/perfil_chrome/
