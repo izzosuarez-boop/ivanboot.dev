@@ -1,0 +1,102 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<style>
+  #stage { position: absolute; inset: 0; transform-origin: 50% 50%; }
+  .bot { position: absolute; left: 190px; top: 230px; width: 520px; text-align: center; }
+  .bot img { width: 440px; height: 440px; mix-blend-mode: screen;
+    -webkit-mask-image: radial-gradient(circle, #000 52%, transparent 70%); mask-image: radial-gradient(circle, #000 52%, transparent 70%); }
+  .bot .ring { position: absolute; left: 50%; top: 220px; width: 470px; height: 470px; margin: -235px 0 0 -235px; border-radius: 50%;
+    border: 2px solid rgba(94,234,212,0.35); }
+  .bot h5 { margin-top: 30px; font-size: 30px; font-weight: 600; }
+  .pill { display: inline-block; margin-top: 14px; padding: 9px 22px; border-radius: 999px; font-size: 19px; letter-spacing: 0.18em; font-weight: 700; }
+  .card { position: absolute; left: 760px; top: 300px; width: 420px; border-radius: 20px; background: #12171d;
+    border: 1px solid rgba(94,234,212,0.45); padding: 26px 30px; box-shadow: 0 30px 80px -30px rgba(0,0,0,0.9); }
+  .card .h { font-size: 17px; letter-spacing: 0.24em; color: var(--glow); font-weight: 700; }
+  .card .id { margin-top: 8px; font-size: 34px; font-weight: 700; color: #fff; }
+  .row { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding: 12px 16px; border-radius: 12px;
+    font-size: 22px; background: rgba(255,255,255,0.03); border: 1px solid transparent; }
+  .row span:first-child { color: var(--muted); font-size: 19px; }
+  .row b { color: #fff; }
+  .row.hi { border-color: rgba(94,234,212,0.7); background: rgba(94,234,212,0.1); }
+  .site { position: absolute; left: 1330px; top: 250px; width: 440px; height: 470px; border-radius: 22px; background: #fff; overflow: hidden;
+    box-shadow: 0 40px 100px -30px rgba(0,0,0,0.85); color: #1b2433; }
+  .site .top { height: 50px; background: #eef1f5; display: flex; align-items: center; gap: 10px; padding: 0 18px; }
+  .site .top i { width: 12px; height: 12px; border-radius: 50%; background: #d5dae2; display: inline-block; }
+  .site .brand { display: flex; align-items: center; gap: 12px; padding: 20px 26px; border-bottom: 1px solid #eef1f5; font-size: 22px; font-weight: 700; }
+  .site .logo { width: 34px; height: 34px; border-radius: 9px; background: linear-gradient(135deg, #2457c5, #5b8def); }
+  .msg { margin: 24px 26px 0; padding: 16px 20px; border-radius: 16px 16px 16px 4px; background: #eef1f5; font-size: 21px; line-height: 1.4; }
+  .msg small { display: block; font-size: 15px; color: #6b7689; margin-bottom: 4px; font-weight: 600; }
+  .status { position: absolute; left: 26px; right: 26px; bottom: 26px; padding: 16px; border-radius: 14px; text-align: center; font-size: 22px; font-weight: 700; }
+  svg.flow { position: absolute; inset: 0; }
+  .coin { position: absolute; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #fff6c9, #f6c94c 35%, #c58a12 70%, #8a5a06);
+    box-shadow: 0 0 18px rgba(246,201,76,0.65), inset 0 0 0 3px rgba(255,236,170,0.5); }
+  .count { position: absolute; left: 1050px; top: 820px; width: 400px; text-align: center; font-size: 30px; font-weight: 700; color: #f6c94c; }
+</style></head>
+<body>
+<div id="stage">
+  <svg class="flow" viewBox="0 0 1920 1080"><path id="arrow" d="M 560 760 C 820 960, 1240 960, 1550 760" fill="none"
+    stroke="rgba(246,201,76,0.55)" stroke-width="4" stroke-dasharray="14 14" stroke-linecap="round"/>
+    <path id="head" d="M 1530 742 L 1556 756 L 1536 780" fill="none" stroke="rgba(246,201,76,0.8)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <line id="plug" x1="640" y1="470" x2="760" y2="470" stroke="rgba(94,234,212,0.6)" stroke-width="3" stroke-dasharray="6 8"/></svg>
+  <div class="bot"><div class="ring" id="ring"></div><img id="robot" src="../out/portfolio-automation-overview/robot-still.png"><h5>Delivery bot</h5><span class="pill" id="pill"></span></div>
+  <div class="card" id="card"><div class="h">ORDER TOKEN</div><div class="id">#48213</div>
+    <div class="row" id="r-server"><span>Server</span><b class="blur">████████</b></div>
+    <div class="row" id="r-amount"><span>Amount</span><b>40 M</b></div>
+    <div class="row"><span>Buyer</span><b>Buyer site A</b></div></div>
+  <div class="site" id="site"><div class="top"><i></i><i></i><i></i></div><div class="brand"><div class="logo"></div>Buyer site A</div>
+    <div class="msg" id="msg"><small>Staff · support chat</small>Hi! Ready to receive your 40 M. Meet you at the trade point 👋</div>
+    <div class="status" id="status"></div></div>
+  <div id="coins"></div>
+  <div class="count" id="count"></div>
+</div>
+<script>
+const clamp = (x) => Math.max(0, Math.min(1, x)), ease = (x) => { x = clamp(x); return x * x * (3 - 2 * x); };
+const arrow = document.getElementById("arrow"), L = arrow.getTotalLength();
+const coins = document.getElementById("coins");
+const N = 9, F0 = 6.3, F1 = 8.5;                     // coins leave between F0 and F1 - 1.0 s, each takes 1.0 s
+for (let i = 0; i < N; i++) { const c = document.createElement("div"); c.className = "coin"; coins.append(c); }
+window.DUR = 9.3;
+window.render = (t) => {
+  document.getElementById("stage").style.transform = `scale(${1 + 0.03 * ease(t / DUR)})`;
+  const standby = t < 5.9, delivered = t >= F1 + 0.1;
+  const pill = document.getElementById("pill");
+  pill.textContent = delivered ? "DELIVERED ✓" : standby ? "STANDBY" : "DELIVERING";
+  const col = delivered ? [76, 208, 141] : standby ? [242, 180, 92] : [94, 234, 212];
+  pill.style.color = `rgb(${col})`; pill.style.background = `rgba(${col},0.12)`; pill.style.border = `1px solid rgba(${col},0.6)`;
+  const breath = standby ? 0.5 + 0.5 * Math.sin(t * 3.2) : 1;
+  pill.style.opacity = standby ? 0.55 + 0.45 * breath : 1;
+  document.getElementById("robot").style.transform = `scale(${1 + 0.02 * Math.sin(t * 2.2)})`;
+  const ring = document.getElementById("ring");
+  ring.style.transform = `scale(${1 + 0.04 * breath})`; ring.style.opacity = 0.4 + 0.6 * breath;
+  ring.style.borderColor = `rgba(${col},0.45)`;
+  // the order token flies in and plugs into the bot
+  const ci = ease((t - 0.5) / 0.8), card = document.getElementById("card");
+  card.style.opacity = ci; card.style.transform = `translate(${160 * (1 - ci)}px, ${-120 * (1 - ci)}px) scale(${0.85 + 0.15 * ci})`;
+  document.getElementById("plug").style.opacity = ease((t - 1.4) / 0.3);
+  document.getElementById("r-server").classList.toggle("hi", t >= 4.2 && t < 5.4);
+  document.getElementById("r-amount").classList.toggle("hi", t >= 4.9 && t < 6.0);
+  const site = document.getElementById("site"), si = ease((t - 0.9) / 0.6);
+  site.style.opacity = si; site.style.transform = `translateX(${60 * (1 - si)}px)`;
+  const msg = document.getElementById("msg"), mi = ease((t - 5.9) / 0.35);
+  msg.style.opacity = mi; msg.style.transform = `translateY(${14 * (1 - mi)}px) scale(${0.94 + 0.06 * mi})`;
+  const st = document.getElementById("status");
+  st.textContent = delivered ? "✓ Received 40 M" : t >= 5.9 ? "Delivery in progress…" : "Waiting for the delivery";
+  st.style.background = delivered ? "#e3f4ec" : "#f3f5f9"; st.style.color = delivered ? "#1e8e5a" : "#6b7689";
+  arrow.style.opacity = document.getElementById("head").style.opacity = ease((t - 6.0) / 0.4) * (delivered ? 0.6 : 1);
+  arrow.setAttribute("stroke-dashoffset", -t * 40);
+  [...coins.children].forEach((c, i) => {
+    const s = F0 + i * (F1 - 1.0 - F0) / (N - 1), u = (t - s) / 1.0;
+    if (u <= 0 || u >= 1) { c.style.opacity = 0; return; }
+    const p = arrow.getPointAtLength(L * ease(u));
+    c.style.left = p.x + "px"; c.style.top = p.y + "px"; c.style.opacity = Math.min(1, u * 6, (1 - u) * 6);
+    c.style.transform = `scale(${0.8 + 0.3 * Math.sin(u * Math.PI)}) rotate(${u * 360}deg)`;
+  });
+  const cnt = document.getElementById("count");
+  const m = Math.round(40 * clamp((t - F0 - 0.5) / (F1 - F0 - 0.4)));
+  cnt.textContent = t >= F0 + 0.3 ? `${m} M / 40 M` : "";
+  cnt.style.color = delivered ? "#4cd08d" : "#f6c94c";
+};
+render(0);
+</script>
+</body></html>

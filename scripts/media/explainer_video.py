@@ -116,6 +116,43 @@ SHOTS = {
                       "no writing appears on them.",
         },
     },
+    # Automation section: a client's game-currency sales automated end to end (approved 2026-11-23). The same man
+    # in all three shots: first by hand at night, then relaxed on his couch while the bots work.
+    "automation-overview": {
+        "manual": {
+            "seconds": 10,
+            "reference": "manual-still.png",
+            "prompt": "Animate the reference image exactly as it is: the same man, the same room, desk, monitor, lamp, "
+                      "notebook and framing. Late at night he works by hand, tired: he looks at the monitor, then writes "
+                      "a few numbers in the paper notebook with the pen, looks back at the monitor, writes again, then "
+                      "pauses, rubs his eyes with one hand and lets out a tired sigh, and goes back to the monitor. "
+                      "Small, natural movements. The monitor stays exactly where it is, its screen steady. LOCKED-OFF "
+                      "STATIC CAMERA on a tripod: no camera movement, no zoom, no pan.",
+        },
+        "ask": {
+            "seconds": 9,
+            "reference": "couch-back-still.png",
+            "prompt": "Animate the reference image exactly as it is: the same man seen from behind, the same sofa, "
+                      "living room, TV and framing. For the first two seconds he watches the TV, relaxed. Then he turns "
+                      "his head slightly to his right toward the smartphone lying face down on the sofa cushion beside "
+                      "him, picks it up with his right hand and brings it up in front of his chest, holding it there "
+                      "and looking down at it, the phone hidden in front of his body; he stays sitting. He then taps "
+                      "it once with his thumb and nods slightly. He never turns his face toward the camera. The TV "
+                      "shows the same calm, softly blurred image the whole time. LOCKED-OFF STATIC CAMERA on a "
+                      "tripod: no camera movement, no zoom, no pan.",
+        },
+        "done": {
+            "seconds": 10,
+            "reference": "couch-profile-still.png",
+            "prompt": "Animate the reference image exactly as it is: the same man in profile, the same sofa, room, "
+                      "side table and framing. For the first two seconds he watches the TV, relaxed. Then he picks up "
+                      "the smartphone lying face down on the side table with his right hand and holds it in front of "
+                      "him at chest height, its screen facing him (we only see the back and edge of the phone), reads "
+                      "it, and a calm, satisfied smile spreads across his face; he gives a small nod and leans back "
+                      "into the sofa, still holding the phone. He never turns his face toward the camera. LOCKED-OFF "
+                      "STATIC CAMERA on a tripod: no camera movement, no zoom, no pan.",
+        },
+    },
 }
 
 # Stills that start a shot: made with the image model from Iván's real photo + the approved hub scene, so he
@@ -266,6 +303,65 @@ STILLS = {
                 "black whiteboard marker with its cap on lies on the tray at the bottom of the board. The board is "
                 "evenly lit so every note is clearly visible. Eye level, 35mm, sharp focus on the board, "
                 "photorealistic. No readable text, no logos, no watermark."),
+        },
+    },
+    "automation-overview": {
+        "manual": {
+            "refs": ["apps/web/public/portfolio/scene.webp"],
+            "prompt": (
+                "The reference image only sets the look: night-time mood, warm amber lamp light, a cool teal ambient "
+                "glow, the same color grading. Its place and its man must NOT appear. "
+                "Create ONE single continuous cinematic photograph, 16:9, not a collage. A man in his early thirties, "
+                "short dark curly hair, a short dark beard, a plain heather-grey hoodie, sits at a cluttered desk in a "
+                "small apartment late at night, visibly tired, shoulders slumped. In front of him a single desktop "
+                "monitor glows with a bright spreadsheet-like page of rows and columns as soft unreadable shapes; next "
+                "to the keyboard an open paper notebook with handwritten columns of numbers, a pen in his right hand "
+                "resting on the page, two empty coffee mugs and a crumpled energy-drink can. The camera is in front of "
+                "him and to his left at eye level, three-quarter view: we see his tired face lit by the cool screen "
+                "glow, the monitor from its side at the right edge of the frame (its screen angled away, partly "
+                "visible), the notebook and his hands. A warm desk lamp on the left; the room falls off into darkness. "
+                "Photorealistic, 35mm, natural skin texture. No readable text, no logos, no watermark, no other people."),
+        },
+        "couch-back": {
+            "refs": ["scripts/media/out/portfolio-automation-overview/manual-still.png", "apps/web/public/portfolio/scene.webp"],
+            "prompt": (
+                "Image 1 is the identity reference: the same man (short dark curly hair, short dark beard, heather-grey "
+                "hoodie). Image 2 only sets the look: night-time mood, warm amber lamp light, cool teal glow. "
+                "Create ONE single continuous cinematic photograph, 16:9, not a collage. A cozy, modern living room in "
+                "the evening. The man sits relaxed at the RIGHT END of a deep dark-green sofa, right next to its armrest, "
+                "watching a large wall-mounted TV. The camera is BEHIND the sofa and slightly to his LEFT, a little "
+                "above the sofa back: we see the back of his head, his left ear and a hint of his beard line, and his "
+                "shoulders above the sofa back, in the center-right of the frame. On the wide sofa armrest right beside "
+                "his right elbow, within easy reach of his right hand, a smartphone lies FACE DOWN: we only see its "
+                "plain dark back, never its screen. The TV in the upper left shows a calm, softly out-of-focus nature "
+                "scene of a misty green forest, no text, no logos. A warm floor lamp at the far right, the room "
+                "otherwise dark. Above his right shoulder and above the phone there is calm, dark, empty wall "
+                "space. Photorealistic, 35mm. No readable text, no logos, no watermark, no other people."),
+        },
+        "couch-profile": {
+            "refs": ["scripts/media/out/portfolio-automation-overview/manual-still.png",
+                     "scripts/media/out/portfolio-automation-overview/couch-back-still.png"],
+            "prompt": (
+                "Image 1 is the identity reference: this exact same man (same face, short dark curly hair, short dark "
+                "beard, heather-grey hoodie). Image 2 is his living room: keep the same dark-green sofa, warm floor "
+                "lamp, TV and night mood. Create ONE single continuous cinematic photograph, 16:9, not a collage. The "
+                "man sits relaxed on the sofa in PROFILE, seen from his RIGHT side at eye level, facing the left of the "
+                "frame toward the TV (the TV is out of frame or a soft glow at the left edge). He is in the center-left "
+                "of the frame from the knees up, calm and content. Beside him on the RIGHT, closer to the camera, a "
+                "small wooden side table with a smartphone lying FACE DOWN on it (we see its dark back). Above the side "
+                "table and above his hands there is calm, dark, empty space. Warm lamp light on his face, a cool teal "
+                "glow from the TV. Photorealistic, 50mm, natural skin texture. No readable text, no logos, no "
+                "watermark, no other people."),
+        },
+        "robot": {
+            "refs": [],
+            "aspect": "1:1",
+            "prompt": (
+                "A single glowing emblem of a friendly robot head with two round eyes and a small antenna, made of fine "
+                "luminous circuit-board lines and small round nodes, seen from the front, symmetrical and elegant. "
+                "Color: bright teal-cyan (#5eead4) glowing lines with a soft bloom, a few white-hot nodes. Centered, "
+                "filling about 65% of the frame, on a PURE BLACK background (#000000) with nothing else: no text, no "
+                "logo, no frame, no reflections, no floor. Crisp, high detail, vector-like but luminous."),
         },
     },
 }

@@ -84,7 +84,7 @@ export const sections: Section[] = [
       "Today, more than ever, it is possible to build workflows with minimal human intervention. Software works " +
       "24/7; a person can't. Delegate everything you can automate to software or AI agents: systematic work, " +
       "gathering information, analyzing it and making decisions by your own guidelines.",
-    video: { title: "The store owner's Telegram bot: alerts, reports and charts on demand", src: null },
+    video: { media: "automation-overview", title: "A real client case: game-currency sales automated end to end, in 86 seconds" },
     projects: [
       {
         title: "Store owner bot on Telegram",

@@ -1,0 +1,25 @@
+/* Shared look of the code-made shots (automation video): the portfolio's night palette */
+@font-face { font-family: "Inter"; src: url("../fonts/Inter.ttf"); font-weight: 100 900; }
+@font-face { font-family: "Fraunces"; src: url("../fonts/Fraunces.ttf"); font-weight: 100 900; }
+:root {
+  --bg: #0b0d10; --ink-2: #12161b; --line: #222a33; --text: #e6e9ed; --muted: #8b95a1;
+  --glow: #5eead4; --lamp: #f2b45c; --ok: #4cd08d; --violet: #a78bfa;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); color: var(--text);
+  font-family: "Inter", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+body::before { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(1100px 700px at 50% 42%, rgba(94,234,212,0.08), transparent 70%),
+              radial-gradient(900px 600px at 85% 95%, rgba(242,180,92,0.05), transparent 70%); }
+.mono { font-family: "Cascadia Mono", "Consolas", monospace; }
+.blur { filter: blur(7px); }
+/* a browser window */
+.win { position: absolute; background: #fff; border-radius: 18px; overflow: hidden;
+  box-shadow: 0 50px 120px -30px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.06); color: #1b2433; }
+.win .bar { height: 56px; background: #eef1f5; display: flex; align-items: center; gap: 12px; padding: 0 20px;
+  border-bottom: 1px solid #dce2eb; }
+.win .dot { width: 14px; height: 14px; border-radius: 50%; background: #d5dae2; }
+.win .url { flex: 1; margin-left: 16px; height: 34px; border-radius: 17px; background: #fff; border: 1px solid #dce2eb;
+  display: flex; align-items: center; padding: 0 18px; font-size: 17px; color: #6b7689; }
+.chip { display: inline-flex; align-items: center; gap: 10px; padding: 10px 20px; border-radius: 999px;
+  border: 1px solid rgba(94,234,212,0.5); background: rgba(94,234,212,0.1); color: var(--glow); font-size: 22px; }

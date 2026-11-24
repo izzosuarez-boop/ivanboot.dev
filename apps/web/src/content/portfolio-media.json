@@ -66,5 +66,29 @@
         }
       }
     }
+  },
+  "automation-overview": {
+    "versions": {
+      "en": {
+        "poster": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/automation-overview-poster.jpg?v=1795488207",
+        "duration": 85.8,
+        "sources": [
+          {
+            "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/automation-overview-explainer-1080.mp4?v=1795488215",
+            "height": 1080,
+            "id": "gid://shopify/GenericFile/46906440220924"
+          },
+          {
+            "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/automation-overview-explainer-720.mp4?v=1795488225",
+            "height": 720,
+            "id": "gid://shopify/GenericFile/46906464567548"
+          }
+        ],
+        "captions": {
+          "en": "/portfolio/captions/automation-overview.en.vtt",
+          "es": "/portfolio/captions/automation-overview.es.vtt"
+        }
+      }
+    }
   }
 }

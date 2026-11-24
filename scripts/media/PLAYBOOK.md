@@ -625,3 +625,44 @@ queda a la izquierda y el video a la derecha (debajo en pantallas estrechas).
   - Mi Browser también pone su propio reproductor encima del video y tapa los subtítulos y botones de la página.
     Prueba en `ivanboot.dev/v/mi.html`: cuatro variantes (como ahora, sin controles del navegador, atributos x5,
     subtítulos nativos) más un sector del círculo. Pendiente de las capturas del usuario.
+
+## 8. Video de la sección 2: Web Scraping, Software Automation & Data (2026-11-23)
+
+Caso real de un cliente: la venta de la moneda de un juego en línea automatizada de principio a fin. Voz en inglés,
+subtítulos en español, 85,8 s. Script: `scripts/media/automation_assemble.py`. No se nombran el juego ni las páginas.
+
+| Toma | Cómo | Comando |
+|---|---|---|
+| Voz (8 frases, transcritas) | Gemini TTS, voz Charon | `automation_assemble.py voice` |
+| 1 diagrama del flujo | HTML (`scenes/pipeline.html`) | `automation_assemble.py scene pipeline` |
+| 2 el cliente copiando precios a mano | foto + clip de Omni de 10 s, estirado a 11,4 s | `explainer_video.py automation-overview manual [--still]`, `automation_assemble.py manual` |
+| 3 la interfaz real (`venta_kamas/interfaz.pyw`) | capturas por estados + cursor dibujado | `record_app.py`, `automation_assemble.py app` |
+| 4a radar cada minuto | HTML (`scenes/radar.html`) | `scene radar` |
+| 4b pregunta por Telegram, se pulsa Accept | foto + clip de 9 s + globos | `explainer_video.py automation-overview ask`, `automation_assemble.py couch ask` |
+| 4c el bot llena la orden de venta | HTML (`scenes/form.html`) | `scene form` |
+| 5 bot de entrega y oro hacia la página | emblema del robot + HTML (`scenes/deliver.html`) | `scene deliver` |
+| 6 "Transaction complete" | foto + clip de 10 s (×1,1) + globos | `couch done` |
+| Montaje, versiones web, póster, subtítulos | | `automation_assemble.py assemble explainer`, `publish_explainer.py automation-overview` |
+
+**Costo:** $3,73 (5 imágenes, una repetida, y 3 clips de Omni que salieron bien a la primera).
+
+- **E31. Grabar una ventana Tk más grande que la pantalla.** Tk solo pinta lo que está en pantalla (PrintWindow
+  devuelve blanco fuera de ella) y la pantalla principal es de 1280×1024. `record_app.py` dibuja la interfaz al doble
+  (Tk scaling + cada medida en píxeles ×2), mueve la ventana para capturar cada trozo y los une. Como la interfaz
+  cambia por estados (escribir, añadir, iniciar, precios nuevos), se captura cada estado y el cursor se dibuja después.
+  - La lista desplegable de ttk se cierra y abre alternadamente con Post/Unpost. Hay que abrirla una vez y moverla con
+    `wm geometry` junto con la ventana.
+  - El cursor parpadeante de las entradas cambiaría entre estados: `insertwidth=0`.
+- **E32. Seguridad de la grabación:** precios simulados (sin pedir nada a la página), el vendedor sustituido por un
+  objeto que aborta si se le pide una venta o un login, servidores y datos de venta en archivos temporales (el
+  `datos_venta.json` real nunca se lee). Cabecera cambiada a "Venta automática" y sin "sitio-comprador.com". Los nombres de
+  servidor y de juego se difuminan en el montaje.
+- **E33. Escenas por código en HTML:** cada escena expone `render(t)` y `DUR`, y se filma fotograma a fotograma con
+  Playwright (Chrome instalado). Siempre da el mismo resultado y es nítido. `scene <nombre> 1.2,3.5` saca solo esos
+  fotogramas para revisar.
+- **E34. Fuente Inter variable en Pillow:** sus ejes son `[Optical size, Weight]`. Pasar `[peso]` a ciegas pone el
+  peso en el tamaño óptico y el texto sale finísimo: asigna cada valor por nombre de eje.
+- **E35. Rellenos translúcidos en tarjetas RGBA:** `ImageDraw` reemplaza los píxeles, no los mezcla, así que un relleno
+  con alfa bajo abre un agujero en la tarjeta blanca. Mezcla el color a mano y dibújalo opaco.
+- **E36. Glifos que Inter no tiene:** "✕" salía como un cuadro vacío; usa "×".
+- Importe coherente: 40 M a 3.52 = 140.80 USDT en el formulario, en la pregunta de Telegram y en el resumen.
