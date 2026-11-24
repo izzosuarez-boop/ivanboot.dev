@@ -158,7 +158,7 @@ export const sections: Section[] = [
   },
   {
     slug: "ai-media-shopify",  // merged from "ai-media" and "web-shopify" 2026-11-23 (user)
-    label: "AI Media & Shopify",
+    label: "AI, Social Media & Shopify",  // renamed by the user 2026-11-24 (was "AI Media & Shopify")
     short: "Media & Shopify",
     // headline, intro and the two cards rewritten by the user (2026-11-24); photography, category videos and
     // the VPS setup cards were removed
@@ -188,6 +188,7 @@ export const sections: Section[] = [
           + "anyone who needs to build, improve, or simply find talent for their projects, and that is what every video "
           + "tries to convey: a problem, its solution and my role in it, while showing what I can do.",
         stack: ["Gemini Omni", "Gemini image", "Gemini TTS", "Seedance", "DaVinci AI", "Claude Opus 5.5", "ffmpeg", "Playwright"],
+        loop: { media: "loop-media", label: "The idea, consistent frames, a real correction, ready to post" },
       },
       {
         title: "Ardea Skin: a Shopify store with an identity of its own",
@@ -207,6 +208,7 @@ export const sections: Section[] = [
           + "automated to run without losing the human touch users look for.",
         stack: ["Shopify Storefront API", "Next.js 16", "React 19", "Tailwind 4", "TypeScript", "Claude API", "Supabase", "Telegram"],
         link: { label: "Open the store", href: STORE },
+        loop: { media: "loop-ardea", label: "Ardea Skin: one identity on every page, and the store run from Telegram" },
       },
     ],
   },

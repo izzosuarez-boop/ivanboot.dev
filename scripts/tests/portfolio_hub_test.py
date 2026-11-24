@@ -81,7 +81,7 @@ def run(pg, label: str, desktop: bool) -> dict[str, bool]:
     c["vecino: siguiente sección"] = pg.evaluate("location.pathname") == "/web-api"
 
     # the neighbours peek in at the sides of the header ring and take you there (four sections: 2026-11-23)
-    c["rueda: vecina visible y clicable"] = click_visible_part(pg, "AI Media & Shopify")
+    c["rueda: vecina visible y clicable"] = click_visible_part(pg, "AI, Social Media & Shopify")
     time.sleep(2.6)
     c["rueda: va a la siguiente"] = pg.evaluate("location.pathname") == "/ai-media-shopify"
     click_visible_part(pg, "Web & API Integration")
@@ -100,7 +100,7 @@ def run(pg, label: str, desktop: bool) -> dict[str, bool]:
     c["tarjeta About"] = pg.locator("dialog[open]").count() == 1
     pg.keyboard.press("Escape")
 
-    click_seg(pg, "AI Media & Shopify")
+    click_seg(pg, "AI, Social Media & Shopify")
     time.sleep(2.5)
     pg.go_back()
     time.sleep(2.0)

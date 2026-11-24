@@ -730,3 +730,9 @@ transcritas) y subtítulos en español. **Costo: solo la voz.** Script: `scripts
   margen por si alguna versión antigua de las fotos se borró antes de que se guardara todo.
 - **Pronunciación:** "Ardea Skin" salió una vez como "our dayaskin" en la transcripción; regenerar esa frase lo arregló.
 - **Póster:** el antes y el después de la barba (`POSTER_AT = ("fixes", 4.2)`).
+- **Loops de las dos tarjetas** (2026-11-24, $0, todo en código): `scenes/loop-media.html` (idea → fotogramas coherentes →
+  la barba corregida con la foto real → listo para publicar) y `scenes/loop-ardea.html` (las páginas reales capturadas,
+  con el video de marca y el tutorial reproduciéndose en su sitio, y la alerta de Telegram con el formato real de
+  `notify.stock_alert`). Filmar: `python automation_assemble.py scene loop-media` y subir con `publish-loops loop-media
+  loop-ardea`. Para que el loop no tenga costura, la última fase vuelve a lo que se ve en `render(0)`; en `loop-ardea`
+  el video de marca también vuelve a su segundo 1,5.
