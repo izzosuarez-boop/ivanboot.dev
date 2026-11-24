@@ -1,0 +1,78 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<!-- Section 3 project loop (6 s, seamless): the real KamasMarket offers page (usernames blurred), an offer is
+     picked, the order moves through its steps, and the order's contract pays the seller and the commission. -->
+<style>
+  html, body { width: 1440px; height: 1080px; }
+  .win { left: 40px; top: 170px; width: 860px; height: 740px; background: #111; }
+  .win .bar { background: #1f1f1f; border-bottom: 1px solid #2a2a2a; }
+  .win .dot { background: #3a3a3a; }
+  .win .url { background: #111; border-color: #2a2a2a; color: #aaa; font-size: 19px; }
+  .view { position: absolute; left: 0; right: 0; top: 56px; bottom: 0; overflow: hidden; }
+  #page { position: absolute; left: 0; width: 1715px; height: 1459px; background: url("../out/portfolio-web-api-overview/site/offers-full.png") 0 0 / 1715px auto no-repeat; }
+  #row { position: absolute; left: 30px; width: 815px; height: 34px; border-radius: 6px; border: 3px solid #f0c040; box-shadow: 0 0 26px rgba(240,192,64,0.6); }
+  #cursor { position: absolute; width: 34px; }
+  .card { position: absolute; left: 940px; width: 460px; border-radius: 24px; background: #12171d; border: 2px solid #2a333d;
+    padding: 26px 28px; box-shadow: 0 30px 80px -30px rgba(0,0,0,0.9); }
+  .card .h { font-size: 17px; letter-spacing: 0.16em; white-space: nowrap; color: #f0c040; font-weight: 700; }
+  .card .id { margin-top: 6px; font-size: 34px; font-weight: 800; color: #fff; }
+  .step { display: flex; align-items: center; gap: 14px; margin-top: 16px; font-size: 24px; color: #6b7689; }
+  .step i { width: 34px; height: 34px; border-radius: 50%; border: 2px solid #2a333d; display: grid; place-items: center; font-style: normal; font-size: 18px; flex: none; }
+  .step.on { color: #fff; } .step.on i { background: #4cd08d; border-color: #4cd08d; color: #06221f; }
+  .step.now { color: #f0c040; } .step.now i { border-color: #f0c040; }
+  .bal { font-size: 52px; font-weight: 800; color: #fff; margin-top: 12px; font-variant-numeric: tabular-nums; }
+  .bal span { font-size: 24px; color: #50af95; margin-left: 8px; }
+  .out { display: flex; justify-content: space-between; margin-top: 14px; font-size: 24px; color: #c3cad3; }
+  .out b { color: #4cd08d; font-variant-numeric: tabular-nums; }
+  .tag { position: absolute; left: 40px; top: 96px; }
+</style></head>
+<body>
+<div class="tag chip">● KamasMarket · a live P2P marketplace</div>
+<div class="win"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url mono">🔒 kamasmarket.com/es/ofertas</span></div>
+  <div class="view"><div id="page"></div><div id="row"></div>
+    <svg id="cursor" viewBox="0 0 24 30"><path d="M2 2v22l6-5 4 9 4-2-4-9h8z" fill="#fff" stroke="#111" stroke-width="1.6" stroke-linejoin="round"/></svg></div></div>
+<div class="card" id="order" style="top:170px"><div class="h">ORDER</div><div class="id">#1042 · 40 M kamas</div>
+  <div class="step" id="s0"><i>✓</i>Seller ready</div>
+  <div class="step" id="s1"><i>✓</i>Kamas received by the bot</div>
+  <div class="step" id="s2"><i>✓</i>Paid to the contract</div>
+  <div class="step" id="s3"><i>✓</i>Delivered to the buyer</div></div>
+<div class="card" id="ctr" style="top:610px"><div class="h">SMART CONTRACT · BNB CHAIN</div>
+  <div class="bal" id="bal">0.00<span>USDT</span></div>
+  <div class="out"><span>Seller</span><b id="vs">—</b></div>
+  <div class="out"><span>Commission 7 %</span><b id="vf">—</b></div></div>
+<script>
+window.SIZE = [1440, 1080];
+const clamp = (x) => Math.max(0, Math.min(1, x)), ease = (x) => { x = clamp(x); return x * x * (3 - 2 * x); };
+const K = 1715 / 1440;                                   // page scale (CSS px of the captured page -> window px)
+const STEPS = [1.5, 1.95, 2.45, 3.0], RESET = 5.45;
+window.DUR = 6.0;
+window.render = (t) => {
+  const r = 1 - ease((t - RESET) / 0.45);                // everything returns to the first frame
+  // pan down from the header to the offer tables, pick an offer
+  const pan = ease((t - 0.15) / 0.7) * r;
+  document.getElementById("page").style.top = (-360 * K * pan) + "px";
+  const row = document.getElementById("row"), rowY = (581 - 17) * K - 360 * K * pan;
+  row.style.top = rowY + "px"; row.style.width = (680 * K) + "px"; row.style.left = (30 * K) + "px";
+  row.style.opacity = t > 1.05 ? (0.6 + 0.4 * Math.sin((t - 1.05) * 8)) * r : 0;
+  const cur = document.getElementById("cursor"), cu = ease((t - 0.5) / 0.5);
+  cur.style.left = (700 - 380 * cu) + "px"; cur.style.top = (520 - (520 - rowY - 10) * cu) + "px";
+  cur.style.opacity = t < 0.4 ? 0 : r; cur.style.transform = `scale(${t > 1.0 && t < 1.12 ? 0.85 : 1})`;
+  // the order moves through its steps
+  const o = document.getElementById("order");
+  o.style.opacity = ease((t - 1.15) / 0.25) * r; o.style.transform = `translateX(${30 * (1 - ease((t - 1.15) / 0.3))}px)`;
+  STEPS.forEach((at, i) => {
+    const s = document.getElementById("s" + i);
+    s.className = "step" + (t >= at ? " on" : t >= at - 0.45 && t >= 1.15 ? " now" : "");
+  });
+  // the contract: paid in, then split between the seller and the commission
+  const c = document.getElementById("ctr");
+  c.style.opacity = ease((t - 2.3) / 0.25) * r;
+  c.style.borderColor = t >= 3.1 ? "rgba(76,208,141,0.8)" : "rgba(240,192,64,0.6)";
+  const paid = ease((t - 2.35) / 0.4), split = ease((t - 3.3) / 0.9);
+  document.getElementById("bal").firstChild.textContent = (100 * paid - 100 * split).toFixed(2);
+  document.getElementById("vs").textContent = split > 0 ? "+" + (93 * split).toFixed(2) + " USDT" : "—";
+  document.getElementById("vf").textContent = split > 0 ? "+" + (7 * split).toFixed(2) + " USDT" : "—";
+};
+render(0);
+</script>
+</body></html>

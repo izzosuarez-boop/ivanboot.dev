@@ -118,10 +118,11 @@ export const sections: Section[] = [
     slug: "web-api",           // was "software" / "Software, APIs & QA" until 2026-11-23 (user)
     label: "Web & API Integration",
     short: "Web & APIs",
-    pitch: "Software that is tested against the wrong answer, not just the right one.",
+    // headline and intro rewritten 2026-11-24 (user asked for a proposal that fits "Web & API Integration")
+    pitch: "Websites built to measure, connected to every service your business runs on.",
     intro:
-      "Backends, API integrations, protocol work and test automation. Every claim backed by a test, a measurement or " +
-      "a log line.",
+      "Custom web platforms and API integrations: payments, notifications, AI and smart contracts working together in " +
+      "one product, from the first sketch to production.",
     // KamasMarket end to end: its APIs, smart contracts and AI agent (made in code, 2026-11-23)
     video: { media: "web-api-overview", title: "KamasMarket end to end: nine API integrations, smart contracts and an AI agent, in 115 seconds" },
     projects: [
@@ -152,25 +153,7 @@ export const sections: Section[] = [
           + "knows where their product and their money are. A constant flow of buying and selling in a secure "
           + "environment.",
         stack: ["FastAPI", "Supabase", "Redis", "Caddy", "Cloudflare", "Solidity", "BNB Chain", "Docker", "DeepSeek API", "Claude API"],
-      },
-      {
-        title: "On-chain escrow test bench",
-        status: "Case study",
-        summary: "A non-custodial escrow where a legal rule is a contract invariant: a buyer's money can only reach the seller or come back.",
-        problem: "Custodial payment hops caused three incidents in one week; the question was what an escrow really costs per order.",
-        how: "CREATE2 one-address-per-order design whose salt makes diversion impossible, compared against a single-contract design, with gas measured on two chains.",
-        result: "TRON made every sale lose money; the same contract on BSC costs about $0.02 per order. Found that USDT's transfer returns false even when funds move.",
-        stack: ["Solidity", "Python", "TRON", "BSC", "CREATE2"],
-      },
-      {
-        title: "API integrations and browser tests",
-        status: "Live demo",
-        summary: "The plumbing behind the store: Shopify Storefront and Admin APIs, signed webhooks, Telegram, Supabase — and Playwright tests that drive a real browser.",
-        problem: "Integrations break at the edges: a cookie set too late, a duplicate webhook, a token printed in a log.",
-        how: "HMAC verification and de-duplication of webhooks, cart mutations in a Route Handler, scripted desktop and mobile browser runs before every release.",
-        result: "Cart, chat and video behavior verified end to end on every change.",
-        stack: ["REST", "GraphQL", "Webhooks", "Playwright", "FastAPI"],
-        link: { label: "Source code", href: REPO },
+        loop: { media: "loop-kamas", label: "KamasMarket: an offer is picked, the order moves step by step, the contract pays the seller" },
       },
     ],
   },
