@@ -1,0 +1,60 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<script src="k-common.js"></script><script src="m-common.js"></script>
+<script src="../out/portfolio-media-overview/frames/wave.js"></script>
+<!-- Shot 5: what AI doesn't do well, code solves: invented screens -> real content; text/bubbles/subtitles drawn
+     separately; every voice line transcribed and compared with the script -->
+<style>
+  .eyebrow { position: absolute; top: 60px; width: 100%; text-align: center; font-size: 24px; letter-spacing: 0.3em; color: var(--glow); font-weight: 600; }
+  .note { position: absolute; top: 110px; width: 100%; text-align: center; font-size: 40px; font-weight: 700; }
+  .panel { position: absolute; left: 290px; top: 200px; width: 1340px; height: 754px; border-radius: 18px; overflow: hidden; border: 1px solid #2a333d; }
+  .panel img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .panel .tag { position: absolute; top: 16px; font-size: 20px; font-weight: 800; letter-spacing: 0.14em; padding: 6px 16px; border-radius: 999px; z-index: 3; }
+  .wipe { position: absolute; top: 0; bottom: 0; width: 4px; background: #5eead4; box-shadow: 0 0 20px #5eead4; z-index: 2; }
+  .chips { position: absolute; top: 970px; width: 100%; text-align: center; }
+  .chips .chip { margin: 0 10px; }
+  .wave { position: absolute; left: 260px; top: 300px; width: 1400px; height: 260px; display: flex; align-items: center; gap: 4px; }
+  .wave i { flex: 1; background: #5eead4; border-radius: 3px; opacity: 0.85; }
+  .tr { position: absolute; left: 260px; top: 620px; width: 1400px; font-size: 30px; line-height: 1.5; color: #e6e9ed; }
+  .tr small { display: block; font-size: 18px; letter-spacing: 0.2em; color: #8b95a1; margin-bottom: 10px; }
+  .ok { position: absolute; left: 260px; top: 860px; padding: 12px 24px; border-radius: 999px; font-size: 26px; font-weight: 700; color: #4cd08d;
+    background: rgba(76,208,141,0.12); border: 1px solid rgba(76,208,141,0.6); }
+</style></head>
+<body>
+<div class="eyebrow" id="eb">WHAT AI DOESN'T DO WELL, CODE SOLVES</div>
+<div class="note" id="note"></div>
+<div class="panel" id="p0"><img src="../out/portfolio-ai-agents-overview/coding-v2-still.png"><img class="aft" src="../out/portfolio-media-overview/frames/coding-real.jpg">
+  <span class="tag" style="left:16px; background:#ef4444; color:#fff">SCREENS INVENTED BY AI</span><span class="tag" style="right:16px; background:#4cd08d; color:#06221f">OUR REAL CODE</span><div class="wipe"></div></div>
+<div class="panel" id="p1"><img src="../out/portfolio-media-overview/frames/ask-raw.jpg"><img class="aft" src="../out/portfolio-media-overview/frames/ask-comp.jpg">
+  <span class="tag" style="left:16px; background:#ef4444; color:#fff">AI CLIP</span><span class="tag" style="right:16px; background:#4cd08d; color:#06221f">+ DRAWN IN CODE</span><div class="wipe"></div></div>
+<div class="chips" id="chips"><span class="chip">Text</span><span class="chip">Speech bubbles</span><span class="chip">Subtitles</span></div>
+<div id="p2"><div class="wave" id="wave"></div>
+  <div class="tr"><small>TRANSCRIPT OF THE VOICE LINE</small><span id="tr"></span></div>
+  <div class="ok" id="ok">✓ Matches the script word for word</div></div>
+<script>
+const TR = "What AI doesn't do well, code solves: the screens it invents are replaced with real content…";
+const wave = document.getElementById("wave");
+(window.WAVE || []).forEach((v) => { const i = document.createElement("i"); i.style.height = Math.max(4, v * 240) + "px"; wave.append(i); });
+window.DUR = 13.5;
+window.render = (t) => {
+  document.getElementById("eb").style.opacity = ease((t - 0.3) / 0.4);
+  const stage = t < 5.9 ? 0 : t < 8.9 ? 1 : 2;
+  document.getElementById("note").textContent = t < 3.1 ? "" : ["Invented screens → real content", "Text, bubbles and subtitles → drawn separately", "Every voice line → transcribed and checked"][stage];
+  [[0, 3.1], [1, 5.9]].forEach(([i, at]) => {
+    const p = document.getElementById("p" + i), on = stage === i && t >= at;
+    p.style.opacity = on ? ease((t - at) / 0.25) : 0;
+    const w = ease((t - at - 0.8) / 1.2);
+    p.querySelector(".aft").style.clipPath = `inset(0 ${100 - 100 * w}% 0 0)`;
+    p.querySelector(".wipe").style.left = (1340 * w - 2) + "px";
+    p.querySelector(".wipe").style.opacity = w > 0 && w < 1 ? 1 : 0;
+  });
+  const ch = document.getElementById("chips"); ch.style.opacity = stage === 1 ? 1 : 0;
+  [...ch.children].forEach((c, i) => popIn(c, t, 7.0 + i * 0.3, 0.3));
+  const p2 = document.getElementById("p2"); p2.style.opacity = stage === 2 ? ease((t - 8.9) / 0.3) : 0;
+  [...wave.children].forEach((b, i) => { b.style.background = i / wave.children.length < (t - 9.2) / 2.6 ? "#5eead4" : "#2a333d"; });
+  document.getElementById("tr").textContent = TR.slice(0, Math.round(TR.length * clamp((t - 9.4) / 2.4)));
+  popIn(document.getElementById("ok"), t, 11.9, 0.35);
+};
+render(0);
+</script>
+</body></html>

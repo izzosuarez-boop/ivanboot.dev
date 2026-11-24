@@ -1,0 +1,28 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<script src="k-common.js"></script><script src="m-common.js"></script>
+<!-- Shot 6: each section's video, one after another, with its name -->
+<style>
+  .frame { position: absolute; left: 160px; top: 110px; width: 1600px; height: 900px; border-radius: 20px; overflow: hidden; border: 1px solid #2a333d;
+    box-shadow: 0 40px 120px -30px rgba(0,0,0,0.9); }
+  .frame video { inset: 0; width: 100%; height: 100%; }
+  .lab { position: absolute; left: 190px; top: 60px; font-size: 26px; letter-spacing: 0.24em; color: var(--glow); font-weight: 700; }
+</style></head>
+<body>
+<div class="lab" id="lab"></div>
+<div class="frame" id="frame"></div>
+<script>
+const CLIPS = [["hub", "HOME · AI AT WORK", 38.0], ["ai", "SECTION 1 · AI AGENTS", 14.0], ["auto", "SECTION 2 · AUTOMATION", 24.0], ["web", "SECTION 3 · WEB & API", 33.0]];
+const frame = document.getElementById("frame");
+const vids = CLIPS.map(([k]) => { const v = video(VID[k], "inset:0; width:100%; height:100%"); frame.append(v); return v; });
+const SEG = 9.5 / CLIPS.length;
+window.DUR = 9.5;
+window.render = async (t) => {
+  const k = Math.min(CLIPS.length - 1, Math.floor(t / SEG));
+  vids.forEach((v, i) => { v.style.opacity = i === k ? 1 : 0; });
+  document.getElementById("lab").textContent = CLIPS[k][1];
+  frame.style.transform = `scale(${1 + 0.02 * ((t % SEG) / SEG)})`;
+  await seekAll([[vids[k], CLIPS[k][2] + (t - k * SEG)]]);
+};
+</script>
+</body></html>

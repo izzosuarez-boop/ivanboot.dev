@@ -1,0 +1,66 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<script src="k-common.js"></script><script src="m-common.js"></script>
+<!-- Shot 4: real corrections, before -> after, each revealed by a wipe: beard, profile, phone, whiteboard circles -->
+<style>
+  .eyebrow { position: absolute; top: 60px; width: 100%; text-align: center; font-size: 24px; letter-spacing: 0.34em; color: var(--glow); font-weight: 600; }
+  .note { position: absolute; top: 110px; width: 100%; text-align: center; font-size: 40px; font-weight: 700; color: #fff; }
+  .pair { position: absolute; left: 100px; top: 200px; width: 1720px; height: 760px; }
+  .side { position: absolute; top: 0; width: 840px; height: 473px; border-radius: 16px; overflow: hidden; border: 1px solid #2a333d; }
+  .side img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .tag { position: absolute; left: 16px; top: 14px; font-size: 20px; font-weight: 800; letter-spacing: 0.16em; padding: 6px 16px; border-radius: 999px; }
+  .why { position: absolute; top: 500px; width: 840px; font-size: 26px; text-align: center; }
+  .ref { position: absolute; right: 16px; bottom: 16px; width: 150px; height: 150px; border-radius: 12px; overflow: hidden; border: 3px solid #fff; }
+  .ref img { width: 100%; height: 100%; object-fit: cover; }
+  .ref span { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); font-size: 14px; text-align: center; padding: 3px; }
+  .strip { position: absolute; left: 100px; top: 260px; display: flex; gap: 14px; }
+  .strip div { position: relative; width: 330px; height: 186px; border-radius: 10px; overflow: hidden; border: 1px solid #2a333d; }
+  .strip img { width: 100%; height: 100%; object-fit: cover; }
+  .strip i { position: absolute; right: 10px; top: 8px; font: 800 30px Inter; color: #4cd08d; font-style: normal; text-shadow: 0 0 10px #000; }
+</style></head>
+<body>
+<div class="eyebrow" id="eb">THEN IT GETS CORRECTED</div>
+<div class="note" id="note"></div>
+<div id="pairs"></div>
+<div class="strip" id="strip"></div>
+<script>
+const A = (n) => `../out/portfolio-ai-agents-overview/${n}`, B = (n) => `../out/portfolio-automation-overview/${n}`;
+// [from, before, after, note, why-before, why-after, reference photo]
+const PAIRS = [[2.3, A("coding-still-172658.png"), A("coding-v2-still.png"), "The beard didn't match the real photo", "First version", "Edited to match the real photo", "C:/Users/Trollo/Desktop/ivan.jpeg"],
+               [4.8, A("requests-still-190220.png"), A("requests-still.png"), "From behind I wasn't recognizable", "Over the shoulder", "Switched to a profile", null],
+               [9.0, B("couch-back-still-211203.png"), B("couch-back-still.png"), "The phone was out of his reach", "Phone at the far end", "Phone under his hand", null],
+               [11.4, A("whiteboard-still.png"), F("wb-code"), "The AI couldn't draw believable circles", "AI drawing the circles", "Circles drawn in code", null]];
+const box = document.getElementById("pairs");
+const els = PAIRS.map(([, b, a, , wb, wa, ref]) => {
+  const p = document.createElement("div"); p.className = "pair";
+  p.innerHTML = `<div class="side" style="left:0"><img src="${b}"><span class="tag" style="background:#ef4444;color:#fff">BEFORE</span>` +
+    (ref ? `<div class="ref"><img src="file:///${ref}"><span>real photo</span></div>` : "") + `</div>` +
+    `<div class="side after" style="left:880px"><img src="${a}"><span class="tag" style="background:#4cd08d;color:#06221f">AFTER</span></div>` +
+    `<div class="why" style="left:0; color:#f87171">✕ ${wb}</div><div class="why" style="left:880px; color:#4cd08d">✓ ${wa}</div>`;
+  box.append(p); return p;
+});
+const strip = document.getElementById("strip");
+[A("coding-v2-still.png"), A("requests-still.png"), B("couch-back-still.png"), F("wb-code"), B("couch-profile-still.png")].forEach((s) => {
+  const d = document.createElement("div"); d.innerHTML = `<img src="${s}"><i>✓</i>`; strip.append(d);
+});
+window.DUR = 21.2;
+window.render = (t) => {
+  document.getElementById("eb").style.opacity = ease((t - 0.3) / 0.4);
+  let cur = -1;
+  PAIRS.forEach(([at], i) => { if (t >= at) cur = i; });
+  if (t >= 16.6) cur = -1;
+  document.getElementById("note").textContent = cur >= 0 ? PAIRS[cur][3] : t >= 16.6 ? "Checked frame by frame before moving on" : "";
+  els.forEach((p, i) => {
+    const at = PAIRS[i][0], on = i === cur;
+    p.style.opacity = on ? ease((t - at) / 0.25) : 0;
+    // the AFTER side wipes in from the left a moment later
+    const w = ease((t - at - 0.7) / 0.6);
+    p.querySelector(".after").style.clipPath = `inset(0 ${100 - 100 * w}% 0 0)`;
+    p.querySelectorAll(".why")[1].style.opacity = w;
+  });
+  [...strip.children].forEach((d, i) => popIn(d, t, 16.9 + i * 0.25, 0.35));
+  strip.style.opacity = t >= 16.6 ? 1 : 0;
+};
+render(0);
+</script>
+</body></html>

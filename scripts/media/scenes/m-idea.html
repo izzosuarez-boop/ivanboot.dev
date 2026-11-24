@@ -1,0 +1,53 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<script src="k-common.js"></script><script src="m-common.js"></script>
+<!-- Shot 2: the idea behind the automation video (a contrast), then its storyboard: one message per shot -->
+<style>
+  .eyebrow { position: absolute; top: 80px; width: 100%; text-align: center; font-size: 24px; letter-spacing: 0.34em; color: var(--glow); font-weight: 600; }
+  .idea { position: absolute; top: 130px; width: 100%; text-align: center; font-family: Fraunces; font-size: 52px; color: #fff; }
+  .big { position: absolute; top: 250px; width: 820px; border-radius: 18px; overflow: hidden; border: 1px solid #2a333d; box-shadow: 0 30px 80px -30px rgba(0,0,0,0.9); }
+  .big img { display: block; width: 100%; }
+  .big span { position: absolute; left: 18px; top: 16px; font-size: 22px; font-weight: 800; letter-spacing: 0.2em; padding: 6px 16px; border-radius: 999px; }
+  .vs { position: absolute; left: 930px; top: 440px; width: 60px; text-align: center; font: 800 40px Inter; color: #8b95a1; }
+  .card { position: absolute; top: 720px; width: 285px; border-radius: 14px; overflow: hidden; background: #12171d; border: 1px solid #2a333d; }
+  .card img { display: block; width: 100%; height: 160px; object-fit: cover; }
+  .card p { padding: 12px 14px; font-size: 18px; line-height: 1.35; color: #c3cad3; }
+  .card p b { display: block; color: #fff; font-size: 19px; margin-bottom: 4px; }
+</style></head>
+<body>
+<div class="eyebrow" id="eb">THE IDEA FIRST</div>
+<div class="idea" id="idea">Manual work → automatic work</div>
+<div class="big" id="b0" style="left:90px"><img src="../out/portfolio-media-overview/frames/t-manual.jpg"><span style="background:#ef4444;color:#fff">BEFORE</span></div>
+<div class="vs" id="vs">→</div>
+<div class="big" id="b1" style="left:1010px"><img src="../out/portfolio-media-overview/frames/t-done.jpg"><span style="background:#4cd08d;color:#06221f">AFTER</span></div>
+<div id="cards"></div>
+<script>
+const CARDS = [["t-manual", "Pain", "Done by hand, at night"], ["t-app", "The tool", "Rules: price and amount"],
+               ["t-radar", "24/7", "Checks every minute"], ["t-ask", "Control", "Asks before selling"],
+               ["t-deliver", "Delivery", "A bot hands it over"], ["t-done", "Relief", "Just check the payment"]];
+const box = document.getElementById("cards");
+const cards = CARDS.map(([f, h, txt], i) => {
+  const c = document.createElement("div"); c.className = "card"; c.style.left = (60 + i * 305) + "px";
+  c.innerHTML = `<img src="${F(f)}"><p><b>${h}</b>${txt}</p>`; box.append(c); return c;
+});
+window.DUR = 14.8;
+window.render = (t) => {
+  document.getElementById("eb").style.opacity = ease((t - 0.3) / 0.4);
+  popIn(document.getElementById("idea"), t, 2.4, 0.4);
+  popIn(document.getElementById("b0"), t, 5.0, 0.45);
+  popIn(document.getElementById("vs"), t, 7.4, 0.3);
+  popIn(document.getElementById("b1"), t, 7.8, 0.45);
+  // the storyboard: the big pair shrinks away and the six cards come in, one message each
+  const sb = ease((t - 10.5) / 0.6);
+  for (const id of ["b0", "b1", "vs"]) {
+    const el = document.getElementById(id);
+    if (sb > 0) { el.style.opacity = 1 - sb; el.style.transform = `translateY(${-120 * sb}px) scale(${1 - 0.15 * sb})`; }
+  }
+  cards.forEach((c, i) => {
+    popIn(c, t, 10.8 + i * 0.32, 0.4);
+    if (t >= 10.8 + i * 0.32) c.style.transform += ` translateY(${-300 * sb}px)`;
+  });
+};
+render(0);
+</script>
+</body></html>

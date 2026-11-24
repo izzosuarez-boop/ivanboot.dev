@@ -114,5 +114,29 @@
         }
       }
     }
+  },
+  "media-overview": {
+    "versions": {
+      "en": {
+        "poster": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/media-overview-poster.jpg?v=1795501542",
+        "duration": 143.0,
+        "sources": [
+          {
+            "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/media-overview-explainer-1080.mp4?v=1795501550",
+            "height": 1080,
+            "id": "gid://shopify/GenericFile/46908263039228"
+          },
+          {
+            "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/media-overview-explainer-720.mp4?v=1795501556",
+            "height": 720,
+            "id": "gid://shopify/GenericFile/46908263563516"
+          }
+        ],
+        "captions": {
+          "en": "/portfolio/captions/media-overview.en.vtt",
+          "es": "/portfolio/captions/media-overview.es.vtt"
+        }
+      }
+    }
   }
 }

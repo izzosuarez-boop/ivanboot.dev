@@ -1,0 +1,35 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<script src="k-common.js"></script><script src="m-common.js"></script>
+<!-- Shot 3: the same character in three images, each generated from the previous one; the same office as the
+     portfolio's portrait -->
+<style>
+  .eyebrow { position: absolute; top: 70px; width: 100%; text-align: center; font-size: 24px; letter-spacing: 0.34em; color: var(--glow); font-weight: 600; }
+  .ph { position: absolute; border-radius: 16px; overflow: hidden; border: 1px solid #2a333d; box-shadow: 0 30px 80px -30px rgba(0,0,0,0.9); }
+  .ph img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .cap { position: absolute; font-size: 22px; color: #c3cad3; text-align: center; }
+  .arrow { position: absolute; font-size: 22px; color: var(--glow); font-weight: 700; text-align: center; white-space: nowrap; }
+  .arrow i { display: block; font-style: normal; font-size: 46px; line-height: 1; }
+</style></head>
+<body>
+<div class="eyebrow" id="eb">CONSISTENCY IS DESIGNED</div>
+<div class="ph" id="a" style="left:80px; top:150px; width:500px; height:281px"><img src="../out/portfolio-automation-overview/manual-still.png"></div>
+<div class="ph" id="b" style="left:710px; top:150px; width:500px; height:281px"><img src="../out/portfolio-automation-overview/couch-back-still.png"></div>
+<div class="ph" id="c" style="left:1340px; top:150px; width:500px; height:281px"><img src="../out/portfolio-automation-overview/couch-profile-still.png"></div>
+<div class="arrow" id="r1" style="left:585px; top:250px; width:120px"><i>→</i>reference</div>
+<div class="arrow" id="r2" style="left:1215px; top:250px; width:120px"><i>→</i>reference</div>
+<div class="cap" id="k1" style="left:80px; top:450px; width:1760px">Same man · same hoodie · same night mood</div>
+<div class="ph" id="d" style="left:430px; top:560px; width:420px; height:420px"><img src="../../../apps/web/public/portfolio/scene.webp"></div>
+<div class="ph" id="e" style="left:1030px; top:600px; width:600px; height:338px"><img src="../out/portfolio-ai-agents-overview/coding-v2-still.png"></div>
+<div class="arrow" id="r3" style="left:860px; top:720px; width:160px"><i>→</i>same office</div>
+</div>
+<script>
+window.DUR = 12.3;
+window.render = (t) => {
+  document.getElementById("eb").style.opacity = ease((t - 0.3) / 0.4);
+  [["a", 2.4], ["b", 2.9], ["c", 3.4], ["k1", 4.2], ["r1", 5.8], ["r2", 6.6], ["d", 8.8], ["r3", 9.6], ["e", 10.0]]
+    .forEach(([id, at]) => popIn(document.getElementById(id), t, at, 0.4));
+};
+render(0);
+</script>
+</body></html>

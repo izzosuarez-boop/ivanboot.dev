@@ -166,7 +166,8 @@ export const sections: Section[] = [
       "Headless Shopify with a custom Next.js frontend: Shopify keeps payments, inventory and checkout; the experience " +
       "is fully yours. The product photos, videos and voice are generated with one art direction and checked in code, " +
       "not by eye alone.",
-    video: { title: "A tour of tienda.ivanboot.dev, from catalog to checkout", src: null },
+    // how the portfolio's AI content is made: idea, consistency, corrections, code, Ardea Skin, social media, budget
+    video: { media: "media-overview", title: "How the content is made: idea, consistency, real corrections and a budget under $25, in 143 seconds" },
     projects: [
       {
         title: "Ardea Skin — headless Shopify store",

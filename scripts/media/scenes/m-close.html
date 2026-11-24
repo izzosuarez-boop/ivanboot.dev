@@ -1,0 +1,22 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<script src="k-common.js"></script>
+<!-- Shot 10: the closing line -->
+<style>
+  .t { position: absolute; top: 400px; width: 100%; text-align: center; font-family: Fraunces; font-size: 92px; font-weight: 500; color: #fff; line-height: 1.15; }
+  .t span { color: var(--glow); }
+  .u { position: absolute; top: 640px; left: 50%; height: 6px; margin-left: -260px; border-radius: 3px; background: var(--glow); box-shadow: 0 0 24px var(--glow); }
+</style></head>
+<body>
+<div class="t" id="t">Content with intent,<br><span>not just with AI.</span></div>
+<div class="u" id="u"></div>
+<script>
+window.DUR = 5.0;
+window.render = (t) => {
+  const el = document.getElementById("t");
+  el.style.opacity = ease((t - 0.3) / 0.6); el.style.transform = `translateY(${20 * (1 - ease((t - 0.3) / 0.8))}px)`;
+  document.getElementById("u").style.width = (520 * ease((t - 2.3) / 0.6)) + "px";
+};
+render(0);
+</script>
+</body></html>

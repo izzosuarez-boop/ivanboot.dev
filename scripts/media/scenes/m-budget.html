@@ -1,0 +1,51 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<script src="k-common.js"></script>
+<!-- Shot 9: the budget. Every paid generation, from PLAYBOOK costs and the saved files (2026-11-24): ≈ $23.57 -->
+<style>
+  .receipt { position: absolute; left: 150px; top: 110px; width: 820px; padding: 40px 46px; border-radius: 22px; background: #f6f3ec; color: #1b2433;
+    box-shadow: 0 50px 120px -30px rgba(0,0,0,0.9); }
+  .receipt h3 { font-size: 22px; letter-spacing: 0.24em; color: #6b7689; }
+  .receipt h2 { margin-top: 6px; font-size: 38px; font-weight: 800; }
+  .line { display: flex; justify-content: space-between; padding: 14px 0; border-bottom: 1px dashed #cfc8b8; font-size: 26px; }
+  .line b { font-variant-numeric: tabular-nums; }
+  .tot { display: flex; justify-content: space-between; margin-top: 20px; font-size: 34px; font-weight: 800; }
+  .tot b { font-variant-numeric: tabular-nums; }
+  .stamp { position: absolute; left: 600px; top: 830px; padding: 14px 30px; border: 6px solid #1e8e5a; border-radius: 18px; color: #1e8e5a;
+    font: 900 64px Inter; transform-origin: 50% 50%; background: rgba(246,243,236,0.9); }
+  .notes { position: absolute; left: 1080px; top: 230px; width: 720px; }
+  .n { font-size: 40px; font-weight: 700; margin-bottom: 34px; line-height: 1.25; }
+  .n small { display: block; margin-top: 8px; font-size: 24px; font-weight: 400; color: #8b95a1; }
+  .chips .chip { margin: 0 10px 12px 0; }
+</style></head>
+<body>
+<div class="receipt" id="rc"><h3>AI CONTENT · PORTFOLIO + ARDEA SKIN</h3><h2>What it really cost</h2><div id="lines"></div>
+  <div class="tot"><span>Total, retakes included</span><b id="tot">$0.00</b></div></div>
+<div class="stamp" id="stamp">&lt; $25</div>
+<div class="notes">
+  <div class="n" id="n0">Nothing made at random</div>
+  <div class="n" id="n1">Every step measured<small>cost printed by every generation</small></div>
+  <div class="n" id="n2">What AI does badly → done in code<small>and it costs nothing</small></div>
+  <div class="chips" id="chips"><span class="chip">Screens</span><span class="chip">Speech bubbles</span><span class="chip">Subtitles</span><span class="chip">Circles</span><span class="chip">Diagrams</span></div>
+</div>
+<script>
+const LINES = [["Product photos (17)", 2.38], ["Category covers + tutorial videos", 5.52], ["Store brand film", 1.56], ["AI Agents video", 2.08],
+               ["Home video, with its corrections", 8.20], ["Automation video", 3.73], ["Web & API + this video (voice only)", 0.10]];
+const box = document.getElementById("lines");
+const els = LINES.map(([n, v]) => { const d = document.createElement("div"); d.className = "line"; d.innerHTML = `<span>${n}</span><b>$${v.toFixed(2)}</b>`; box.append(d); return d; });
+const TOTAL = LINES.reduce((a, [, v]) => a + v, 0);
+window.DUR = 21.2;
+window.render = (t) => {
+  popIn(document.getElementById("rc"), t, 0.3, 0.45);
+  let sum = 0;
+  els.forEach((d, i) => { const at = 1.9 + i * 0.95; d.style.opacity = ease((t - at) / 0.25); if (t >= at) sum += LINES[i][1]; });
+  const tt = ease((t - 9.1) / 0.8);
+  document.getElementById("tot").textContent = "$" + (t < 9.1 ? sum : sum + (TOTAL - sum) * tt).toFixed(2);
+  const st = document.getElementById("stamp"), a = back((t - 10.0) / 0.35);
+  st.style.opacity = clamp((t - 10.0) / 0.1); st.style.transform = `rotate(-8deg) scale(${2 - a})`;
+  [["n0", 11.5], ["n1", 13.1], ["n2", 16.5]].forEach(([id, at]) => popIn(document.getElementById(id), t, at, 0.4));
+  [...document.getElementById("chips").children].forEach((c, i) => popIn(c, t, 17.4 + i * 0.25, 0.3));
+};
+render(0);
+</script>
+</body></html>

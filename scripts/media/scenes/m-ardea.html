@@ -1,0 +1,53 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<script src="k-common.js"></script><script src="m-common.js"></script>
+<script src="../out/portfolio-media-overview/store/boxes.js"></script>
+<!-- Shot 7: Ardea Skin (real pages, media_assemble.py capture): the brand film on the home page, product photos,
+     a category cover and its tutorial video playing where it sits on the page, a product photo -->
+<style>
+  .win { left: 160px; top: 90px; width: 1600px; height: 900px; background: #f5f0e8; }
+  .view { position: absolute; left: 0; right: 0; top: 56px; bottom: 0; overflow: hidden; }
+  .pg { position: absolute; left: 0; top: 0; width: 1600px; }
+  .pg img { display: block; width: 1600px; }
+  .pg video { position: absolute; object-fit: cover; }
+  .lab { position: absolute; z-index: 5; }
+  .art { position: absolute; left: 0; right: 0; bottom: 120px; text-align: center; z-index: 5; }
+  .art span { display: inline-block; padding: 14px 30px; border-radius: 999px; background: rgba(9,11,14,0.85); color: #fff; font-size: 30px; font-weight: 700; }
+</style></head>
+<body>
+<div class="win"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url mono" id="url">tienda.ivanboot.dev</span></div>
+  <div class="view" id="view">
+    <div class="pg" id="home"><img src="../out/portfolio-media-overview/store/home.png"></div>
+    <div class="pg" id="cat"><img src="../out/portfolio-media-overview/store/cleansers.png"></div>
+    <div class="pg" id="prod"><img src="../out/portfolio-media-overview/store/product.png"></div>
+  </div></div>
+<div class="chip lab" id="l0" style="left:50%; top:1006px; transform:translateX(-50%)">▶ Brand film · AI video</div>
+<div class="chip lab" id="l1" style="left:50%; top:1006px; transform:translateX(-50%)">Product photos · AI images</div>
+<div class="chip lab" id="l2" style="left:50%; top:1006px; transform:translateX(-50%)">Category cover · AI image</div>
+<div class="chip lab" id="l3" style="left:50%; top:1006px; transform:translateX(-50%)">▶ Tutorial video · AI video + voice</div>
+<div class="chip lab" id="l4" style="left:50%; top:1006px; transform:translateX(-50%)">Product photo · AI image</div>
+<div class="art" id="art"><span>One art direction · every piece has a job on the page</span></div>
+<script>
+const S = 1600 / 1440;                                  // captured CSS px -> window px
+const B = window.BOXES;
+const home = document.getElementById("home"), cat = document.getElementById("cat"), prod = document.getElementById("prod");
+const place = (parent, box, src) => { const v = video(src, `left:${box.x * S}px; top:${box.y * S}px; width:${box.w * S}px; height:${box.h * S}px`); parent.append(v); return v; };
+const brand = place(home, B.home.videos[0], VID.brand), howto = place(cat, B.cleansers.videos[0], VID.howto);
+window.DUR = 13.6;
+window.render = async (t) => {
+  // which page is on screen, and how far it is scrolled (CSS px of the captured page)
+  const page = t < 6.8 ? 0 : t < 10.8 ? 1 : 2;
+  [home, cat, prod].forEach((p, i) => { p.style.opacity = i === page ? 1 : 0; });
+  let y = 0;
+  if (page === 0) y = 760 * ease((t - 4.3) / 1.2);
+  if (page === 1) y = 860 * ease((t - 8.5) / 1.0);
+  [home, cat, prod][page].style.top = (-y * S) + "px";
+  document.getElementById("url").textContent = ["tienda.ivanboot.dev", "tienda.ivanboot.dev/collections/cleansers", "tienda.ivanboot.dev/products/clarifying-gel-cleanser"][page];
+  const L = [[0.8, 4.2], [5.2, 6.8], [7.0, 8.5], [9.3, 10.8], [11.0, 13.6]];
+  L.forEach(([a, b], i) => { const el = document.getElementById("l" + i); el.style.opacity = t >= a && t < b ? ease((t - a) / 0.25) : 0; });
+  popIn(document.getElementById("art"), t, 11.4, 0.4);
+  brand.style.opacity = page === 0 ? 1 : 0; howto.style.opacity = page === 1 ? 1 : 0;
+  await seekAll([[brand, 1.5 + t], [howto, 2.0 + Math.max(0, t - 8.3)]]);
+};
+</script>
+</body></html>

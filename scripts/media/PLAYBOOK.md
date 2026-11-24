@@ -708,3 +708,25 @@ a este video (`point_aa()`).
   para la segunda verificación por visión del bot, solo como consejo.
 - **E37.** Las secuencias de emoji con ZWJ (🧑‍💼) salen partidas en dos en el Chrome del montaje: usa iconos SVG.
 - **Póster:** el contrato después de pagar (`POSTER_AT = ("contract", 19.8)`).
+
+## 11. Video de la sección 4: AI Media & Shopify, el proceso creativo (2026-11-24)
+
+Cómo se hicieron los videos: la idea, la coherencia, las correcciones reales, lo que resuelve el código, Ardea Skin, las
+redes sociales (como servicio que se ofrece, no como proyecto hecho) y el presupuesto. 143 s, voz en inglés (10 frases,
+transcritas) y subtítulos en español. **Costo: solo la voz.** Script: `scripts/media/media_assemble.py`.
+
+- **Escenas** (`scenes/m-*.html`, base común en `m-common.js`). Los videos reales (las 4 explicaciones, el video de marca
+  y el tutorial de limpiadores) se muestran **moviéndolos al fotograma exacto**: `render(t)` es asíncrono, `seekAll()`
+  espera el evento `seeked` de cada video visible y un fotograma más, y Playwright espera la promesa antes de capturar.
+  Cada escena con video tarda ~2 min en filmarse; las 10 juntas, unos 20 min.
+- **Ardea Skin:** `media_assemble.py capture` captura a 2x (en inglés) el inicio, la categoría de limpiadores y una ficha de
+  producto, y guarda dónde está cada `<video>` (`store/boxes.js`): la escena reproduce el archivo real justo ahí.
+- **Correcciones reales:** las versiones descartadas son `coding-still-172658.png` (barba), `requests-still-190220.png`
+  (por encima del hombro; la aprobada es `requests-still.png`), `couch-back-still-211203.png` (celular lejos) y
+  `whiteboard-still.png` (círculos de la IA → `whiteboard-composite-en.mp4`).
+- **Presupuesto** (cuenta del 2026-11-24, con lo documentado y cada archivo generado que conservamos): fotos de producto
+  $2,38 · portadas y tutoriales $5,52 · video de marca $1,56 · video AI Agents $2,08 · video de portada $8,20 · video de
+  Automation $3,73 · Web & API, este video y las voces ≈ $0,10 → **≈ $23,57**. La voz dice "less than 25 dollars": queda
+  margen por si alguna versión antigua de las fotos se borró antes de que se guardara todo.
+- **Pronunciación:** "Ardea Skin" salió una vez como "our dayaskin" en la transcripción; regenerar esa frase lo arregló.
+- **Póster:** el antes y el después de la barba (`POSTER_AT = ("fixes", 4.2)`).

@@ -1,0 +1,59 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<script src="../out/logos-media/logos.js"></script><script src="k-common.js"></script><script src="m-common.js"></script>
+<!-- Shot 8: an offer, not a past project: scraping (trends, competitors) -> content -> automation (schedule, publish,
+     reply). The post uses a real Ardea Skin product photo. -->
+<style>
+  .eyebrow { position: absolute; top: 60px; width: 100%; text-align: center; font-size: 24px; letter-spacing: 0.3em; color: var(--glow); font-weight: 600; }
+  #logos { position: absolute; top: 110px; left: 0; right: 0; height: 130px; }
+  .col { position: absolute; top: 300px; width: 540px; height: 680px; border-radius: 26px; border: 1px solid var(--line);
+    background: linear-gradient(180deg, rgba(18,22,27,0.92), rgba(14,18,22,0.92)); padding: 30px; }
+  .col h4 { font-size: 30px; font-weight: 800; } .col h4 small { display: block; font-size: 20px; font-weight: 400; color: var(--muted); margin-top: 4px; }
+  .bars { display: flex; align-items: flex-end; gap: 14px; height: 220px; margin-top: 30px; }
+  .bars i { flex: 1; background: linear-gradient(180deg, #5eead4, #1f6f66); border-radius: 6px 6px 0 0; }
+  .row { margin-top: 14px; padding: 12px 16px; border-radius: 12px; background: rgba(255,255,255,0.04); font-size: 19px; color: #c3cad3; display: flex; justify-content: space-between; }
+  .post { margin: 26px auto 0; width: 330px; border-radius: 22px; overflow: hidden; background: #fff; color: #1b2433; }
+  .post .hd { display: flex; align-items: center; gap: 10px; padding: 12px 14px; font-size: 17px; font-weight: 700; }
+  .post .hd i { width: 30px; height: 30px; border-radius: 50%; background: #d9b8a3; }
+  .post img { display: block; width: 330px; height: 330px; object-fit: cover; }
+  .post p { padding: 12px 14px; font-size: 17px; line-height: 1.4; }
+  .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 26px; }
+  .cal i { height: 52px; border-radius: 8px; background: rgba(255,255,255,0.05); }
+  .cal i.on { background: rgba(94,234,212,0.35); border: 1px solid #5eead4; }
+  .step { margin-top: 16px; padding: 12px 18px; border-radius: 12px; font-size: 22px; font-weight: 600; background: rgba(94,234,212,0.08); border: 1px solid rgba(94,234,212,0.35); }
+  .arrow { position: absolute; top: 600px; font: 800 50px Inter; color: var(--glow); }
+</style></head>
+<body>
+<div class="eyebrow" id="eb">FOR YOUR SOCIAL MEDIA</div>
+<div id="logos"></div>
+<div class="col" id="c0" style="left:70px"><h4>Web scraping<small>trends and what your competitors post</small></h4>
+  <div class="bars" id="bars"></div>
+  <div class="row">Competitor A · reel <b>48k views</b></div><div class="row">Competitor B · carousel <b>12k likes</b></div></div>
+<div class="arrow" id="a0" style="left:622px">→</div>
+<div class="col" id="c1" style="left:690px"><h4>Content<small>made with the same care</small></h4>
+  <div class="post"><div class="hd"><i></i>ardea.skin</div><img src="../../images/out/clarifying-gel-cleanser--v3--gemini-3-pro-image--20261118-234312.jpg"><p>Your morning routine in 3 steps ✨</p></div></div>
+<div class="arrow" id="a1" style="left:1242px">→</div>
+<div class="col" id="c2" style="left:1310px"><h4>Automation<small>it runs by itself</small></h4>
+  <div class="cal" id="cal"></div>
+  <div class="step" id="k0">🗓 Scheduling</div><div class="step" id="k1">✓ Publishing</div><div class="step" id="k2">💬 Replying to comments</div></div>
+<script>
+const logos = document.getElementById("logos");
+const L = ["instagram", "tiktok", "youtube", "facebook"].map((s, i) => { const t = tile(s, 104, false); t.style.left = (720 + i * 130) + "px"; t.style.top = "0px"; logos.append(t); return t; });
+const bars = document.getElementById("bars"), H = [30, 42, 38, 55, 61, 78, 92];
+const B = H.map(() => { const i = document.createElement("i"); bars.append(i); return i; });
+const cal = document.getElementById("cal"), cells = Array.from({ length: 21 }, () => { const i = document.createElement("i"); cal.append(i); return i; });
+const ON = [1, 3, 5, 8, 10, 12, 15, 17, 19];
+window.DUR = 13.5;
+window.render = (t) => {
+  document.getElementById("eb").style.opacity = ease((t - 0.2) / 0.4);
+  L.forEach((el, i) => popIn(el, t, 0.6 + i * 0.25, 0.35));
+  [["c0", 3.0], ["a0", 6.2], ["c1", 6.4], ["a1", 9.0], ["c2", 9.1]].forEach(([id, at]) => {
+    const el = document.getElementById(id); el.style.opacity = 0.15 + 0.85 * ease((t - at) / 0.4);
+  });
+  B.forEach((b, i) => { b.style.height = (H[i] * 2.2 * ease((t - 3.3 - i * 0.12) / 0.6)) + "px"; });
+  cells.forEach((c, i) => c.classList.toggle("on", ON.includes(i) && t >= 9.5 + ON.indexOf(i) * 0.12));
+  [9.6, 10.5, 11.3].forEach((at, i) => popIn(document.getElementById("k" + i), t, at, 0.35));
+};
+render(0);
+</script>
+</body></html>
