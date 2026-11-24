@@ -90,15 +90,23 @@ export function HubCenter() {
         className="m-auto w-[min(92vw,640px)] rounded-2xl border border-line bg-ink-2 p-0 text-text backdrop:bg-black/70 backdrop:backdrop-blur-sm"
         onClick={(e) => e.target === dialog.current && dialog.current?.close()}
       >
-        <div className="p-6 sm:p-8">
-          <div className="flex items-start justify-between gap-4">
+        <div className="relative p-6 sm:p-8">
+          <button type="button" onClick={() => dialog.current?.close()} className="absolute right-3 top-3 rounded-full border border-line bg-ink-2 px-2.5 py-0.5 text-sm text-muted hover:text-text sm:right-4 sm:top-4" aria-label="Close">
+            ✕
+          </button>
+          <div className="flex items-center justify-between gap-4 pr-8 sm:pr-10">
             <div>
               <h2 className="font-serif text-3xl">{about.name}</h2>
               <p className="mt-1 text-sm text-glow">{about.role}</p>
             </div>
-            <button type="button" onClick={() => dialog.current?.close()} className="rounded-full border border-line px-3 py-1 text-sm text-muted hover:text-text" aria-label="Close">
-              ✕
-            </button>
+            <Image
+              src="/portfolio/ivan.webp"
+              alt={`Portrait of ${about.name}`}
+              width={480}
+              height={480}
+              unoptimized // a 14 KB 480 px webp: sharp on retina at 112 px, no resize step needed
+              className="h-20 w-20 shrink-0 rounded-full object-cover ring-2 ring-line ring-offset-2 ring-offset-ink-2 sm:h-28 sm:w-28"
+            />
           </div>
           <p className="mt-5 leading-relaxed text-text-2">{about.bio}</p>
 
