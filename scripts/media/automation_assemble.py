@@ -107,9 +107,9 @@ def ease(t: float) -> float:
     return ov.ease(t)
 
 
-def encoder(path: Path) -> subprocess.Popen:
+def encoder(path: Path, w: int = W, h: int = H) -> subprocess.Popen:
     return subprocess.Popen([g.ffmpeg(), "-loglevel", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24",
-                             "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-crf", "15",
+                             "-s", f"{w}x{h}", "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-crf", "15",
                              "-preset", "slow", "-pix_fmt", "yuv420p", str(path)], stdin=subprocess.PIPE)
 
 
@@ -268,6 +268,8 @@ def scene(name: str, preview: str = "") -> Path:
         pg.wait_for_function("document.fonts.ready.then(() => true)")
         pg.evaluate("document.fonts.ready")
         dur = pg.evaluate("window.DUR")
+        size = pg.evaluate("window.SIZE || null") or [W, H]
+        pg.set_viewport_size({"width": size[0], "height": size[1]})
         if preview:
             for t in [float(x) for x in preview.split(",")]:
                 pg.evaluate(f"render({t})")
@@ -275,7 +277,7 @@ def scene(name: str, preview: str = "") -> Path:
             b.close()
             print("previews:", preview)
             return out
-        enc = encoder(out)
+        enc = encoder(out, *size)
         for i in range(round(dur * FPS)):
             pg.evaluate(f"render({i / FPS})")
             img = Image.open(io.BytesIO(pg.screenshot(type="png"))).convert("RGB")
@@ -283,7 +285,18 @@ def scene(name: str, preview: str = "") -> Path:
         enc.stdin.close(); enc.wait()
         b.close()
     print(f"{name} ({dur} s) ->", out.name)
+    if name.startswith("loop-"):                            # section loops: small silent web file + poster
+        LOOPS.mkdir(exist_ok=True)
+        subprocess.run([g.ffmpeg(), "-y", "-loglevel", "error", "-i", str(out), "-vf", "scale=1200:-2", "-an",
+                        "-c:v", "libx264", "-crf", "24", "-preset", "slow", "-pix_fmt", "yuv420p", "-movflags", "+faststart",
+                        str(LOOPS / f"{name}.mp4")], check=True)
+        subprocess.run([g.ffmpeg(), "-y", "-loglevel", "error", "-i", str(out), "-frames:v", "1", "-vf", "scale=1200:-2",
+                        "-q:v", "3", str(LOOPS / f"{name}-poster.jpg")], check=True)
+        print("web loop ->", LOOPS / f"{name}.mp4", f"{(LOOPS / f'{name}.mp4').stat().st_size // 1024} KB")
     return out
+
+
+LOOPS = HERE / "out/loops"
 
 
 # ── shots 4b and 6: the client on the couch, the bot's Telegram messages over his phone ─────────────────────
@@ -620,6 +633,22 @@ def write_cues(starts: dict, total: float) -> dict:
     return cues
 
 
+def publish_loops(*names: str) -> None:
+    """Upload the section loops (silent 6 s MP4 + poster) to Shopify Files; URLs go to portfolio-loops.json."""
+    sys.path.insert(0, str(g.ROOT / "scripts/shopify"))
+    from shopify_admin import ShopifyAdmin
+    from upload_files import upload
+    path = g.ROOT / "apps/web/src/content/portfolio-loops.json"
+    data = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    s = ShopifyAdmin()
+    for n in names or ("loop-store", "loop-sale"):
+        v = upload(s, LOOPS / f"{n}.mp4", "FILE", f"portfolio section loop {n}")
+        im = upload(s, LOOPS / f"{n}-poster.jpg", "IMAGE", f"portfolio section loop {n} (poster)")
+        data[n] = {"src": v["url"], "poster": im["url"]}
+        print(n, "->", v["url"][:90])
+    path.write_text(json.dumps(data, indent=2) + chr(10), encoding="utf-8", newline=chr(10))
+
+
 if __name__ == "__main__":
     cmd, args = sys.argv[1], sys.argv[2:]
-    {"voice": voice, "app": app_shot, "scene": scene, "assemble": assemble, "couch": couch_shot, "manual": manual_shot}[cmd](*args)
+    {"voice": voice, "app": app_shot, "scene": scene, "assemble": assemble, "couch": couch_shot, "manual": manual_shot, "publish-loops": publish_loops}[cmd](*args)

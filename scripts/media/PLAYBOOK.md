@@ -666,3 +666,20 @@ subtítulos en español, 85,8 s. Script: `scripts/media/automation_assemble.py`.
   con alfa bajo abre un agujero en la tarjeta blanca. Mezcla el color a mano y dibújalo opaco.
 - **E36. Glifos que Inter no tiene:** "✕" salía como un cuadro vacío; usa "×".
 - Importe coherente: 40 M a 3.52 = 140.80 USDT en el formulario, en la pregunta de Telegram y en el resumen.
+
+## 9. Loops de las tarjetas de proyecto (2026-11-23)
+
+Las secciones 1 y 2 tienen el mismo diseño: el video explicativo grande arriba y, en la tarjeta del proyecto, un
+loop mudo de 6 s a la izquierda con el texto a la derecha. Todo hecho con código, a costo $0.
+
+- `scenes/loop-store.html`: fotogramas reales de la grabación del celular (`record_store.py chat`, en `out/loops/store_*.png`)
+  dentro de un celular dibujado, con tres pasos al lado (Browse the store, Ask the agent, Added to your bag).
+- `scenes/loop-sale.html`: capturas reales de la interfaz (`record_app.py`, estados `07-reading-3` y `08-match`, este
+  último el estado real "En cola: abriendo Chrome…" con el vendedor sustituido: no se abre ningún navegador). Luego el
+  celular pregunta, se pulsa Accept y llega "Transaction complete".
+- `automation_assemble.py scene loop-<nombre>` filma la escena (tamaño propio con `window.SIZE`, 1440×1080) y deja
+  `out/loops/<nombre>.mp4` (1200×900, sin audio, unos 300 KB) y su póster; `publish-loops` los sube a Shopify Files y
+  escribe `apps/web/src/content/portfolio-loops.json`.
+- En la web: `loop-video.tsx` (muted + loop + playsInline, solo se reproduce en pantalla, póster fijo con
+  "reducir movimiento"); en `portfolio.ts`, `loop: { media, label }` en el proyecto.
+- Cada loop termina fundiéndose con su primer fotograma, para que la vuelta no se note.

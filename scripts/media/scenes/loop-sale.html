@@ -1,0 +1,101 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<!-- Section 2 project loop (6 s, seamless): the real price monitor reaches the target and queues the sale (real
+     captures from record_app.py, names blurred), the client's phone asks, Accept, transaction complete. -->
+<style>
+  html, body { width: 1440px; height: 1080px; }
+  .app { position: absolute; left: 40px; top: 250px; width: 900px; height: 600px; border-radius: 20px; overflow: hidden;
+    box-shadow: 0 50px 120px -30px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.06);
+    transform-origin: 72% 76%; }
+  .app img { position: absolute; inset: 0; width: 900px; height: 600px; }
+  .hit { position: absolute; left: 28px; width: 832px; height: 30px; border-radius: 8px; border: 3px solid #f2b45c;
+    box-shadow: 0 0 30px rgba(242,180,92,0.6); }
+  .phone { position: absolute; left: 990px; top: 70px; width: 420px; height: 900px; border-radius: 58px; background: #050608;
+    box-shadow: 0 0 0 3px #2a323b, 0 60px 140px -40px rgba(0,0,0,0.95), 0 0 120px -30px rgba(94,234,212,0.3); }
+  .scr { position: absolute; left: 16px; top: 16px; width: 388px; height: 868px; border-radius: 44px; overflow: hidden;
+    background: radial-gradient(120% 70% at 50% 0%, #17403d, #0b1416 60%, #07090b); }
+  .clock { position: absolute; top: 90px; width: 100%; text-align: center; color: #e6f5f2; }
+  .clock b { display: block; font-size: 96px; font-weight: 300; letter-spacing: -2px; }
+  .clock span { font-size: 22px; color: #9fb7b3; }
+  .card { position: absolute; left: 18px; right: 18px; border-radius: 26px; background: #fff; color: #1b2433; padding: 22px 22px 24px;
+    box-shadow: 0 20px 50px -10px rgba(0,0,0,0.6); }
+  .hd { display: flex; align-items: center; gap: 12px; font-size: 20px; font-weight: 700; color: #0f1e36; }
+  .hd i { width: 38px; height: 38px; border-radius: 10px; background: #26a69a; display: grid; place-items: center; color: #fff; font-style: normal; font-size: 20px; }
+  .hd small { margin-left: auto; font-weight: 400; color: #6b7689; font-size: 16px; }
+  .q { margin-top: 16px; font-size: 25px; font-weight: 700; line-height: 1.25; }
+  .amt { margin-top: 6px; font-size: 40px; font-weight: 800; color: #0f1e36; }
+  .sub { margin-top: 4px; font-size: 17px; color: #6b7689; }
+  .btns { display: flex; gap: 12px; margin-top: 18px; }
+  .btns div { flex: 1; height: 58px; border-radius: 14px; display: grid; place-items: center; font-size: 22px; font-weight: 700; }
+  .acc { background: #1e8e5a; color: #fff; }
+  .can { background: #f3f5f9; color: #c62f3b; }
+  .ok { font-size: 26px; font-weight: 800; color: #1e8e5a; margin-top: 14px; }
+  .big { font-size: 46px; font-weight: 800; color: #1e8e5a; margin-top: 4px; }
+  .ring { position: absolute; width: 80px; height: 80px; margin: -40px 0 0 -40px; border-radius: 50%; border: 5px solid rgba(94,234,212,0.95); }
+  .bar { height: 8px; border-radius: 4px; background: #e6eaf0; margin-top: 16px; overflow: hidden; }
+  .bar div { height: 100%; background: #26a69a; }
+  .steps { margin-top: 12px; font-size: 18px; color: #6b7689; line-height: 1.7; }
+  .tag { position: absolute; left: 40px; top: 170px; }
+</style></head>
+<body>
+<div class="tag chip">● Price monitor · every minute, 24/7</div>
+<div class="app"><img id="a0" src="../out/loops/app_07-reading-3.png"><img id="a1" src="../out/loops/app_08-match.png"><div class="hit" id="hit"></div></div>
+<div class="phone"><div class="scr">
+  <div class="clock"><b>22:23</b><span>Monday, 23 November</span></div>
+  <div class="card" id="ask" style="top: 330px">
+    <div class="hd"><i>➤</i>Sale bot<small>now</small></div>
+    <div class="q">Do you want to make this sale?</div>
+    <div class="amt">140.80 USDT</div>
+    <div class="sub">40 M at 3.52 · Buyer site A</div>
+    <div class="btns"><div class="acc" id="acc">✓ Accept</div><div class="can" id="can">× Cancel</div></div>
+    <div id="prog"><div class="bar"><div id="barf"></div></div><div class="steps" id="steps"></div></div>
+  </div>
+  <div class="card" id="done" style="top: 330px">
+    <div class="hd"><i>➤</i>Sale bot<small>now</small></div>
+    <div class="ok">✓ Transaction complete</div>
+    <div class="big">+140.80 USDT</div>
+    <div class="sub">Order #48213 · 40 M delivered</div>
+    <div class="sub" style="margin-top:14px; color:#0f1e36; font-weight:600">Check your balance</div>
+  </div>
+</div></div>
+<div class="ring" id="ring"></div>
+<script>
+window.SIZE = [1440, 1080];
+const clamp = (x) => Math.max(0, Math.min(1, x)), ease = (x) => { x = clamp(x); return x * x * (3 - 2 * x); };
+const back = (x) => { x = clamp(x); const c = 1.7; return x <= 0 ? 0 : 1 + (c + 1) * (x - 1) ** 3 + c * (x - 1) ** 2; };
+const MATCH = 1.0, ASK = 1.45, TAP = 2.6, DONE = 4.35, RESET = 5.5;
+window.DUR = 6.0;
+window.render = (t) => {
+  const reset = ease((t - RESET) / 0.45);                       // everything returns to the first frame
+  document.getElementById("a1").style.opacity = ease((t - MATCH) / 0.12) * (1 - reset);
+  // when the price matches, the camera leans into that row
+  const z = ease((t - MATCH - 0.05) / 0.5) * (1 - reset);
+  document.querySelector(".app").style.transform = `scale(${1 + 0.45 * z})`;
+  const hit = document.getElementById("hit");                   // the third row, in the 900 px wide capture
+  hit.style.top = (1082 / 1440 * 600 - 3) + "px";
+  hit.style.opacity = t >= MATCH ? (0.55 + 0.45 * Math.sin((t - MATCH) * 9)) * (1 - reset) : 0;
+  const phone = document.querySelector(".phone");
+  const buzz = t > ASK - 0.1 && t < ASK + 0.3 ? Math.sin(t * 90) * 5 : 0;
+  phone.style.transform = `translateX(${buzz}px)`;
+  const ask = document.getElementById("ask"), a = back((t - ASK) / 0.35);
+  ask.style.opacity = clamp((t - ASK) / 0.15) * (1 - ease((t - DONE + 0.15) / 0.2));
+  ask.style.transform = `scale(${0.7 + 0.3 * a})`;
+  const accd = t >= TAP + 0.12;
+  const acc = document.getElementById("acc");
+  acc.textContent = accd ? "✓ Accepted" : "✓ Accept";
+  acc.style.background = t > TAP - 0.05 && t < TAP + 0.12 ? "#14603d" : "#1e8e5a";
+  document.getElementById("can").style.color = accd ? "#c0c6cf" : "#c62f3b";
+  // after Accept: the sale runs (browser bot, delivery bot)
+  const prog = document.getElementById("prog"), pg = clamp((t - TAP - 0.3) / (DONE - TAP - 0.5));
+  prog.style.display = t >= TAP + 0.3 ? "block" : "none";
+  document.getElementById("barf").style.width = (100 * pg) + "%";
+  document.getElementById("steps").innerHTML = (pg < 0.5 ? "● Creating the sell order…" : "✓ Sell order created<br>● Delivering 40 M…");
+  const ring = document.getElementById("ring"), r = (t - TAP) / 0.45;
+  ring.style.left = (990 + 16 + 18 + 22 + 85) + "px"; ring.style.top = (70 + 16 + 330 + 300) + "px";
+  ring.style.opacity = r > 0 && r < 1 ? 1 - r : 0; ring.style.transform = `scale(${0.4 + 0.9 * clamp(r)})`;
+  const done = document.getElementById("done"), d = back((t - DONE) / 0.35);
+  done.style.opacity = clamp((t - DONE) / 0.15) * (1 - reset); done.style.transform = `scale(${0.7 + 0.3 * d})`;
+};
+render(0);
+</script>
+</body></html>

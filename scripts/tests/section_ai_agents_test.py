@@ -3,8 +3,8 @@
     python scripts/tests/section_ai_agents_test.py [portfolio_base] [store_base]
 
 Checks the store opens its chat from ?ref=portfolio&chat=1 with the portfolio greeting (EN / ES) and both
-options unselected, and that the section shows the explainer inside the store-agent card, the Live demo
-button, the inline Try-it button and the coming-soon main video.
+options unselected, and that the section shows the explainer as its big video above the projects (since
+2026-11-23), a silent loop inside the store-agent card, the Live demo button and the inline Try-it button.
 """
 import sys
 from playwright.sync_api import sync_playwright
@@ -31,14 +31,16 @@ with sync_playwright() as p:
     pg = b.new_page(viewport={"width": 1440, "height": 900})
     pg.goto(BASE + "/ai-agents", wait_until="load"); pg.wait_for_timeout(1500)
     card = pg.locator("article").filter(has_text="Ardea Skin store agent")
-    c["video dentro de la ficha"] = card.locator("video.explainer").count() == 1
+    loop = card.locator("video[loop]")
+    c["loop dentro de la ficha"] = loop.count() == 1 and card.locator("video.explainer").count() == 0
+    c["loop silencioso y en línea"] = loop.count() == 1 and loop.evaluate("v => v.muted && v.playsInline && v.loop")
     badge = card.get_by_role("link", name="Live demo")
     c["badge es botón al chat"] = badge.count() == 1 and "chat=1" in (badge.get_attribute("href") or "")
     inline = card.locator("p").filter(has_text="A demo agent you can try live").get_by_role("link", name="Try it in the store")
     c["botón 'Try it' en el texto"] = inline.count() == 1
-    c["sin panel de video de sección"] = pg.locator("section[aria-label='Explainer video']").count() == 0
-    card.scroll_into_view_if_needed(); pg.wait_for_timeout(500)
-    pass
+    c["video grande de la sección"] = pg.locator("#section-video video.explainer").count() == 1
+    card.scroll_into_view_if_needed(); pg.wait_for_timeout(2500)
+    c["el loop se reproduce al verse"] = loop.evaluate("v => !v.paused && v.currentTime > 0.3")
     b.close()
 for k, v in c.items(): print(("✅" if v else "❌"), k)
 print(f"{sum(c.values())}/{len(c)}")

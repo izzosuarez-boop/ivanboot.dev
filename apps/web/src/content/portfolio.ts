@@ -14,6 +14,7 @@ export type Project = {
   link?: { label: string; href: string };
   demoHref?: string;            // makes the status badge a button that opens the live demo
   video?: { media: string; title: string };  // key in portfolio-media.json, shown instead of screenshots
+  loop?: { media: string; label: string };   // key in portfolio-loops.json: a 6 s silent loop, shown first
   image?: string | null;
 };
 
@@ -43,7 +44,8 @@ export const sections: Section[] = [
     intro:
       "Beyond a chat: from asking for things to delegating the work. Today AI agents work for you — integrated " +
       "into your platforms and workflows, they act as a force multiplier.",
-    // no section video for now (user, 2026-11-23): the empty panel is gone until the new overview video exists
+    // same layout as section 2 (user, 2026-11-23): the explainer is the big section video; the card shows a loop
+    video: { media: "ai-agents", title: "The store agent and the owner's Telegram agent, in 67 seconds" },
     projects: [
       {
         title: "Ardea Skin store agent",
@@ -68,7 +70,7 @@ export const sections: Section[] = [
         stack: ["Claude API", "Tool use", "FastAPI", "Shopify Storefront API", "Shopify Admin API", "Telegram Bot API", "Supabase", "Playwright"],
         link: { label: "Try it in the store", href: STORE_CHAT },
         demoHref: STORE_CHAT,
-        video: { media: "ai-agents", title: "The store agent and the owner's Telegram agent, in 67 seconds" },
+        loop: { media: "loop-store", label: "The Ardea Skin store and its AI agent: browse, ask, added to the bag" },
       },
     ],
   },
@@ -106,6 +108,7 @@ export const sections: Section[] = [
           + "logged, and when something goes wrong (an expired session, a server that stops buying) it reports it "
           + "instead of failing silently.",
         stack: ["Python", "Playwright", "Chrome", "Tkinter", "Threading", "CSV / JSON"],
+        loop: { media: "loop-sale", label: "The price monitor hits the target, the client accepts on the phone, sale complete" },
       },
       {
         title: "Fleet of headless Linux workers",

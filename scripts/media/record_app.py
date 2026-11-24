@@ -286,6 +286,16 @@ def main() -> None:
         app._refrescar_kpis()
         app._avisar(f"Precios actualizados a las {app.ultima_lectura:%H:%M:%S}.")
         shot(f"07-reading-{n + 1}")
+    # the price reaches the target: the app's real "sale queued" state (for the section loop). The seller stub
+    # only records the request here: still no browser and no sale.
+    queued = []
+    app.vendedor.pedir_venta = lambda orden: queued.append(orden)
+    app._con_precios(cfg({**READINGS[-1], "Servidor1": 3.52}))
+    app.ultima_lectura = t0 + timedelta(minutes=len(READINGS))
+    app._refrescar_kpis()
+    app._avisar(f"Precios actualizados a las {app.ultima_lectura:%H:%M:%S}.")
+    shot("08-match")
+    print("sale requests recorded (not sent):", len(queued))
     (OUT / "meta.json").write_text(json.dumps(meta, indent=1), encoding="utf-8")
     root.destroy()
     print("->", OUT)

@@ -6,6 +6,8 @@ import { site } from "@/lib/site";
 import { GoLink, Stage } from "../_components/stage";
 import { ExplainerVideo, type ExplainerMedia } from "../_components/explainer-video";
 import portfolioMedia from "@/content/portfolio-media.json";
+import portfolioLoops from "@/content/portfolio-loops.json";
+import { LoopVideo } from "../_components/loop-video";
 
 export function generateStaticParams() {
   return sections.map((s) => ({ section: s.slug }));
@@ -17,6 +19,7 @@ export async function generateMetadata({ params }: PageProps<"/[section]">): Pro
 }
 
 const MEDIA = portfolioMedia as Record<string, ExplainerMedia>;
+const LOOPS = portfolioLoops as Record<string, { src: string; poster: string }>;
 
 function StatusBadge({ status, href }: { status: Project["status"]; href?: string }) {
   const style =
@@ -95,8 +98,10 @@ function ProjectCard({ p, flip }: { p: Project; flip: boolean }) {
   }
   return (
     <article className="grid items-start gap-6 md:grid-cols-2 md:gap-10">
-      <div className={`${flip ? "md:order-2" : ""} ${p.video ? "md:sticky md:top-24" : ""}`}>
-        {p.video && MEDIA[p.video.media] ? (
+      <div className={`${flip ? "md:order-2" : ""} ${p.video || p.loop ? "md:sticky md:top-24" : ""}`}>
+        {p.loop && LOOPS[p.loop.media] ? (
+          <LoopVideo src={LOOPS[p.loop.media].src} poster={LOOPS[p.loop.media].poster} label={p.loop.label} />
+        ) : p.video && MEDIA[p.video.media] ? (
           <ExplainerVideo media={MEDIA[p.video.media]} title={p.video.title} />
         ) : (
           <MediaFrame label="Screenshots coming soon" ratio="aspect-[4/3]" />
@@ -158,7 +163,7 @@ async function SectionContent({ params }: { params: PageProps<"/[section]">["par
         </header>
 
         {s.video && (
-          <section aria-label="Explainer video" className="mt-14">
+          <section id="section-video" aria-label="Explainer video" className="mt-14">
             {media ? (
               <ExplainerVideo media={media} title={s.video.title} />
             ) : (

@@ -1,0 +1,64 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<!-- Section 1 project loop (6 s, seamless): the real store and its agent, from the real phone recording
+     (record_store.py chat). Frames in out/loops/store_*.png. -->
+<style>
+  html, body { width: 1440px; height: 1080px; }
+  .phone { position: absolute; left: 150px; top: 56px; width: 466px; height: 968px; border-radius: 64px; background: #050608;
+    box-shadow: 0 0 0 3px #2a323b, 0 60px 140px -40px rgba(0,0,0,0.95), 0 0 120px -30px rgba(94,234,212,0.35); }
+  .screen { position: absolute; left: 18px; top: 18px; width: 430px; height: 932px; border-radius: 48px; overflow: hidden; background: #f5f0e8; }
+  .screen img { position: absolute; left: 0; top: 0; width: 430px; height: 930px; }
+  .notch { position: absolute; left: 50%; top: 30px; width: 120px; height: 32px; margin-left: -60px; border-radius: 16px; background: #050608; z-index: 5; }
+  .tap { position: absolute; width: 90px; height: 90px; margin: -45px 0 0 -45px; border-radius: 50%; border: 5px solid rgba(94,234,212,0.9); z-index: 6; }
+  .steps { position: absolute; left: 700px; top: 300px; width: 640px; }
+  .eyebrow { font-size: 26px; letter-spacing: 0.3em; color: var(--glow); font-weight: 600; margin-bottom: 34px; }
+  .step { display: flex; align-items: center; gap: 24px; padding: 24px 28px; margin-bottom: 20px; border-radius: 24px;
+    border: 2px solid var(--line); background: rgba(18,22,27,0.8); font-size: 40px; font-weight: 600; color: #6b7689; }
+  .step .n { width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center; font-size: 30px; border: 2px solid #2a333d; flex: none; }
+  .step.on { border-color: rgba(94,234,212,0.7); background: rgba(94,234,212,0.1); color: #fff; }
+  .step.on .n { border-color: var(--glow); color: var(--glow); }
+  .step.done { color: #c3cad3; }
+  .step.done .n { background: var(--glow); border-color: var(--glow); color: #06221f; }
+</style></head>
+<body>
+<div class="phone"><div class="screen" id="screen"></div></div>
+<div class="tap" id="tap"></div>
+<div class="steps">
+  <div class="eyebrow">ARDEA SKIN · AI AGENT</div>
+  <div class="step" id="s0"><span class="n">1</span>Browse the store</div>
+  <div class="step" id="s1"><span class="n">2</span>Ask the agent</div>
+  <div class="step" id="s2"><span class="n">3</span>Added to your bag</div>
+</div>
+<script>
+window.SIZE = [1440, 1080];
+const clamp = (x) => Math.max(0, Math.min(1, x)), ease = (x) => { x = clamp(x); return x * x * (3 - 2 * x); };
+// [frame, from (s)]; the last one fades back into the first so the loop has no seam
+const SHOTS = [["0.9", 0], ["2.0", 1.05], ["4.5", 1.6], ["6.6", 2.2], ["15.0", 2.85], ["20.5", 3.9], ["25.5", 4.45]];
+const screen = document.getElementById("screen");
+const imgs = SHOTS.map(([f]) => { const i = new Image(); i.src = `../out/loops/store_${f}.png`; screen.append(i); return i; });
+const home = new Image(); home.src = "../out/loops/store_0.9.png"; screen.append(home);   // the loop's return
+const FADE = 0.16;
+window.DUR = 6.0;
+window.render = (t) => {
+  SHOTS.forEach(([, at], k) => {
+    const next = SHOTS[k + 1] ? SHOTS[k + 1][1] : 99;
+    imgs[k].style.opacity = t >= at ? (k === 0 ? 1 : ease((t - at) / FADE)) : 0;
+    imgs[k].style.zIndex = k;
+    // a slow drift inside each screen, as if the page breathes
+    imgs[k].style.transform = `translateY(${-6 * ease((t - at) / Math.max(0.5, next - at))}px)`;
+  });
+  home.style.zIndex = 9; home.style.opacity = ease((t - 5.55) / 0.4);
+  const tap = document.getElementById("tap"), u = (t - 0.8) / 0.4;     // tap on "Ask Ardea"
+  tap.style.left = (150 + 18 + 430 * 0.788) + "px"; tap.style.top = (56 + 18 + 930 * 0.947) + "px";
+  tap.style.opacity = u > 0 && u < 1 ? 1 - u : 0; tap.style.transform = `scale(${0.4 + 0.8 * clamp(u)})`;
+  const step = t < 1.0 ? 0 : t < 4.45 ? 1 : t < 5.55 ? 2 : -1;
+  [0, 1, 2].forEach((k) => {
+    const s = document.getElementById("s" + k);
+    s.classList.toggle("on", k === step);
+    s.classList.toggle("done", step >= 0 && k < step);
+    s.querySelector(".n").textContent = step >= 0 && k < step ? "✓" : String(k + 1);
+  });
+};
+render(0);
+</script>
+</body></html>
