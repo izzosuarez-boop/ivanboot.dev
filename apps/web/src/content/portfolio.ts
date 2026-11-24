@@ -126,13 +126,32 @@ export const sections: Section[] = [
     video: { media: "web-api-overview", title: "KamasMarket end to end: nine API integrations, smart contracts and an AI agent, in 115 seconds" },
     projects: [
       {
-        title: "Protocol lab",
+        // replaced "Protocol lab" 2026-11-23 (user's text, checked against the KamasMarket code: Caddy at the edge
+        // behind Cloudflare, Redis shared by 3 workers for listing cache + rate limits, OCR bot with Claude as an
+        // advisory second check, CREATE2 escrow on BNB Chain that can only pay the seller or refund the buyer)
+        title: "A website built to measure",
         status: "Case study",
-        summary: "A reverse-engineered TCP protocol bench: frame parser, MITM proxy with hooks, mock servers and client, and a replay and fuzzing harness.",
-        problem: "Studying a legacy protocol without touching production, and trusting a parser that real clients feed in odd fragments.",
-        how: "One parser shared by the proxy and every mock, an asyncio proxy that rewrites redirects, and a fuzzer that cuts the stream at every byte.",
-        result: "Zero dependencies beyond the standard library; end-to-end runs with assertions in all four traffic directions.",
-        stack: ["Python asyncio", "TCP", "Fuzzing", "Testing"],
+        summary: "A website built around the client's needs, designed to be easy for its users and to solve a real "
+          + "market problem.",
+        problem: "The client asked for a complete product: a site with user accounts that works as a peer-to-peer "
+          + "marketplace, where sellers list their products (here, an online game's items and currency) and buyers "
+          + "purchase and pay without leaving the platform. The site is the middleman of every trade and earns a "
+          + "commission on each sale.",
+        how: "I chose technologies for speed and simplicity, and for full control when the client asked for changes "
+          + "before going live. FastAPI for the backend, with Supabase (Postgres) as the database. Caddy as the "
+          + "production gateway: it serves HTTPS and is the only way in to the backend, behind Cloudflare. Redis, "
+          + "shared by the server's workers, caches the heaviest listings and keeps rate limits consistent when many "
+          + "users connect at once. At the core of every trade, a smart contract written in Solidity on BNB Chain: the "
+          + "payment is verified on the blockchain, and the contract pays the seller or refunds the buyer as the "
+          + "backend reports, with no third option. A separate program, using computer vision and OCR with a second "
+          + "check by AI, runs on its own, coordinated through the API, and receives and delivers the products inside "
+          + "the game according to each payment's status.",
+        result: "A product with three parts working together: the smart contract, the AI-assisted in-game software and "
+          + "the backend that creates and manages the orders, many at a time, with each task handed to a single bot so "
+          + "nothing is done twice. On top, an AI agent connected to the site and to every order, so each user always "
+          + "knows where their product and their money are. A constant flow of buying and selling in a secure "
+          + "environment.",
+        stack: ["FastAPI", "Supabase", "Redis", "Caddy", "Cloudflare", "Solidity", "BNB Chain", "Docker", "DeepSeek API", "Claude API"],
       },
       {
         title: "On-chain escrow test bench",

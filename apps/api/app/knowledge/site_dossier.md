@@ -131,5 +131,5 @@ offers two tappable follow-up questions in the same topic.
 ## How Iván works (from his portfolio)
 Measure before concluding; write down why each decision was made; test that a fix also fails with the
 wrong input. The portfolio case studies (LLM systems in production with cost and latency budgets, an
-on-chain escrow with gas measured on two chains, a reverse-engineered protocol test bench, an end-to-end web
+on-chain escrow with gas measured on two chains, a custom P2P marketplace built around that escrow, an end-to-end web
 scraping system that sells by the client's own rules) all follow that thread.
