@@ -1,4 +1,6 @@
-// Portfolio content: the six sections of the hub circle, clockwise from the top, and their projects.
+// Portfolio content: the four sections of the hub circle, clockwise from the top, and their projects.
+// 2026-11-23 (user): the scraping section was dropped (scraping lives in section 2) and AI Media + Web & Shopify
+// were merged. Old URLs redirect in next.config.ts.
 // Videos and project images are filled in later (null = placeholder frame).
 
 export type ProjectStatus = "Live demo" | "Case study" | "In progress";
@@ -113,9 +115,9 @@ export const sections: Section[] = [
     ],
   },
   {
-    slug: "software",
-    label: "Software, APIs & QA",
-    short: "Software & QA",
+    slug: "web-api",           // was "software" / "Software, APIs & QA" until 2026-11-23 (user)
+    label: "Web & API Integration",
+    short: "Web & APIs",
     pitch: "Software that is tested against the wrong answer, not just the right one.",
     intro:
       "Backends, API integrations, protocol work and test automation. Every claim backed by a test, a measurement or " +
@@ -153,33 +155,26 @@ export const sections: Section[] = [
     ],
   },
   {
-    slug: "scraping",
-    label: "Web Scraping & Data",
-    short: "Scraping",
-    pitch: "Data collected reliably, matched intelligently and delivered where it is useful.",
-    intro: "Scrapers that respect each site's rules, survive layout changes and turn pages into clean, matched data.",
-    video: { title: "Coming soon", src: null },
+    slug: "ai-media-shopify",  // merged from "ai-media" and "web-shopify" 2026-11-23 (user)
+    label: "AI Media & Shopify",
+    short: "Media & Shopify",
+    pitch: "Custom Shopify storefronts, with product photos and videos made by AI.",
+    intro:
+      "Headless Shopify with a custom Next.js frontend: Shopify keeps payments, inventory and checkout; the experience " +
+      "is fully yours. The product photos, videos and voice are generated with one art direction and checked in code, " +
+      "not by eye alone.",
+    video: { title: "A tour of tienda.ivanboot.dev, from catalog to checkout", src: null },
     projects: [
       {
-        title: "Competitor price radar",
-        status: "In progress",
-        summary: "Prices from permitted competitor sites, matched to the store's products with an LLM and shown as a live dashboard.",
-        problem: "",
-        how: "",
-        result: "",
-        stack: ["Python", "Playwright", "Claude API", "Supabase"],
+        title: "Ardea Skin — headless Shopify store",
+        status: "Live demo",
+        summary: "A working store for a fictional skincare brand: real catalog, cart and Shopify checkout in test mode, with an AI advisor built in.",
+        problem: "Show both sides a client needs: solid Shopify integration and a frontend that does not look like every other theme.",
+        how: "Next.js 16 with server-side Storefront API calls (private token never reaches the browser), cached product data, host-based routing for two sites in one app.",
+        result: "Instant static shells with live stock streamed in; a burst of visitors costs one Shopify request.",
+        stack: ["Shopify Storefront API", "Next.js 16", "React 19", "Tailwind", "TypeScript"],
+        link: { label: "Open the store", href: STORE },
       },
-    ],
-  },
-  {
-    slug: "ai-media",
-    label: "AI Media",
-    short: "AI Media",
-    pitch: "Product photos and videos made with AI — and checked in code.",
-    intro:
-      "Generated images, videos and voice with one art direction, and quality control that does not rely on eyes alone.",
-    video: { title: "How the Ardea Skin photos and videos were made", src: null },
-    projects: [
       {
         title: "Ardea Skin product photography",
         status: "Live demo",
@@ -199,28 +194,6 @@ export const sections: Section[] = [
         result: "About $1.70–1.90 per category; the whole demo's media budget was roughly $10.",
         stack: ["Gemini video", "Gemini TTS", "ffmpeg", "Python"],
         link: { label: "Watch in the store", href: STORE },
-      },
-    ],
-  },
-  {
-    slug: "web-shopify",
-    label: "Web & Shopify",
-    short: "Web & Shopify",
-    pitch: "Fast, custom storefronts on top of the commerce platform clients already trust.",
-    intro:
-      "Headless Shopify with a custom Next.js frontend: Shopify keeps payments, inventory and checkout; the experience " +
-      "is fully yours.",
-    video: { title: "A tour of tienda.ivanboot.dev, from catalog to checkout", src: null },
-    projects: [
-      {
-        title: "Ardea Skin — headless Shopify store",
-        status: "Live demo",
-        summary: "A working store for a fictional skincare brand: real catalog, cart and Shopify checkout in test mode, with an AI advisor built in.",
-        problem: "Show both sides a client needs: solid Shopify integration and a frontend that does not look like every other theme.",
-        how: "Next.js 16 with server-side Storefront API calls (private token never reaches the browser), cached product data, host-based routing for two sites in one app.",
-        result: "Instant static shells with live stock streamed in; a burst of visitors costs one Shopify request.",
-        stack: ["Shopify Storefront API", "Next.js 16", "React 19", "Tailwind", "TypeScript"],
-        link: { label: "Open the store", href: STORE },
       },
       {
         title: "One-VPS production setup",

@@ -2,7 +2,7 @@
 
     python scripts/tests/portfolio_hub_test.py [base_url]     # default http://localhost:3100
 
-Checks, on desktop and mobile: the six segments render, clicking one turns the ring and enters its section,
+Checks, on desktop and mobile: the four segments render, clicking one turns the ring and enters its section,
 the scene hides while leaving and only reappears once the ring has shrunk back, neighbour links slide to the
 next section, the About card opens, browser back works, and no page errors are thrown.
 """
@@ -24,17 +24,31 @@ def scene_opacity(pg) -> float:
     }""")
 
 
+def click_seg(pg, label: str) -> None:
+    """Click the middle of a ring segment's band. Playwright's own click aims at the bounding-box centre, which
+    for a 90° arc (four sections) falls inside the circle, not on the segment."""
+    x, y = pg.evaluate("""(label) => {
+        const path = document.querySelector(`a.ring-seg[aria-label="${label}"] path.ring-band`);
+        const b = path.getBBox(), len = path.getTotalLength();
+        const outer = path.getPointAtLength(len * 0.25), inner = path.getPointAtLength(len * 0.75);
+        const m = path.getScreenCTM();
+        const px = (outer.x + inner.x) / 2, py = (outer.y + inner.y) / 2;
+        return [px * m.a + m.e, py * m.d + m.f];
+    }""", label)
+    pg.mouse.click(x, y)
+
+
 def run(pg, label: str, desktop: bool) -> dict[str, bool]:
     errors: list[str] = []
     pg.on("pageerror", lambda e: errors.append(str(e)))
     pg.goto(BASE + "/", wait_until="load")  # the hub plays its intro video: the network never goes idle
     time.sleep(1.2)
     c: dict[str, bool] = {}
-    c["6 segmentos"] = pg.locator("a.ring-seg").count() == 6
+    c["4 segmentos"] = pg.locator("a.ring-seg").count() == 4
     c["escena visible en el inicio"] = scene_opacity(pg) > 0.95
     c["botón Upwork"] = "upwork.com" in (pg.get_by_role("link", name="Hire me on Upwork").first.get_attribute("href") or "")
 
-    pg.locator('a.ring-seg[aria-label="Web Scraping, Software Automation & Data"]').click()
+    click_seg(pg, "Web Scraping, Software Automation & Data")
     time.sleep(0.4)
     c["escena se oculta al entrar"] = scene_opacity(pg) < 0.6
     time.sleep(2.2)
@@ -43,9 +57,9 @@ def run(pg, label: str, desktop: bool) -> dict[str, bool]:
     c["título de la sección"] = pg.get_by_role("heading", level=1, name="Bots that").is_visible()
     c["segmento activo arriba"] = pg.locator('a.ring-seg[aria-current="page"]').get_attribute("aria-label") == "Web Scraping, Software Automation & Data"
 
-    pg.locator('nav[aria-label="Other areas"] a', has_text="Software, APIs & QA").click()
+    pg.locator('nav[aria-label="Other areas"] a', has_text="Web & API Integration").click()
     time.sleep(2.0)
-    c["vecino: siguiente sección"] = pg.evaluate("location.pathname") == "/software"
+    c["vecino: siguiente sección"] = pg.evaluate("location.pathname") == "/web-api"
 
     pg.get_by_role("link", name="All work").first.click()
     time.sleep(0.9)
@@ -59,7 +73,7 @@ def run(pg, label: str, desktop: bool) -> dict[str, bool]:
     c["tarjeta About"] = pg.locator("dialog[open]").count() == 1
     pg.keyboard.press("Escape")
 
-    pg.locator('a.ring-seg[aria-label="AI Media"]').click()
+    click_seg(pg, "AI Media & Shopify")
     time.sleep(2.5)
     pg.go_back()
     time.sleep(2.0)

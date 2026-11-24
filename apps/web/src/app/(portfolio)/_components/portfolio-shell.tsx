@@ -333,10 +333,12 @@ function RingSvg({ vp, ring, active, onHover, go }: {
         const c = rot + i * STEP;
         const a = c - STEP / 2 + gap;
         const b = c + STEP / 2 - gap;
-        // top half: text along the clockwise arc; bottom half: along the reversed arc so it stays upright.
-        // Near the horizontal both fade out for an instant instead of overlapping.
-        const up = smooth(0.06, 0.3, Math.cos(rad(c)));
-        const down = smooth(0.06, 0.3, -Math.cos(rad(c)));
+        // top half and the sides: text along the clockwise arc (on a side it runs vertically, like a book spine);
+        // bottom half: along the reversed arc so it stays upright. The switch sits below the horizontal, where
+        // both fade out for an instant instead of overlapping. (With four sections two segments rest exactly at
+        // 90° and 270°; a switch at the horizontal left them with no label, 2026-11-23.)
+        const up = smooth(-0.3, -0.12, Math.cos(rad(c)));
+        const down = smooth(0.3, 0.45, -Math.cos(rad(c)));
         const isActive = i === active;
         const label = compact ? s.short : (s.ring ?? s.label);
         const num = String(i + 1).padStart(2, "0");
