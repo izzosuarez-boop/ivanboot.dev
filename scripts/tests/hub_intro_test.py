@@ -25,7 +25,7 @@ with sync_playwright() as p:
         ring = pg.locator("svg title", has_text="Areas of work").locator("..")
         vb, rb = video.bounding_box(), ring.locator("a.ring-seg").first.bounding_box()
         if label == "desktop":
-            seg_boxes = [pg.locator("a.ring-seg").nth(i).bounding_box() for i in range(6)]
+            seg_boxes = [seg.bounding_box() for seg in pg.locator("a.ring-seg").all()]   # 4 sections since 2026-11-23
             ring_right = max(s["x"] + s["width"] for s in seg_boxes)
             c[f"[{label}] video a la derecha del círculo"] = vb["x"] > ring_right
         else:

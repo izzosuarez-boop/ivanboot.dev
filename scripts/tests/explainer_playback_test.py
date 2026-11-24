@@ -64,7 +64,14 @@ with sync_playwright() as p:
         "() => [...document.querySelectorAll('#section-video video.explainer')].every(v => v.paused)")
 
     # come back through the ring, same document: no second autoplay
-    pg.get_by_role("link", name="AI Agents").first.click()
+    # click the middle of the segment's band: with four sections a 90 deg arc's bounding-box centre falls inside
+    # the circle, where Playwright's own click would land (same helper as portfolio_hub_test.py)
+    x, y = pg.evaluate("""() => {
+        const path = document.querySelector('a.ring-seg[aria-label="AI Agents & LLMs"] path.ring-band');
+        const len = path.getTotalLength(), o = path.getPointAtLength(len * 0.25), i = path.getPointAtLength(len * 0.75);
+        const m = path.getScreenCTM();
+        return [(o.x + i.x) / 2 * m.a + m.e, (o.y + i.y) / 2 * m.d + m.f]; }""")
+    pg.mouse.click(x, y)
     pg.wait_for_url(BASE + "/ai-agents", timeout=15000)
     pg.wait_for_timeout(2500)
     to_video(pg)
