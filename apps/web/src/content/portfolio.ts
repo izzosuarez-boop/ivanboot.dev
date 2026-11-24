@@ -19,7 +19,8 @@ export type Project = {
 
 export type Section = {
   slug: string;
-  label: string;      // text on the circle
+  label: string;      // section name (page header, links), also on the circle unless `ring` is set
+  ring?: string;      // shorter text on the circle when `label` doesn't fit a segment
   short: string;      // compact label for small screens
   pitch: string;      // headline inside the section
   intro: string;
@@ -73,12 +74,16 @@ export const sections: Section[] = [
   },
   {
     slug: "automation",
-    label: "Automation & Bots",
+    // renamed 2026-11-23 (user). The full name is too long for a circle segment (320 px on a 288 px arc on a
+    // laptop), so the circle shows `ring`
+    label: "Web Scraping, Software Automation & Data",
+    ring: "Scraping, Automation & Data",
     short: "Automation",
-    pitch: "Bots that do the routine work and only interrupt you when it matters.",
+    pitch: "Bots that do the routine work, automate your work end to end and only interrupt you when needed.",
     intro:
-      "Telegram and chat bots, scheduled reports, webhooks and workers that run 24/7 — designed around what a person " +
-      "can actually read in a day.",
+      "Today, more than ever, it is possible to build workflows with minimal human intervention. Software works " +
+      "24/7; a person can't. Delegate everything you can automate to software or AI agents: systematic work, " +
+      "gathering information, analyzing it and making decisions by your own guidelines.",
     video: { title: "The store owner's Telegram bot: alerts, reports and charts on demand", src: null },
     projects: [
       {

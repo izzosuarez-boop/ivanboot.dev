@@ -34,14 +34,14 @@ def run(pg, label: str, desktop: bool) -> dict[str, bool]:
     c["escena visible en el inicio"] = scene_opacity(pg) > 0.95
     c["botón Upwork"] = "upwork.com" in (pg.get_by_role("link", name="Hire me on Upwork").first.get_attribute("href") or "")
 
-    pg.locator('a.ring-seg[aria-label="Automation & Bots"]').click()
+    pg.locator('a.ring-seg[aria-label="Web Scraping, Software Automation & Data"]').click()
     time.sleep(0.4)
     c["escena se oculta al entrar"] = scene_opacity(pg) < 0.6
     time.sleep(2.2)
     c["entra en la sección"] = pg.evaluate("location.pathname") == "/automation"
     # visited pages stay mounted but hidden (React Activity), so look for the visible heading only
     c["título de la sección"] = pg.get_by_role("heading", level=1, name="Bots that").is_visible()
-    c["segmento activo arriba"] = pg.locator('a.ring-seg[aria-current="page"]').get_attribute("aria-label") == "Automation & Bots"
+    c["segmento activo arriba"] = pg.locator('a.ring-seg[aria-current="page"]').get_attribute("aria-label") == "Web Scraping, Software Automation & Data"
 
     pg.locator('nav[aria-label="Other areas"] a', has_text="Software, APIs & QA").click()
     time.sleep(2.0)

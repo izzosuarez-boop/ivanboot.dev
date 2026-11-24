@@ -338,7 +338,7 @@ function RingSvg({ vp, ring, active, onHover, go }: {
         const up = smooth(0.06, 0.3, Math.cos(rad(c)));
         const down = smooth(0.06, 0.3, -Math.cos(rad(c)));
         const isActive = i === active;
-        const label = compact ? s.short : s.label;
+        const label = compact ? s.short : (s.ring ?? s.label);
         const num = String(i + 1).padStart(2, "0");
         const labelArc = (b - a) * 0.96;
         const text = (id: string, opacity: number) =>
