@@ -14,6 +14,7 @@ export type Project = {
   result: string;
   stack: string[];
   link?: { label: string; href: string };
+  repos?: { label: string; href: string }[];  // GitHub repos with this project's code
   demoHref?: string;            // makes the status badge a button that opens the live demo
   video?: { media: string; title: string };  // key in portfolio-media.json, shown instead of screenshots
   loop?: { media: string; label: string };   // key in portfolio-loops.json: a 6 s silent loop, shown first
@@ -35,6 +36,7 @@ export type Section = {
 const STORE = "https://tienda.ivanboot.dev";
 // opens the store with the agent's chat already open and a greeting for visitors coming from the portfolio
 const STORE_CHAT = `${STORE}/?ref=portfolio&chat=1`;
+const GH = "https://github.com/izzosuarez-boop";
 
 export const sections: Section[] = [
   {
@@ -71,6 +73,7 @@ export const sections: Section[] = [
         stack: ["Claude API", "Tool use", "FastAPI", "Shopify Storefront API", "Shopify Admin API", "Telegram Bot API", "Supabase", "Playwright"],
         link: { label: "Try it in the store", href: STORE_CHAT },
         demoHref: STORE_CHAT,
+        repos: [{ label: "Code on GitHub", href: `${GH}/ardea-skin` }],
         loop: { media: "loop-store", label: "The Ardea Skin store and its AI agent: browse, ask, added to the bag" },
       },
     ],
@@ -109,6 +112,7 @@ export const sections: Section[] = [
           + "logged, and when something goes wrong (an expired session, a server that stops buying) it reports it "
           + "instead of failing silently.",
         stack: ["Python", "Playwright", "Chrome", "Tkinter", "Threading", "CSV / JSON"],
+        repos: [{ label: "Code on GitHub", href: `${GH}/web-scraping-automation` }],
         loop: { media: "loop-sale", label: "The price monitor hits the target, the client accepts on the phone, sale complete" },
       },
     ],
@@ -152,6 +156,11 @@ export const sections: Section[] = [
           + "knows where their product and their money are. A constant flow of buying and selling in a secure "
           + "environment.",
         stack: ["FastAPI", "Supabase", "Redis", "Caddy", "Cloudflare", "Solidity", "BNB Chain", "Docker", "DeepSeek API", "Claude API"],
+        repos: [
+          { label: "Smart contract", href: `${GH}/escrow-smart-contract` },
+          { label: "AI agent", href: `${GH}/llm-support-agent` },
+          { label: "Infrastructure", href: `${GH}/marketplace-infra` },
+        ],
         loop: { media: "loop-kamas", label: "KamasMarket: an offer is picked, the order moves step by step, the contract pays the seller" },
       },
     ],
@@ -188,6 +197,7 @@ export const sections: Section[] = [
           + "anyone who needs to build, improve, or simply find talent for their projects, and that is what every video "
           + "tries to convey: a problem, its solution and my role in it, while showing what I can do.",
         stack: ["Gemini Omni", "Gemini image", "Gemini TTS", "Seedance", "DaVinci AI", "Claude Opus 5.5", "ffmpeg", "Playwright"],
+        repos: [{ label: "Code on GitHub", href: `${GH}/ai-media` }],
         loop: { media: "loop-media", label: "The idea, consistent frames, a real correction, ready to post" },
       },
       {
@@ -208,6 +218,7 @@ export const sections: Section[] = [
           + "automated to run without losing the human touch users look for.",
         stack: ["Shopify Storefront API", "Next.js 16", "React 19", "Tailwind 4", "TypeScript", "Claude API", "Supabase", "Telegram"],
         link: { label: "Open the store", href: STORE },
+        repos: [{ label: "Code on GitHub", href: `${GH}/ardea-skin` }],
         loop: { media: "loop-ardea", label: "Ardea Skin: one identity on every page, and the store run from Telegram" },
       },
     ],
