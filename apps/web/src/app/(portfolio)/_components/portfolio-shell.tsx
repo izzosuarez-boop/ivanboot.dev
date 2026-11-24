@@ -20,6 +20,7 @@ type Ring = { rot: number; R: number; cx: number; cy: number; band: number };
 type Viewport = { w: number; h: number };
 
 const STEP = 360 / sections.length;
+const SECTION_STEP = 60; // segment width in a section header: what six sections had, so neighbours stay in view
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 const smooth = (lo: number, hi: number, x: number) => {
@@ -330,9 +331,13 @@ function RingSvg({ vp, ring, active, onHover, go }: {
       <circle cx={cx} cy={cy} r={rIn - 9} fill="none" stroke="var(--line)" strokeWidth={1} opacity={0.8} />
 
       {sections.map((s, i) => {
-        const c = rot + i * STEP;
-        const a = c - STEP / 2 + gap;
-        const b = c + STEP / 2 - gap;
+        // In a section header the segments narrow to SECTION_STEP so the neighbours still peek in at the sides
+        // (with four sections a 90° segment pushed them off screen, 2026-11-23). Only the drawing is squeezed,
+        // around the top and in step with the ring's growth (k); rotation and navigation keep using STEP.
+        const warp = 1 + (Math.min(1, SECTION_STEP / STEP) - 1) * k;
+        const c = ((((rot + i * STEP) % 360) + 540) % 360 - 180) * warp; // relative to the top, in (-180, 180]
+        const a = c - (STEP / 2) * warp + gap;
+        const b = c + (STEP / 2) * warp - gap;
         // top half and the sides: text along the clockwise arc (on a side it runs vertically, like a book spine);
         // bottom half: along the reversed arc so it stays upright. The switch sits below the horizontal, where
         // both fade out for an instant instead of overlapping. (With four sections two segments rest exactly at

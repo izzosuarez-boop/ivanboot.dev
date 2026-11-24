@@ -38,6 +38,25 @@ def click_seg(pg, label: str) -> None:
     pg.mouse.click(x, y)
 
 
+def click_visible_part(pg, label: str) -> bool:
+    """In a section header, click the part of a neighbour segment that is on screen. Returns False if none is."""
+    pt = pg.evaluate("""(label) => {
+        const a = document.querySelector(`a.ring-seg[aria-label="${label}"]`), p = a.querySelector('path.ring-band');
+        const len = p.getTotalLength(), m = p.getScreenCTM();
+        for (let t = 0; t <= 0.5; t += 0.005) {            // along the outer edge, 12 px inside the band
+            const o = p.getPointAtLength(len * t), x = o.x * m.a + m.e, y = o.y * m.d + m.f + 12;
+            if (x < 2 || x > innerWidth - 2 || y < 2 || y > innerHeight - 2) continue;
+            const el = document.elementFromPoint(x, y);
+            if (el && a.contains(el)) return [x, y];
+        }
+        return null;
+    }""", label)
+    if not pt:
+        return False
+    pg.mouse.click(*pt)
+    return True
+
+
 def run(pg, label: str, desktop: bool) -> dict[str, bool]:
     errors: list[str] = []
     pg.on("pageerror", lambda e: errors.append(str(e)))
@@ -60,6 +79,14 @@ def run(pg, label: str, desktop: bool) -> dict[str, bool]:
     pg.locator('nav[aria-label="Other areas"] a', has_text="Web & API Integration").click()
     time.sleep(2.0)
     c["vecino: siguiente sección"] = pg.evaluate("location.pathname") == "/web-api"
+
+    # the neighbours peek in at the sides of the header ring and take you there (four sections: 2026-11-23)
+    c["rueda: vecina visible y clicable"] = click_visible_part(pg, "AI Media & Shopify")
+    time.sleep(2.6)
+    c["rueda: va a la siguiente"] = pg.evaluate("location.pathname") == "/ai-media-shopify"
+    click_visible_part(pg, "Web & API Integration")
+    time.sleep(2.6)
+    c["rueda: vuelve a la anterior"] = pg.evaluate("location.pathname") == "/web-api"
 
     pg.get_by_role("link", name="All work").first.click()
     time.sleep(0.9)
