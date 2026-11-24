@@ -87,13 +87,25 @@ export const sections: Section[] = [
     video: { media: "automation-overview", title: "A real client case: game-currency sales automated end to end, in 86 seconds" },
     projects: [
       {
-        title: "Store owner bot on Telegram",
-        status: "Live demo",
-        summary: "The back office of the Ardea Skin demo: the owner asks in plain language (“top 10 customers”, “chart of best sellers in 3 months”) and gets answers and charts.",
-        problem: "One message per order stops being readable at a few thousand visitors a month; the owner needs signal, not a feed.",
-        how: "Shopify webhooks verified with HMAC; only actionable events are pushed (sold out, under 10 units, orders over $150, complaints). Everything else goes into a 9:00 daily summary and a Monday report with charts. Questions are answered by Claude with tools; charts are rendered server-side with matplotlib. It can also restock a product (“Vitamin C is sold out, add 40 units”), always after the owner taps Confirm.",
-        result: "About $0.0005 per question. A scheduler that never sends twice after a restart and catches up after downtime.",
-        stack: ["Telegram Bot API", "Shopify Admin API", "Webhooks", "Claude API", "matplotlib", "Supabase"],
+        // replaced the Telegram owner bot card 2026-11-23 (user); text approved as written
+        title: "End-to-end web scraping: from data to decisions",
+        status: "Case study",
+        summary: "The value of web scraping isn't in collecting data but in using it well: wiring it into scripts and "
+          + "bots that act on the client's own rules.",
+        problem: "Many decisions depend on information that changes by the minute, and one person can't watch it all "
+          + "day. This case is selling in-game currency, but the same pattern fits trading, online groceries, airlines, "
+          + "hotel search, real estate and job boards: manual work that becomes far more profitable once automated. It "
+          + "only makes sense when the platform has no API; if it has one, the right job is an API integration.",
+        how: "Python throughout. Prices are read without a browser: the page ships its data as embedded JSON, so "
+          + "reading is fast and light. Playwright drives a real Chrome only to sell, picking the server and filling in "
+          + "the form. A desktop interface (Tkinter) runs price reading and the browser on separate threads so it never "
+          + "freezes. Data goes to CSV and JSON, or to Excel or a SQL or NoSQL database if the client needs it. I also "
+          + "work in Node.js and C# when a project calls for it.",
+        result: "The client sets a minimum price and an amount. The software checks 7 servers across 3 games every "
+          + "minute, decides when to sell, prepares the sale and alerts the client, who just confirms. Every step is "
+          + "logged, and when something goes wrong (an expired session, a server that stops buying) it reports it "
+          + "instead of failing silently.",
+        stack: ["Python", "Playwright", "Chrome", "Tkinter", "Threading", "CSV / JSON"],
       },
       {
         title: "Fleet of headless Linux workers",
