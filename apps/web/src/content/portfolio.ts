@@ -110,15 +110,6 @@ export const sections: Section[] = [
         stack: ["Python", "Playwright", "Chrome", "Tkinter", "Threading", "CSV / JSON"],
         loop: { media: "loop-sale", label: "The price monitor hits the target, the client accepts on the phone, sale complete" },
       },
-      {
-        title: "Social media automation",
-        status: "In progress",
-        summary: "Scheduled posts and replies generated from the catalog and approved by a person before publishing.",
-        problem: "",
-        how: "",
-        result: "",
-        stack: ["n8n", "Claude API", "Meta Graph API"],
-      },
     ],
   },
   {
