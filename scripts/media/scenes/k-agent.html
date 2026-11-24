@@ -1,0 +1,82 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<!-- Shot 7: the site's AI agent, recreated in code with the real widget's look (web/frontend/static/js/
+     chatbot_widget.js: colors, sizes, English texts) at 2x. The answers follow the site's real flow (Profile ->
+     Payout methods -> "Crypto (BEP-20)"); the order is an example. -->
+<style>
+  #cam { position: absolute; inset: 0; transform-origin: 70% 50%; }
+  .bgpage { position: absolute; inset: 0; background: url("../out/portfolio-web-api-overview/site/offers-full.png") center top / 1920px auto no-repeat;
+    filter: blur(6px) brightness(0.35); transform: scale(1.04); }
+  #panel { position: absolute; right: 150px; bottom: 150px; width: 680px; height: 820px; background: #161616; border: 2px solid #2a2a2a;
+    border-radius: 20px; box-shadow: 0 16px 60px rgba(0,0,0,.6); display: flex; flex-direction: column; overflow: hidden; font-family: Inter; }
+  #head { background: #1f1f1f; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #2a2a2a; }
+  #head strong { color: #f0c040; font-size: 28px; font-weight: 700; }
+  #head span { color: #999; font-size: 28px; }
+  #msgs { flex: 1; overflow: hidden; padding: 20px 24px; position: relative; }
+  #inner { position: absolute; left: 24px; right: 24px; display: flex; flex-direction: column; gap: 16px; }
+  .m { max-width: 85%; padding: 14px 20px; border-radius: 16px; font-size: 25px; line-height: 1.4; white-space: pre-wrap; }
+  .m.user { align-self: flex-end; background: #f0c040; color: #111; }
+  .m.bot { align-self: flex-start; background: #232323; color: #ddd; }
+  .m.sys { align-self: flex-start; background: transparent; color: #777; font-size: 23px; font-style: italic; padding: 2px 6px; }
+  #form { display: flex; gap: 12px; padding: 16px; border-top: 2px solid #2a2a2a; }
+  #input { flex: 1; background: #0d0d0d; border: 2px solid #333; color: #e0e0e0; border-radius: 12px; padding: 14px 18px; font-size: 25px; min-height: 68px; }
+  #input.ph { color: #666; }
+  #send { background: #f0c040; color: #111; border-radius: 12px; padding: 0 24px; font-size: 25px; font-weight: 600; display: grid; place-items: center; }
+  #team { padding: 16px 24px; border-top: 2px solid #2a2a2a; font-size: 23px; color: #8b93a7; text-align: center; }
+  #fab { position: absolute; right: 150px; bottom: 40px; width: 96px; height: 96px; border-radius: 50%; background: #f0c040; display: grid; place-items: center; font-size: 44px; box-shadow: 0 6px 24px rgba(0,0,0,.35); }
+  .caps { position: absolute; left: 150px; top: 300px; }
+  .cap { display: flex; align-items: center; gap: 18px; margin-bottom: 26px; font-size: 34px; font-weight: 600; color: #6b7689; }
+  .cap i { width: 46px; height: 46px; border-radius: 50%; border: 2px solid #2a333d; display: grid; place-items: center; font-style: normal; font-size: 24px; }
+  .cap.on { color: #fff; } .cap.on i { border-color: #f0c040; background: #f0c040; color: #111; }
+  .eyebrow { font-size: 24px; letter-spacing: 0.3em; color: #f0c040; font-weight: 700; margin-bottom: 36px; }
+</style></head>
+<body>
+<div id="cam">
+  <div class="bgpage"></div>
+  <div class="caps"><div class="eyebrow">THE SITE'S AI AGENT</div>
+    <div class="cap" id="k0"><i>✓</i>Tracks your orders</div>
+    <div class="cap" id="k1"><i>✓</i>Tells you how a payment is going</div>
+    <div class="cap" id="k2"><i>✓</i>Explains any section of the site</div>
+    <div class="cap" id="k3"><i>✓</i>e.g. register your BEP-20 address</div></div>
+  <div id="panel"><div id="head"><strong>Live chat</strong><span>🗑 &nbsp;✕</span></div>
+    <div id="msgs"><div id="inner"></div></div>
+    <div id="form"><div id="input"></div><div id="send">Send</div></div>
+    <div id="team">Need our team? Message us on Discord</div></div>
+  <div id="fab">💬</div>
+</div>
+<script>
+const clamp = (x) => Math.max(0, Math.min(1, x)), ease = (x) => { x = clamp(x); return x * x * (3 - 2 * x); };
+const Q1 = "How is my order #1042 going?", Q2 = "How do I register my BEP-20 address?";
+const A1 = "Order #1042: your payment of 100 USDT was confirmed on BNB Chain ✓\nThe bot already has the seller's kamas and is delivering them to you now.";
+const A2 = "Go to Profile → Payout methods and choose \"Crypto (BEP-20)\". Paste your USDT address on BNB Smart Chain (it starts with 0x) and save.\nMake sure it's BEP-20: sending on another network loses the money. No address yet? Our BEP-20 guide shows how to create one on Binance in under a minute.";
+const WELCOME = "Hi! Ask me how the site works, how to set up your payout method or the status of one of your orders, or report a bug to me.";
+// [kind, text, at]; user messages are typed in the input first (typing ends at `at`)
+const SEQ = [["bot", WELCOME, 0.0], ["user", Q1, 2.9], ["sys", "Typing…", 3.15], ["bot", A1, 3.9],
+             ["user", Q2, 6.5], ["sys", "Typing…", 6.75], ["bot", A2, 7.5]];
+const TYPE = [[Q1, 2.0, 2.9], [Q2, 5.6, 6.5]];
+const inner = document.getElementById("inner");
+const els = SEQ.map(([k, txt]) => { const d = document.createElement("div"); d.className = "m " + k; d.textContent = txt; inner.append(d); return d; });
+window.DUR = 12.8;
+window.render = (t) => {
+  document.getElementById("cam").style.transform = `scale(${1 + 0.035 * ease(t / DUR)})`;
+  els.forEach((el, i) => {
+    const [k, , at] = SEQ[i];
+    const nextSame = SEQ.findIndex((s, j) => j > i && s[0] !== "sys" && SEQ[i][0] === "sys");
+    let on = t >= at;
+    if (k === "sys") on = t >= at && t < SEQ[i + 1][2];               // "Typing…" until the answer arrives
+    el.style.display = on ? "block" : "none";
+    el.style.opacity = on ? Math.min(1, (t - at) / 0.15 + (i === 0 ? 1 : 0)) : 0;
+  });
+  // keep the newest message in view: the stack slides up as it grows
+  const box = document.getElementById("msgs").clientHeight - 40;
+  const h = inner.scrollHeight;
+  inner.style.top = (20 + Math.min(0, box - h)) + "px";
+  const inp = document.getElementById("input");
+  const cur = TYPE.find(([, a, b]) => t >= a && t < b);
+  if (cur) { const [q, a, b] = cur; inp.textContent = q.slice(0, Math.round(q.length * (t - a) / (b - a))); inp.className = ""; }
+  else { inp.textContent = "Type something"; inp.className = "ph"; }
+  [2.5, 3.9, 5.6, 7.5].forEach((at, i) => document.getElementById("k" + i).classList.toggle("on", t >= at));
+};
+render(0);
+</script>
+</body></html>

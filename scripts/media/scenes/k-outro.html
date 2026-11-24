@@ -1,0 +1,46 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<script src="../out/logos-kamas/logos.js"></script><script src="k-common.js"></script>
+<!-- Shot 8: one site, nine integrations around it, the contract's shield in the middle -->
+<style>
+  #cam { position: absolute; inset: 0; transform-origin: 50% 50%; }
+  .core { position: absolute; left: 760px; top: 390px; width: 400px; text-align: center; }
+  .shield { width: 220px; height: 220px; margin: 0 auto; border-radius: 50%; display: grid; place-items: center;
+    background: radial-gradient(circle at 50% 35%, #1d1a10, #0e0d08); border: 3px solid rgba(240,192,64,0.7); }
+  .shield svg { width: 120px; height: 120px; }
+  .core b { display: block; margin-top: 26px; font-family: Fraunces; font-size: 54px; font-weight: 500; color: #fff; }
+  .core span { font-size: 24px; color: #f0c040; }
+  .count { position: absolute; top: 40px; width: 100%; text-align: center; font-size: 30px; letter-spacing: 0.2em; color: var(--glow); font-weight: 700; }
+</style></head>
+<body>
+<div id="cam">
+  <div class="count" id="count"></div>
+  <div class="core" id="core"><div class="shield" id="shield"><svg viewBox="0 0 64 64" fill="none" stroke="#f0c040" stroke-width="3.5" stroke-linejoin="round"><path d="M32 6l22 8v16c0 14-9 23-22 28C19 53 10 44 10 30V14z"/><path d="M22 32l7 7 13-14"/></svg></div>
+    <b>KamasMarket</b><span>kamasmarket.com</span></div>
+  <div id="ring"></div>
+</div>
+<script>
+const SLUGS = ["zavu", "resend", "binance", "nowpayments", "wompi", "telegram", "discord", "deepseek", "anthropic"];
+const ring = document.getElementById("ring");
+const tiles = SLUGS.map((s) => { const t = tile(s, 118); ring.append(t); return t; });
+window.DUR = 8.0;
+window.render = (t) => {
+  document.getElementById("cam").style.transform = `scale(${1 + 0.04 * ease(t / DUR)})`;
+  popIn(document.getElementById("core"), t, 0.3, 0.5);
+  const spin = t * 0.06;
+  let shown = 0;
+  tiles.forEach((el, i) => {
+    const a = -Math.PI / 2 + i * 2 * Math.PI / SLUGS.length + spin;
+    el.style.left = (960 + 640 * Math.cos(a) - 59) + "px";
+    el.style.top = (580 + 350 * Math.sin(a) - 59) + "px";
+    const at = 1.4 + i * 0.16;
+    popIn(el, t, at, 0.35);
+    if (t >= at) shown++;
+  });
+  document.getElementById("count").textContent = shown ? `${shown} INTEGRATION${shown > 1 ? "S" : ""}` : "";
+  const g = ease((t - 3.1) / 0.6);
+  document.getElementById("shield").style.boxShadow = `0 0 ${90 * g}px rgba(240,192,64,${0.5 * g})`;
+};
+render(0);
+</script>
+</body></html>

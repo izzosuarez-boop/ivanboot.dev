@@ -683,3 +683,28 @@ loop mudo de 6 s a la izquierda con el texto a la derecha. Todo hecho con códig
 - En la web: `loop-video.tsx` (muted + loop + playsInline, solo se reproduce en pantalla, póster fijo con
   "reducir movimiento"); en `portfolio.ts`, `loop: { media, label }` en el proyecto.
 - Cada loop termina fundiéndose con su primer fotograma, para que la vuelta no se note.
+
+## 10. Video de la sección 3: Web & API Integration (KamasMarket, 2026-11-23)
+
+KamasMarket de principio a fin: el flujo de una orden, el contrato inteligente, las 9 integraciones y el agente de IA.
+114,7 s, voz en inglés (8 frases, transcritas) y subtítulos en español. **Costo: solo la voz (céntimos).**
+Script: `scripts/media/kamas_assemble.py`, que reutiliza `automation_assemble.py` apuntando sus variables globales
+a este video (`point_aa()`).
+
+- **Escenas** (`scenes/k-*.html`, base común en `k-common.js`): `k-intro` (la página real), `k-flow` (vendedor, bot,
+  comprador y contrato), `k-contract` (100 USDT: 93 al vendedor y 7 de comisión; la plataforma no puede desviarlo),
+  `k-pay`, `k-notify`, `k-ai`, `k-agent`, `k-outro`.
+- **Página real:** `kamas_assemble.py capture` hace una captura a 2x de `kamasmarket.com/es/ofertas` y difumina los
+  nombres de usuario (la primera celda de cada fila) ANTES de la captura.
+- **Logos:** `kamas_assemble.py logos` descarga los SVG de Simple Icons 16.36.0 y escribe `out/logos-kamas/logos.js`
+  (las páginas `file://` no pueden pedir JSON con fetch). Wompi, NOWPayments y Zavu no tienen logo: salen como ficha
+  con su nombre.
+- **El agente** se recreó con el aspecto real del chat (`web/frontend/static/js/chatbot_widget.js` de Pagina_Kamas:
+  colores, tamaños y textos en inglés) a 2x. La respuesta sobre BEP-20 sigue el flujo real (Profile → Payout methods →
+  "Crypto (BEP-20)"). La orden #1042 es un ejemplo.
+- **Papel de cada API** (confirmado por el usuario): BNB Chain para los contratos y USDT BEP-20; Wompi para pagos en
+  pesos (Nequi, Bancolombia, Bre-B); Binance y NOWPayments para pagos a vendedores en el exterior; Zavu para WhatsApp;
+  Telegram y Discord para avisos; Resend para los correos de la cuenta; DeepSeek para el agente; Claude (Anthropic)
+  para la segunda verificación por visión del bot, solo como consejo.
+- **E37.** Las secuencias de emoji con ZWJ (🧑‍💼) salen partidas en dos en el Chrome del montaje: usa iconos SVG.
+- **Póster:** el contrato después de pagar (`POSTER_AT = ("contract", 19.8)`).

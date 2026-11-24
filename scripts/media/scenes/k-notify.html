@@ -1,0 +1,60 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<script src="../out/logos-kamas/logos.js"></script><script src="k-common.js"></script>
+<!-- Shot 5: notifications: WhatsApp via Zavu (with action buttons), Telegram, Discord, account emails via Resend -->
+<style>
+  #cam { position: absolute; inset: 0; transform-origin: 50% 50%; }
+  .eyebrow { position: absolute; top: 70px; width: 100%; text-align: center; font-size: 24px; letter-spacing: 0.34em; color: var(--glow); font-weight: 600; }
+  .phone { position: absolute; left: 170px; top: 140px; width: 440px; height: 880px; border-radius: 58px; background: #050608;
+    box-shadow: 0 0 0 3px #2a323b, 0 60px 140px -40px rgba(0,0,0,0.95); }
+  .scr { position: absolute; left: 16px; top: 16px; width: 408px; height: 848px; border-radius: 44px; overflow: hidden; background: #0b141a; }
+  .wa-h { height: 110px; background: #1f2c34; display: flex; align-items: flex-end; gap: 14px; padding: 0 22px 16px; }
+  .wa-h i { width: 48px; height: 48px; border-radius: 50%; background: #f0c040; display: grid; place-items: center; font: 800 20px Inter; color: #111; font-style: normal; }
+  .wa-h b { color: #e9edef; font-size: 22px; } .wa-h small { display: block; color: #8696a0; font-size: 15px; font-weight: 400; }
+  .msg { position: absolute; left: 18px; right: 40px; background: #1f2c34; border-radius: 4px 18px 18px 18px; color: #e9edef; font-size: 19px; line-height: 1.4; overflow: hidden; }
+  .msg p { padding: 14px 16px 10px; } .msg .to { font-size: 14px; color: #f0c040; font-weight: 700; display: block; margin-bottom: 4px; }
+  .msg .btn { border-top: 1px solid #2a3942; padding: 13px; text-align: center; color: #53bdeb; font-weight: 600; font-size: 19px; }
+  .side { position: absolute; left: 720px; width: 1080px; }
+  .row { position: absolute; left: 0; display: flex; align-items: center; gap: 30px; }
+  .row .ktile { position: relative !important; }
+  .card { background: #12171d; border: 1px solid var(--line); border-radius: 18px; padding: 18px 24px; font-size: 21px; color: #c3cad3; min-width: 380px; }
+  .card b { color: #fff; display: block; font-size: 22px; margin-bottom: 4px; }
+</style></head>
+<body>
+<div id="cam">
+  <div class="eyebrow">NOTIFICATIONS</div>
+  <div class="phone"><div class="scr"><div class="wa-h"><i>K</i><div><b>KamasMarket</b><small>WhatsApp · via Zavu</small></div></div>
+    <div class="msg" id="m1" style="top:150px"><p><span class="to">TO THE SELLER</span>New order #1042: a buyer wants your 40 M kamas.</p><div class="btn">Confirm availability</div></div>
+    <div class="msg" id="m2" style="top:360px"><p><span class="to">TO THE BUYER</span>The seller is ready. Pay 100 USDT to your order's contract.</p><div class="btn">Pay now</div></div>
+    <div class="msg" id="m3" style="top:570px"><p><span class="to">TO THE BUYER</span>Delivered ✓ Your 40 M kamas are in your inventory.</p></div>
+  </div></div>
+  <div class="side">
+    <div class="row" id="r0" style="top:150px"></div>
+    <div class="row" id="r1" style="top:430px"></div>
+    <div class="row" id="r2" style="top:700px"></div>
+  </div>
+</div>
+<script>
+const add = (row, el) => document.getElementById(row).append(el);
+const t_wa = tile("whatsapp", 130), t_zavu = tile("zavu", 130), t_tg = tile("telegram", 130), t_dc = tile("discord", 130), t_rs = tile("resend", 130);
+const card = (title, body) => { const c = document.createElement("div"); c.className = "card"; c.innerHTML = `<b>${title}</b>${body}`; return c; };
+const c_wa = card("WhatsApp messages", "a template per step, with its action button");
+const c_tc = card("Telegram & Discord", "the same updates, wherever the user prefers");
+const c_rs = card("Account emails", "verify your email · reset your password");
+add("r0", t_wa); add("r0", t_zavu); add("r0", c_wa);
+add("r1", t_tg); add("r1", t_dc); add("r1", c_tc);
+add("r2", t_rs); add("r2", c_rs);
+const SEQ = [[t_wa, 2.3], [t_zavu, 2.9], [c_wa, 3.4], [document.getElementById("m1"), 4.0], [document.getElementById("m2"), 5.8],
+             [t_tg, 7.3], [t_dc, 7.9], [c_tc, 8.3], [document.getElementById("m3"), 8.6], [t_rs, 9.3], [c_rs, 10.2]];
+window.DUR = 14.3;
+window.render = (t) => {
+  document.getElementById("cam").style.transform = `scale(${1 + 0.03 * ease(t / DUR)})`;
+  document.querySelector(".eyebrow").style.opacity = ease((t - 0.2) / 0.4);
+  SEQ.forEach(([el, at]) => popIn(el, t, at, 0.38));
+  // the message buttons flash as the voice names them ("Confirm availability" / "Pay now")
+  document.querySelector("#m1 .btn").style.background = t > 5.0 && t < 5.6 ? "rgba(83,189,235,0.18)" : "transparent";
+  document.querySelector("#m2 .btn").style.background = t > 6.3 && t < 6.9 ? "rgba(83,189,235,0.18)" : "transparent";
+};
+render(0);
+</script>
+</body></html>

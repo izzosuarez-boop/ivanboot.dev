@@ -1,0 +1,307 @@
+{
+ "duration": 114.7,
+ "en": [
+  {
+   "start": 2.35,
+   "end": 3.6,
+   "text": "This is KamasMarket,"
+  },
+  {
+   "start": 3.6,
+   "end": 6.32,
+   "text": "a marketplace that acts as a safe middleman for buying"
+  },
+  {
+   "start": 6.32,
+   "end": 8.97,
+   "text": "and selling an online game's currency."
+  },
+  {
+   "start": 8.97,
+   "end": 13.18,
+   "text": "Let's see how it works from start to finish, and which services it's connected to."
+  },
+  {
+   "start": 14.15,
+   "end": 17.17,
+   "text": "The seller posts an offer and the buyer accepts it."
+  },
+  {
+   "start": 17.17,
+   "end": 20.51,
+   "text": "A bot receives the currency from the seller inside the game,"
+  },
+  {
+   "start": 20.51,
+   "end": 23.45,
+   "text": "the buyer pays in USDT to their order's contract,"
+  },
+  {
+   "start": 23.45,
+   "end": 25.91,
+   "text": "and once the payment is confirmed on the blockchain,"
+  },
+  {
+   "start": 25.91,
+   "end": 28.09,
+   "text": "the bot delivers what they bought."
+  },
+  {
+   "start": 29.15,
+   "end": 31.56,
+   "text": "Each order has its own smart contract."
+  },
+  {
+   "start": 31.56,
+   "end": 34.93,
+   "text": "The buyer's money can only end up in two places: with the seller,"
+  },
+  {
+   "start": 34.93,
+   "end": 39.27,
+   "text": "once the delivery is confirmed, or back with the buyer if the order falls through."
+  },
+  {
+   "start": 39.27,
+   "end": 44.02,
+   "text": "No one, not even the platform, can divert it. When the delivery is confirmed,"
+  },
+  {
+   "start": 44.02,
+   "end": 47.59,
+   "text": "the contract pays the seller and sends the commission to its wallet,"
+  },
+  {
+   "start": 47.59,
+   "end": 49.33,
+   "text": "for a few cents per order."
+  },
+  {
+   "start": 50.35,
+   "end": 53.55,
+   "text": "For payments: the contracts live on BNB Chain;"
+  },
+  {
+   "start": 53.55,
+   "end": 57.68,
+   "text": "Wompi pays in Colombian pesos to sellers who get paid through Nequi,"
+  },
+  {
+   "start": 57.68,
+   "end": 63.6,
+   "text": "Bancolombia or Bre-B; and Binance and NOWPayments handle payouts to sellers abroad."
+  },
+  {
+   "start": 64.55,
+   "end": 67.94,
+   "text": "Every step is announced instantly: on WhatsApp through Zavu,"
+  },
+  {
+   "start": 67.94,
+   "end": 73.0,
+   "text": "with buttons like 'Confirm availability' or 'Pay now'; on Telegram and Discord;"
+  },
+  {
+   "start": 73.0,
+   "end": 77.8,
+   "text": "and account emails, like verification and password recovery, go out through Resend."
+  },
+  {
+   "start": 78.85,
+   "end": 83.18,
+   "text": "Artificial intelligence works on two fronts: DeepSeek powers the site's agent,"
+  },
+  {
+   "start": 83.18,
+   "end": 86.84,
+   "text": "and Anthropic's Claude reviews every trade the bot makes with vision,"
+  },
+  {
+   "start": 86.84,
+   "end": 89.96,
+   "text": "as a second check of the amount and the key."
+  },
+  {
+   "start": 91.05,
+   "end": 94.41,
+   "text": "And the agent looks after the users: it tracks their orders,"
+  },
+  {
+   "start": 94.41,
+   "end": 98.03,
+   "text": "tells them how a payment is going, and explains any section of the site,"
+  },
+  {
+   "start": 98.03,
+   "end": 102.75,
+   "text": "for example how to register their BEP-20 address to receive their payouts."
+  },
+  {
+   "start": 103.85,
+   "end": 106.47,
+   "text": "One site, nine integrations,"
+  },
+  {
+   "start": 106.47,
+   "end": 110.61,
+   "text": "and a contract that makes sure no one is left without what's theirs."
+  }
+ ],
+ "es": [
+  {
+   "start": 2.35,
+   "end": 3.6,
+   "text": "Esta es KamasMarket,"
+  },
+  {
+   "start": 3.6,
+   "end": 6.32,
+   "text": "un mercado que hace de intermediario seguro para comprar"
+  },
+  {
+   "start": 6.32,
+   "end": 8.97,
+   "text": "y vender la moneda de un juego en línea."
+  },
+  {
+   "start": 8.97,
+   "end": 13.18,
+   "text": "Veamos cómo funciona de principio a fin y con qué servicios está conectada."
+  },
+  {
+   "start": 14.15,
+   "end": 17.17,
+   "text": "El vendedor publica su oferta y el comprador la acepta."
+  },
+  {
+   "start": 17.17,
+   "end": 20.51,
+   "text": "Un bot recibe la moneda del vendedor dentro del juego,"
+  },
+  {
+   "start": 20.51,
+   "end": 23.45,
+   "text": "el comprador paga en USDT al contrato de su orden y,"
+  },
+  {
+   "start": 23.45,
+   "end": 28.09,
+   "text": "cuando el pago se confirma en la blockchain, el bot le entrega lo que compró."
+  },
+  {
+   "start": 29.15,
+   "end": 31.56,
+   "text": "Cada orden tiene su propio contrato inteligente."
+  },
+  {
+   "start": 31.56,
+   "end": 34.93,
+   "text": "El dinero del comprador solo puede terminar en dos lugares: en el vendedor,"
+  },
+  {
+   "start": 34.93,
+   "end": 36.73,
+   "text": "cuando se confirma la entrega,"
+  },
+  {
+   "start": 36.73,
+   "end": 40.21,
+   "text": "o de vuelta en el comprador si la orden no se concreta. Nadie,"
+  },
+  {
+   "start": 40.21,
+   "end": 44.02,
+   "text": "ni siquiera la plataforma, puede desviarlo. Al confirmarse la entrega,"
+  },
+  {
+   "start": 44.02,
+   "end": 47.59,
+   "text": "el contrato paga al vendedor y envía la comisión a su billetera,"
+  },
+  {
+   "start": 47.59,
+   "end": 49.33,
+   "text": "por unos centavos por orden."
+  },
+  {
+   "start": 50.35,
+   "end": 53.55,
+   "text": "Para los pagos: los contratos viven en BNB Chain;"
+  },
+  {
+   "start": 53.55,
+   "end": 57.68,
+   "text": "Wompi paga en pesos a quien cobra por Nequi, Bancolombia o Bre-B;"
+  },
+  {
+   "start": 57.68,
+   "end": 63.6,
+   "text": "y Binance y NOWPayments se encargan de los pagos a vendedores en el exterior."
+  },
+  {
+   "start": 64.55,
+   "end": 67.94,
+   "text": "Cada paso se avisa al instante: por WhatsApp a través de Zavu,"
+  },
+  {
+   "start": 67.94,
+   "end": 73.0,
+   "text": "con botones como 'Confirmar disponibilidad' o 'Pagar ahora'; por Telegram y Discord;"
+  },
+  {
+   "start": 73.0,
+   "end": 76.55,
+   "text": "y los correos de la cuenta, como la verificación y la recuperación de contraseña,"
+  },
+  {
+   "start": 76.55,
+   "end": 77.8,
+   "text": "salen por Resend."
+  },
+  {
+   "start": 78.85,
+   "end": 81.29,
+   "text": "La inteligencia artificial trabaja en dos frentes:"
+  },
+  {
+   "start": 81.29,
+   "end": 84.93,
+   "text": "DeepSeek impulsa el agente de la página, y Claude, de Anthropic,"
+  },
+  {
+   "start": 84.93,
+   "end": 86.84,
+   "text": "revisa con visión cada intercambio del bot como"
+  },
+  {
+   "start": 86.84,
+   "end": 89.96,
+   "text": "una segunda verificación de la cantidad y la clave."
+  },
+  {
+   "start": 91.05,
+   "end": 94.41,
+   "text": "Y el agente atiende a los usuarios: hace seguimiento de sus órdenes,"
+  },
+  {
+   "start": 94.41,
+   "end": 98.03,
+   "text": "les dice cómo va un pago y explica cualquier sección de la página,"
+  },
+  {
+   "start": 98.03,
+   "end": 102.75,
+   "text": "por ejemplo cómo registrar su dirección BEP-20 para recibir sus cobros."
+  },
+  {
+   "start": 103.85,
+   "end": 104.73,
+   "text": "Una sola página,"
+  },
+  {
+   "start": 104.73,
+   "end": 110.61,
+   "text": "nueve integraciones y un contrato que garantiza que nadie se quede sin lo suyo."
+  }
+ ]
+}

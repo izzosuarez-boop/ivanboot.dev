@@ -1,0 +1,108 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<script src="../out/logos-kamas/logos.js"></script><script src="k-common.js"></script>
+<!-- Shot 3: one order's smart contract: the money can only reach the seller or go back to the buyer; on delivery
+     it pays the seller (93 %) and the commission wallet (7 %). Amounts are an example order of 100 USDT. -->
+<style>
+  #cam { position: absolute; inset: 0; transform-origin: 50% 50%; }
+  .ctr { position: absolute; left: 700px; top: 330px; width: 520px; border-radius: 26px; padding: 30px 34px;
+    background: linear-gradient(180deg, #15191f, #0f1317); border: 2px solid rgba(240,192,64,0.55);
+    box-shadow: 0 40px 120px -30px rgba(0,0,0,0.9), 0 0 80px -30px rgba(240,192,64,0.35); }
+  .ctr .h { font-size: 18px; letter-spacing: 0.26em; color: #f0c040; font-weight: 700; }
+  .ctr .id { margin-top: 10px; font-size: 38px; font-weight: 800; color: #fff; }
+  .ctr .addr { margin-top: 4px; font-size: 20px; color: #8b95a1; }
+  .ctr .bal { margin-top: 22px; display: flex; align-items: baseline; gap: 12px; }
+  .ctr .bal b { font-size: 56px; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
+  .ctr .bal span { font-size: 24px; color: #50af95; font-weight: 700; }
+  .ctr .st { margin-top: 14px; font-size: 22px; font-weight: 600; }
+  .node { position: absolute; width: 300px; text-align: center; }
+  .node .disc { width: 128px; height: 128px; margin: 0 auto; border-radius: 50%; display: grid; place-items: center;
+    background: radial-gradient(circle at 50% 35%, #1a2027, #0e1216); border: 3px solid #2a333d; font-size: 54px; }
+  .node .n { margin-top: 14px; font-size: 28px; font-weight: 700; }
+  .node .v { margin-top: 4px; font-size: 26px; font-weight: 800; color: #4cd08d; font-variant-numeric: tabular-nums; }
+  svg.paths { position: absolute; inset: 0; }
+  .lbl { position: absolute; font-size: 20px; color: #8b95a1; white-space: nowrap; }
+  .coin { position: absolute; width: 42px; height: 42px; margin: -21px 0 0 -21px; border-radius: 50%; display: grid; place-items: center;
+    font: 800 19px Inter; color: #fff; background: radial-gradient(circle at 35% 30%, #c9ffef, #50af95 45%, #2a7a64); box-shadow: 0 0 16px rgba(80,175,149,0.6); }
+  .badge { position: absolute; padding: 12px 24px; border-radius: 999px; font-size: 24px; font-weight: 700; white-space: nowrap; }
+  .x { position: absolute; font: 900 90px Inter; color: #ef4444; text-shadow: 0 0 30px rgba(239,68,68,0.6); }
+</style></head>
+<body>
+<div id="cam">
+  <svg class="paths" viewBox="0 0 1920 1080" fill="none" stroke-linecap="round" stroke-width="4">
+    <path id="pin" d="M 420 500 L 700 500" stroke="rgba(80,175,149,0.6)" stroke-dasharray="12 12"/>
+    <path id="pseller" d="M 1220 450 C 1330 400, 1420 340, 1520 330" stroke="rgba(76,208,141,0.7)" stroke-dasharray="12 12"/>
+    <path id="prefund" d="M 760 690 C 650 840, 420 820, 330 600" stroke="rgba(242,180,92,0.7)" stroke-dasharray="6 12"/>
+    <path id="pfee" d="M 1220 600 C 1330 660, 1420 730, 1520 750" stroke="rgba(94,234,212,0.7)" stroke-dasharray="12 12"/>
+    <path id="pplat" d="M 960 330 L 960 230" stroke="rgba(239,68,68,0.7)" stroke-dasharray="8 10"/>
+  </svg>
+  <div class="node" id="buyer" style="left:120px; top:420px"><div class="disc"><svg viewBox="0 0 64 64" width="64" height="64" fill="none" stroke="#50af95" stroke-width="3.5"><circle cx="32" cy="22" r="11"/><path d="M12 56c2-12 10-18 20-18s18 6 20 18"/></svg></div><div class="n">Buyer</div><div class="v" id="vb"></div></div>
+  <div class="node" id="seller" style="left:1460px; top:250px"><div class="disc"><svg viewBox="0 0 64 64" width="64" height="64" fill="none" stroke="#f0c040" stroke-width="3.5"><circle cx="32" cy="22" r="11"/><path d="M12 56c2-12 10-18 20-18s18 6 20 18"/></svg></div><div class="n">Seller</div><div class="v" id="vs"></div></div>
+  <div class="node" id="fee" style="left:1460px; top:680px"><div class="disc"><svg viewBox="0 0 64 64" width="64" height="64" fill="none" stroke="#5eead4" stroke-width="3.5" stroke-linejoin="round"><rect x="8" y="16" width="48" height="36" rx="6"/><path d="M8 26h48M42 38h6"/></svg></div><div class="n">Commission wallet</div><div class="v" id="vf"></div></div>
+  <div class="node" id="plat" style="left:810px; top:40px"><div class="disc" style="width:110px;height:110px;font-size:44px"><svg viewBox="0 0 64 64" width="52" height="52" fill="none" stroke="#c3cad3" stroke-width="3.5" stroke-linejoin="round"><path d="M14 56V12h24v44M38 26h12v30M22 22h8M22 32h8M22 42h8M8 56h48"/></svg></div><div class="n" style="font-size:24px">Platform</div></div>
+  <div class="x" id="x" style="left:930px; top:228px">✕</div>
+  <div class="lbl" id="l1" style="left:1250px; top:330px">if delivered</div>
+  <div class="lbl" id="l2" style="left:410px; top:800px">if the order falls through → refund</div>
+  <div class="ctr" id="ctr"><div class="h">SMART CONTRACT · BNB CHAIN</div><div class="id">Order #1042</div>
+    <div class="addr mono">0x7f3a…c91e · its own address</div>
+    <div class="bal"><b id="bal">0.00</b><span>USDT</span></div><div class="st" id="st"></div></div>
+  <div class="badge" id="deliv" style="left:780px; top:250px; color:#4cd08d; background:rgba(76,208,141,0.12); border:1px solid rgba(76,208,141,0.6)">✓ Delivery confirmed</div>
+  <div class="badge" id="gas" style="left:775px; top:770px; color:#f0c040; background:rgba(240,192,64,0.1); border:1px solid rgba(240,192,64,0.5)">Network fee ≈ $0.02 per order</div>
+  <div id="coins"></div>
+</div>
+<script>
+const coins = document.getElementById("coins");
+const flows = { pin: [3.15, 4.7], pseller: [15.4, 16.9], pfee: [17.1, 18.4] };
+const sets = Object.entries(flows).map(([id, [a, b]]) => ({ path: document.getElementById(id), a, b,
+  list: [0, 1, 2, 3, 4].map(() => { const c = document.createElement("div"); c.className = "coin"; c.textContent = "₮"; coins.append(c); return c; }) }));
+const fmt = (x) => x.toFixed(2);
+window.DUR = 21.2;
+window.render = (t) => {
+  document.getElementById("cam").style.transform = `scale(${1 + 0.03 * ease(t / DUR)})`;
+  popIn(document.getElementById("ctr"), t, 0.5, 0.5);
+  popIn(document.getElementById("buyer"), t, 2.9, 0.4);
+  popIn(document.getElementById("seller"), t, 5.4, 0.4);
+  popIn(document.getElementById("plat"), t, 10.9, 0.4);
+  popIn(document.getElementById("fee"), t, 16.9, 0.4);
+  popIn(document.getElementById("deliv"), t, 14.1, 0.4);
+  popIn(document.getElementById("gas"), t, 19.1, 0.4);
+  // money in: buyer -> contract
+  const paid = ease((t - 3.4) / 1.3);
+  const toSeller = ease((t - 15.7) / 1.2), toFee = ease((t - 17.3) / 1.1);
+  document.getElementById("bal").textContent = fmt(100 * paid - 93 * toSeller - 7 * toFee);
+  document.getElementById("vs").textContent = toSeller > 0 ? "+" + fmt(93 * toSeller) + " USDT" : "";
+  document.getElementById("vf").textContent = toFee > 0 ? "+" + fmt(7 * toFee) + " USDT · 7 %" : "";
+  document.getElementById("vb").textContent = t < 3.1 ? "" : t < 4.7 ? "paying…" : "paid ✓";
+  const st = document.getElementById("st");
+  if (t < 3.2) { st.textContent = "Waiting for the buyer's payment"; st.style.color = "#8b95a1"; }
+  else if (t < 14.1) { st.textContent = t < 4.7 ? "Receiving payment…" : "🔒 Locked: seller or buyer only"; st.style.color = "#f0c040"; }
+  else if (t < 18.5) { st.textContent = "Paying out…"; st.style.color = "#4cd08d"; }
+  else { st.textContent = "✓ Paid out · order closed"; st.style.color = "#4cd08d"; }
+  // the two only possible destinations, each highlighted when the voice names it
+  const ps = document.getElementById("pseller"), pr = document.getElementById("prefund"), pp = document.getElementById("pplat");
+  ps.style.opacity = t < 5.4 ? 0 : (t > 5.6 && t < 8.0) || t > 15.2 ? 1 : 0.35;
+  pr.style.opacity = t < 8.0 ? 0 : t < 10.3 ? 1 : t < 14 ? 0.35 : 0.15;
+  document.getElementById("l1").style.opacity = ps.style.opacity;
+  document.getElementById("l2").style.opacity = pr.style.opacity;
+  pp.style.opacity = t > 11.2 && t < 13.6 ? 1 : 0;
+  const x = document.getElementById("x"); popIn(x, t, 11.7, 0.3);
+  if (t > 13.6) x.style.opacity = 1 - ease((t - 13.6) / 0.4);
+  document.getElementById("plat").style.filter = t > 11.7 ? "grayscale(1) brightness(0.7)" : "none";
+  if (t > 13.6) document.getElementById("plat").style.opacity = 1 - ease((t - 13.6) / 0.5);
+  document.getElementById("ctr").style.borderColor = t >= 14.1 ? "rgba(76,208,141,0.8)" : "rgba(240,192,64,0.55)";
+  for (const id of ["pin", "pseller", "pfee", "prefund", "pplat"]) document.getElementById(id).setAttribute("stroke-dashoffset", -t * 40);
+  document.getElementById("pin").style.opacity = t > 3.0 && t < 5.0 ? 1 : t >= 5 ? 0.2 : 0;
+  document.getElementById("pfee").style.opacity = t > 16.9 ? 1 : 0;
+  sets.forEach((s) => {
+    const L = s.path.getTotalLength();
+    s.list.forEach((c, i) => {
+      const stt = s.a + i * (s.b - s.a - 0.8) / 4, u = (t - stt) / 0.8;
+      if (u <= 0 || u >= 1) { c.style.opacity = 0; return; }
+      const p = s.path.getPointAtLength(L * ease(u));
+      c.style.left = p.x + "px"; c.style.top = p.y + "px"; c.style.opacity = Math.min(1, u * 6, (1 - u) * 6);
+    });
+  });
+};
+render(0);
+</script>
+</body></html>

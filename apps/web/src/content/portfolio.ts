@@ -122,7 +122,8 @@ export const sections: Section[] = [
     intro:
       "Backends, API integrations, protocol work and test automation. Every claim backed by a test, a measurement or " +
       "a log line.",
-    video: { title: "Browser tests running against the live store", src: null },
+    // KamasMarket end to end: its APIs, smart contracts and AI agent (made in code, 2026-11-23)
+    video: { media: "web-api-overview", title: "KamasMarket end to end: nine API integrations, smart contracts and an AI agent, in 115 seconds" },
     projects: [
       {
         title: "Protocol lab",

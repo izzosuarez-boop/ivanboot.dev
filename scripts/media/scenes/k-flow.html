@@ -1,0 +1,73 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<script src="../out/logos-kamas/logos.js"></script><script src="k-common.js"></script>
+<!-- Shot 2: an order from start to finish: seller, in-game bot, buyer, the order's contract -->
+<style>
+  #cam { position: absolute; inset: 0; transform-origin: 50% 50%; }
+  .actor { position: absolute; width: 340px; text-align: center; }
+  .disc { width: 170px; height: 170px; margin: 0 auto; border-radius: 50%; display: grid; place-items: center;
+    background: radial-gradient(circle at 50% 35%, #1a2027, #0e1216); border: 3px solid #2a333d; position: relative; }
+  .disc svg { width: 84px; height: 84px; }
+  .disc img { width: 210px; height: 210px; mix-blend-mode: screen;
+    -webkit-mask-image: radial-gradient(circle, #000 50%, transparent 68%); }
+  .name { margin-top: 18px; font-size: 32px; font-weight: 700; }
+  .sub { margin-top: 4px; font-size: 21px; color: var(--muted); }
+  .chip { position: absolute; white-space: nowrap; font-size: 22px; transform-origin: 50% 50%; }
+  svg.paths { position: absolute; inset: 0; }
+  .coin { position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%;
+    display: grid; place-items: center; font: 800 20px Inter; }
+  .kamas { background: radial-gradient(circle at 35% 30%, #fff6c9, #f6c94c 35%, #c58a12 70%, #8a5a06); box-shadow: 0 0 16px rgba(246,201,76,0.6); color: #6b4300; }
+  .usdt { background: radial-gradient(circle at 35% 30%, #c9ffef, #50af95 45%, #2a7a64); box-shadow: 0 0 16px rgba(80,175,149,0.6); color: #fff; }
+  .ok { position: absolute; padding: 12px 22px; border-radius: 999px; font-size: 22px; font-weight: 700; color: #4cd08d;
+    background: rgba(76,208,141,0.12); border: 1px solid rgba(76,208,141,0.6); white-space: nowrap; }
+</style></head>
+<body>
+<div id="cam">
+  <svg class="paths" viewBox="0 0 1920 1080" fill="none" stroke-linecap="round" stroke-width="4" stroke-dasharray="12 12">
+    <path id="p1" d="M 470 330 C 620 220, 760 200, 860 250" stroke="rgba(246,201,76,0.5)"/>
+    <path id="p2" d="M 1530 480 C 1530 700, 1320 790, 1100 770" stroke="rgba(80,175,149,0.55)"/>
+    <path id="p3" d="M 1060 250 C 1160 200, 1300 220, 1450 330" stroke="rgba(246,201,76,0.5)"/>
+  </svg>
+  <div class="actor" id="seller" style="left:230px; top:250px"><div class="disc"><svg viewBox="0 0 64 64" fill="none" stroke="#c3cad3" stroke-width="3.5"><circle cx="32" cy="22" r="11"/><path d="M12 56c2-12 10-18 20-18s18 6 20 18"/></svg></div><div class="name">Seller</div><div class="sub">posts 40 M kamas</div></div>
+  <div class="actor" id="buyer" style="left:1350px; top:250px"><div class="disc"><svg viewBox="0 0 64 64" fill="none" stroke="#c3cad3" stroke-width="3.5"><circle cx="32" cy="22" r="11"/><path d="M12 56c2-12 10-18 20-18s18 6 20 18"/></svg></div><div class="name">Buyer</div><div class="sub">pays 100 USDT</div></div>
+  <div class="actor" id="bot" style="left:790px; top:90px"><div class="disc" style="border-color:rgba(94,234,212,0.5)"><img src="../out/portfolio-automation-overview/robot-still.png"></div><div class="name">In-game bot</div><div class="sub">receives &amp; delivers</div></div>
+  <div class="actor" id="ctr" style="left:790px; top:640px"><div class="disc" style="border-color:rgba(240,192,64,0.6)"><svg viewBox="0 0 64 64" fill="none" stroke="#f0c040" stroke-width="3.5" stroke-linejoin="round"><path d="M32 6l22 8v16c0 14-9 23-22 28C19 53 10 44 10 30V14z"/><path d="M22 32l7 7 13-14"/></svg></div><div class="name">Order contract</div><div class="sub">USDT · BEP-20</div></div>
+  <div class="chip" id="c1" style="left:255px; top:540px">📢 Posts an offer</div>
+  <div class="chip" id="c2" style="left:1395px; top:540px">✓ Accepts it</div>
+  <div class="chip" id="c3" style="left:560px; top:150px">Kamas received in-game</div>
+  <div class="chip" id="c4" style="left:1250px; top:830px">Pays the order's contract</div>
+  <div class="ok" id="ok" style="left:770px; top:960px">✓ Payment confirmed on the blockchain</div>
+  <div class="chip" id="c5" style="left:1120px; top:150px">Delivered to the buyer ✓</div>
+  <div id="coins"></div>
+</div>
+<script>
+const coins = document.getElementById("coins");
+const make = (cls, label) => { const c = document.createElement("div"); c.className = "coin " + cls; c.textContent = label; coins.append(c); return c; };
+const FLOWS = [["p1", "kamas", "K", 4.0, 5.9], ["p2", "usdt", "₮", 7.2, 9.1], ["p3", "kamas", "K", 12.4, 13.9]];
+const sets = FLOWS.map(([p, cls, lab, a, b]) => ({ path: document.getElementById(p), a, b, list: [0, 1, 2, 3, 4].map(() => make(cls, lab)) }));
+const ON = { seller: 0.5, buyer: 1.8, bot: 3.7, ctr: 6.9 };
+const CHIPS = { c1: 0.9, c2: 2.1, c3: 4.4, c4: 7.6, c5: 12.8 };
+window.DUR = 15.0;
+window.render = (t) => {
+  document.getElementById("cam").style.transform = `scale(${1 + 0.03 * ease(t / DUR)})`;
+  for (const [id, at] of Object.entries(ON)) popIn(document.getElementById(id), t, at, 0.45);
+  for (const [id, at] of Object.entries(CHIPS)) popIn(document.getElementById(id), t, at, 0.35);
+  popIn(document.getElementById("ok"), t, 10.2, 0.4);
+  // the contract lights up green once the payment is confirmed
+  document.querySelector("#ctr .disc").style.borderColor = t >= 10.2 ? "rgba(76,208,141,0.9)" : "rgba(240,192,64,0.6)";
+  document.querySelector("#ctr .disc").style.boxShadow = t >= 10.2 ? "0 0 50px rgba(76,208,141,0.35)" : "none";
+  sets.forEach((s, k) => {
+    const L = s.path.getTotalLength();
+    s.path.style.opacity = t >= s.a - 0.2 ? 1 : 0;
+    s.path.setAttribute("stroke-dashoffset", -t * 40);
+    s.list.forEach((c, i) => {
+      const st = s.a + i * (s.b - s.a - 0.9) / 4, u = (t - st) / 0.9;
+      if (u <= 0 || u >= 1) { c.style.opacity = 0; return; }
+      const p = s.path.getPointAtLength(L * ease(u));
+      c.style.left = p.x + "px"; c.style.top = p.y + "px"; c.style.opacity = Math.min(1, u * 6, (1 - u) * 6);
+    });
+  });
+};
+render(0);
+</script>
+</body></html>

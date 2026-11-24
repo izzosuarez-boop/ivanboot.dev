@@ -1,0 +1,45 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<script src="../out/logos-kamas/logos.js"></script><script src="k-common.js"></script>
+<!-- Shot 1: the real kamasmarket.com/es/ofertas (captured by kamas_assemble.py capture, usernames blurred) -->
+<style>
+  #cam { position: absolute; inset: 0; transform-origin: 50% 50%; }
+  .win { left: 210px; top: 110px; width: 1500px; height: 860px; background: #111; }
+  .win .bar { background: #1f1f1f; border-bottom: 1px solid #2a2a2a; }
+  .win .dot { background: #3a3a3a; }
+  .win .url { background: #111; border-color: #2a2a2a; color: #aaa; }
+  .view { position: absolute; left: 0; right: 0; top: 56px; bottom: 0; overflow: hidden; }
+  .view img { position: absolute; left: 0; top: 0; width: 1500px; }
+  #ring .ktile { opacity: 0; }
+</style></head>
+<body>
+<div id="cam">
+  <div class="win"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    <span class="url mono">🔒 kamasmarket.com/es/ofertas</span></div>
+    <div class="view"><img id="page" src="../out/portfolio-web-api-overview/site/offers-full.png"></div></div>
+  <div id="ring"></div>
+</div>
+<script>
+const SLUGS = ["zavu", "resend", "binance", "nowpayments", "wompi", "telegram", "discord", "deepseek", "anthropic"];
+const ring = document.getElementById("ring");
+const tiles = SLUGS.map((s) => { const t = tile(s, 104, false); ring.append(t); return t; });
+window.DUR = 11.8;
+window.render = (t) => {
+  // scroll the page: the header, the "protected purchase" box, then both offer tables
+  const page = document.getElementById("page");
+  const maxScroll = 1500 / 1440 * 1225 - 804;
+  page.style.top = (-maxScroll * ease((t - 0.8) / 5.4)) + "px";
+  // pull back a little, then the nine services gather around the window
+  const back_ = ease((t - 7.1) / 1.6);
+  document.getElementById("cam").style.transform = `scale(${1.04 - 0.26 * back_})`;
+  tiles.forEach((el, i) => {
+    const a = -Math.PI / 2 + i * 2 * Math.PI / SLUGS.length;
+    const rx = 860, ry = 470;
+    el.style.left = (960 + rx * Math.cos(a) - 52) + "px";
+    el.style.top = (540 + ry * Math.sin(a) - 52) + "px";
+    popIn(el, t, 9.3 + i * 0.11, 0.35);
+  });
+};
+render(0);
+</script>
+</body></html>

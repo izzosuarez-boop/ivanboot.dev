@@ -1,0 +1,55 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="common.css">
+<script src="../out/logos-kamas/logos.js"></script><script src="k-common.js"></script>
+<!-- Shot 6: AI on two fronts: DeepSeek powers the site agent; Anthropic's Claude double-checks each in-game trade
+     with vision (amount and key; advisory only). The trade window is a generic drawing, not the game's art. -->
+<style>
+  #cam { position: absolute; inset: 0; transform-origin: 50% 50%; }
+  .eyebrow { position: absolute; top: 110px; width: 100%; text-align: center; font-size: 24px; letter-spacing: 0.34em; color: var(--glow); font-weight: 600; }
+  .panel { position: absolute; top: 210px; width: 800px; height: 700px; border-radius: 28px; border: 1px solid var(--line);
+    background: linear-gradient(180deg, rgba(18,22,27,0.92), rgba(14,18,22,0.92)); }
+  .panel h4 { position: absolute; left: 0; right: 0; top: 230px; text-align: center; font-size: 32px; font-weight: 700; }
+  .panel h4 small { display: block; margin-top: 6px; font-size: 21px; font-weight: 400; color: var(--muted); }
+  .chat { position: absolute; left: 110px; right: 110px; top: 380px; }
+  .b { padding: 14px 18px; border-radius: 12px; font-size: 21px; line-height: 1.4; margin-bottom: 14px; max-width: 80%; }
+  .u { margin-left: auto; background: #f0c040; color: #111; } .a { background: #232323; color: #ddd; }
+  .trade { position: absolute; left: 120px; right: 120px; top: 380px; height: 250px; border-radius: 16px; background: #1b1712;
+    border: 2px solid #5a4a2a; overflow: hidden; color: #e8dcc0; }
+  .trade .tt { background: #2a2216; padding: 12px 20px; font-size: 18px; letter-spacing: 0.12em; color: #c8b070; font-weight: 700; }
+  .trade .f { display: flex; justify-content: space-between; padding: 16px 70px 16px 24px; font-size: 24px; border-bottom: 1px solid #3a3020; }
+  .trade .f b { font-variant-numeric: tabular-nums; }
+  .scan { position: absolute; left: 0; right: 0; height: 60px; background: linear-gradient(180deg, transparent, rgba(217,119,87,0.45), transparent); }
+  .ck { position: absolute; right: 24px; font: 800 26px Inter; color: #4cd08d; }
+</style></head>
+<body>
+<div id="cam">
+  <div class="eyebrow">ARTIFICIAL INTELLIGENCE</div>
+  <div class="panel" id="p0" style="left:120px"><h4>DeepSeek<small>powers the site's agent</small></h4>
+    <div class="chat"><div class="b u">How is my order going?</div><div class="b a">Your payment was confirmed ✓ The bot is delivering now.</div></div></div>
+  <div class="panel" id="p1" style="left:1000px"><h4>Claude · Anthropic<small>second check of every trade, with vision</small></h4>
+    <div class="trade"><div class="tt">IN-GAME TRADE · SCREEN CAPTURE</div>
+      <div class="f" style="position:relative">Kamas offered <b>40,000,000</b><span class="ck" id="k1">✓</span></div>
+      <div class="f" style="position:relative">Buyer's key <b>K7-29X</b><span class="ck" id="k2">✓</span></div>
+      <div class="scan" id="scan"></div></div></div>
+  <div id="tiles"></div>
+</div>
+<script>
+const T = document.getElementById("tiles");
+const TILES = [["deepseek", 520, 260, 3.0], ["anthropic", 1320, 260, 4.9], ["claude", 1480, 260, 5.4]];
+const els = TILES.map(([s, x, y]) => { const el = tile(s, 140, false); el.style.left = (x - 70) + "px"; el.style.top = y + "px"; T.append(el); return el; });
+window.DUR = 12.2;
+window.render = (t) => {
+  document.getElementById("cam").style.transform = `scale(${1 + 0.03 * ease(t / DUR)})`;
+  document.querySelector(".eyebrow").style.opacity = ease((t - 0.2) / 0.4);
+  const p0 = document.getElementById("p0"), p1 = document.getElementById("p1");
+  p0.style.opacity = 0.3 + 0.7 * ease((t - 2.9) / 0.4); p1.style.opacity = 0.3 + 0.7 * ease((t - 4.8) / 0.4);
+  p0.style.borderColor = t >= 2.9 ? "rgba(87,134,254,0.6)" : "#222a33"; p1.style.borderColor = t >= 4.8 ? "rgba(217,119,87,0.6)" : "#222a33";
+  els.forEach((el, i) => popIn(el, t, TILES[i][3], 0.4));
+  document.querySelectorAll("#p0 .b").forEach((b, i) => popIn(b, t, 3.4 + i * 0.7, 0.35));
+  const scan = document.getElementById("scan"), u = (t - 5.6) / 2.6;
+  scan.style.opacity = u > 0 && u < 1 ? 1 : 0; scan.style.top = (40 + 190 * ((u * 2) % 1)) + "px";
+  popIn(document.getElementById("k1"), t, 8.7, 0.3); popIn(document.getElementById("k2"), t, 9.6, 0.3);
+};
+render(0);
+</script>
+</body></html>

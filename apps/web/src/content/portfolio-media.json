@@ -90,5 +90,29 @@
         }
       }
     }
+  },
+  "web-api-overview": {
+    "versions": {
+      "en": {
+        "poster": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/web-api-overview-poster.jpg?v=1795495447",
+        "duration": 114.7,
+        "sources": [
+          {
+            "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/web-api-overview-explainer-1080.mp4?v=1795495454",
+            "height": 1080,
+            "id": "gid://shopify/GenericFile/46907604926716"
+          },
+          {
+            "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/web-api-overview-explainer-720.mp4?v=1795495461",
+            "height": 720,
+            "id": "gid://shopify/GenericFile/46907605221628"
+          }
+        ],
+        "captions": {
+          "en": "/portfolio/captions/web-api-overview.en.vtt",
+          "es": "/portfolio/captions/web-api-overview.es.vtt"
+        }
+      }
+    }
   }
 }
