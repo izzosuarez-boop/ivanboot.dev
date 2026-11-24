@@ -184,9 +184,9 @@ def main() -> None:
         for l in [w, *w.winfo_children(), *[g for c in w.winfo_children() for g in c.winfo_children()]]:
             if isinstance(l, tk.Label):
                 t = l.cget("text")
-                if t == "Venta automática":                     # the currency's name gives the game away
+                if t.startswith("Venta"):                      # the currency's name would give the game away
                     l.config(text="Venta automática")
-                elif "sitio-comprador" in t:
+                elif t.startswith("Monitor de precios"):     # its header names the buyer site
                     l.config(text="Monitor de precios y venta asistida")
                 elif t.startswith("Lectura cada"):
                     l.config(text=f"Lectura cada {ui.INTERVALO_S} s")

@@ -1,21 +1,33 @@
-# Portfolio — Iván
+# ivanboot.dev
 
-Four self-contained pieces of work, each extracted and sanitized from production systems I
-built and operate solo. Each folder is a standalone repo with its own README.
+**Live: [ivanboot.dev](https://ivanboot.dev)** · the store: [tienda.ivanboot.dev](https://tienda.ivanboot.dev)
 
-| Project | What it shows | Language / stack |
+How I put AI to work for you and plug its tools into your workflows to make you more productive.
+
+I build AI agents, automations and the software around them — from production LLM systems and scraping pipelines to
+Shopify stores and 24/7 Linux workers. I measure before I conclude and write down why each decision was made, so
+clients know what they are paying for.
+
+This repo is the whole site: the portfolio, the Ardea Skin demo store and the API, in one codebase and one deploy.
+
+## The four sections
+
+| Section | What it shows | Repo |
 |---|---|---|
-| **escrow-smart-contract** | A non-custodial escrow in Solidity with a legal constraint encoded as an invariant, a CREATE2 one-address-per-order design, and a gas study measured on two chains | Solidity, Python, TRON/EVM |
-| **protocol-lab** | A reverse-engineered TCP protocol test bench: framer, MITM proxy with hooks, mock servers/client, replay + fuzzing harness — all passing | Python (asyncio, stdlib only) |
-| **linux-fleet-guide** | A field guide to operating a fleet of 9 headless Linux workers: systemd, per-machine proxy egress, self-healing supervisor, and a catalog of real failures | Linux, systemd, networking |
-| **llm-production-case-study** | Three production LLM integrations (DeepSeek + Anthropic) designed around cost budgets, latency budgets and code-level verification | Python, LLM APIs |
+| [AI Agents & LLMs](https://ivanboot.dev/ai-agents) | AI agents: systems that think, plan and act. The Ardea Skin store agent and the owner's Telegram agent | [ardea-skin](https://github.com/izzosuarez-boop/ardea-skin) |
+| [Web Scraping, Software Automation & Data](https://ivanboot.dev/automation) | Bots that do the routine work and automate your work from start to finish | [web-scraping-automation](https://github.com/izzosuarez-boop/web-scraping-automation) |
+| [Web & API Integration](https://ivanboot.dev/web-api) | Websites built to measure, connected to every service your business runs on: KamasMarket | [llm-support-agent](https://github.com/izzosuarez-boop/llm-support-agent) · [marketplace-infra](https://github.com/izzosuarez-boop/marketplace-infra) · [escrow-smart-contract](https://github.com/izzosuarez-boop/escrow-smart-contract) |
+| [AI, Social Media & Shopify](https://ivanboot.dev/ai-media-shopify) | AI-generated media: meaningful production that sells ideas | [ai-media](https://github.com/izzosuarez-boop/ai-media) · [ardea-skin](https://github.com/izzosuarez-boop/ardea-skin) |
 
-### How I work
+## What's in this repo
 
-The thread through all four: **I measure before I conclude, and I write down why.** Comments
-carry the date and the number that motivated a decision; every fix is tested so it also
-*fails* with the wrong input; conclusions later found false are struck through in place rather
-than quietly deleted, because the evidence trail is the point.
+| Path | What it is |
+|---|---|
+| `apps/web/` | Next.js 16, React 19, TypeScript and Tailwind 4: the portfolio on ivanboot.dev and the store on tienda.ivanboot.dev (same app, routed by host) |
+| `apps/api/` | FastAPI: the store agent (Claude Haiku 5.5), the owner's Telegram bot, Shopify webhooks and reports, Supabase |
+| `scripts/media/`, `scripts/images/` | Every video and image of the site, made with AI and corrected in code |
+| `scripts/shopify/`, `scripts/telegram/`, `scripts/db/` | Store catalog, bot setup and database migrations |
+| `scripts/tests/` | Browser tests (Playwright) of the portfolio, the videos and the store agent |
+| `infra/` | Docker Compose and Caddy on one Linux VPS, with automatic HTTPS and a one-command deploy |
 
-Each repo runs on its own — `protocol-lab` and `escrow-smart-contract` include runnable tests
-and measurement scripts.
+Older write-ups kept here: `escrow-smart-contract/`, `linux-fleet-guide/`, `llm-production-case-study/`.

@@ -655,7 +655,7 @@ subtítulos en español, 85,8 s. Script: `scripts/media/automation_assemble.py`.
   - El cursor parpadeante de las entradas cambiaría entre estados: `insertwidth=0`.
 - **E32. Seguridad de la grabación:** precios simulados (sin pedir nada a la página), el vendedor sustituido por un
   objeto que aborta si se le pide una venta o un login, servidores y datos de venta en archivos temporales (el
-  `datos_venta.json` real nunca se lee). Cabecera cambiada a "Venta automática" y sin "sitio-comprador.com". Los nombres de
+  `datos_venta.json` real nunca se lee). Cabecera cambiada a "Venta automática" y sin el nombre del sitio comprador. Los nombres de
   servidor y de juego se difuminan en el montaje.
 - **E33. Escenas por código en HTML:** cada escena expone `render(t)` y `DUR`, y se filma fotograma a fotograma con
   Playwright (Chrome instalado). Siempre da el mismo resultado y es nítido. `scene <nombre> 1.2,3.5` saca solo esos
