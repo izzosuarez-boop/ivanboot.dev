@@ -16,6 +16,7 @@ services:
       - ../media:/srv/media:ro
       - caddy_data:/data # TLS certificates: keep across rebuilds (Let's Encrypt rate limits)
       - caddy_config:/config
+    env_file: ../sites.env # the domains in the Caddyfile
     depends_on:
       - web
       - api
@@ -25,23 +26,29 @@ services:
       context: ../apps/web
       args:
         NEXT_PUBLIC_STORE_BASE: ""
-        NEXT_PUBLIC_STORE_URL: "https://tienda.ivanboot.dev"
-        NEXT_PUBLIC_UPWORK_URL: "https://www.upwork.com/freelancers/~01d5ad771e5c598546"
-        NEXT_PUBLIC_WORKANA_URL: "" # pending profile approval
         # Dev-store password page sits in front of Shopify checkout; it is shown to visitors
         # in the cart on purpose (it protects nothing but the dev storefront). Empty = hidden.
         NEXT_PUBLIC_STORE_PASSWORD: "ardea"
+        # the two portfolio versions' domains and hiring profiles (sites.env, via --env-file in deploy.sh)
+        UPWORK_SITE_HOST: ${UPWORK_SITE_HOST}
+        UPWORK_STORE_HOST: ${UPWORK_STORE_HOST}
+        UPWORK_PROFILE_URL: ${UPWORK_PROFILE_URL}
+        WORKANA_SITE_HOST: ${WORKANA_SITE_HOST}
+        WORKANA_STORE_HOST: ${WORKANA_STORE_HOST}
+        WORKANA_PROFILE_URL: ${WORKANA_PROFILE_URL}
     restart: unless-stopped
-    env_file: ../.env # Shopify server-side tokens; read at runtime, never baked into the image
-    environment:
-      STORE_HOST: tienda.ivanboot.dev
+    env_file: # Shopify server-side tokens and the sites' domains; read at runtime, never baked into the image
+      - ../.env
+      - ../sites.env
     expose:
       - "3000"
 
   api:
     build: ../apps/api
     restart: unless-stopped
-    env_file: ../.env
+    env_file:
+      - ../.env
+      - ../sites.env # which store (domain) belongs to which portfolio version
     environment:
       APP_VERSION: ${APP_VERSION:-dev}
     expose:

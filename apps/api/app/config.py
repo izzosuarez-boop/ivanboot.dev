@@ -35,6 +35,14 @@ SUPABASE_SECRET_KEY = env("SUPABASE_SECRET_KEY")
 
 STORE_URL = env("STORE_URL", "https://tienda.ivanboot.dev")
 UPWORK_URL = env("UPWORK_URL", "https://www.upwork.com/freelancers/~01d5ad771e5c598546")
+# Two versions of the portfolio (2026-11-25): the Upwork site (English) and the Workana site (Spanish), each with its
+# own store subdomain. The agent answers with the site, store and hiring profile of the store it is talking from,
+# never the other one. Hosts and the Workana profile come from sites.env (outside the public repo).
+UPWORK_SITE_HOST = env("UPWORK_SITE_HOST", "ivanboot.dev")
+UPWORK_STORE_HOST = env("UPWORK_STORE_HOST", "tienda.ivanboot.dev")
+WORKANA_SITE_HOST = env("WORKANA_SITE_HOST", "")
+WORKANA_STORE_HOST = env("WORKANA_STORE_HOST", "")
+WORKANA_URL = env("WORKANA_PROFILE_URL", "")
 
 # Budget and abuse limits for a public chat
 DAILY_BUDGET_USD = float(env("AGENT_DAILY_BUDGET_USD", "2.0"))

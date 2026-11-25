@@ -1,0 +1,85 @@
+WEBVTT
+
+1
+00:00:02.350 --> 00:00:07.510 size:78% align:center
+Today, in the age of AI, automating a workflow from start to finish is a reality.
+
+2
+00:00:07.510 --> 00:00:10.000 size:78% align:center
+Let's look at a real case from one of my clients.
+
+3
+00:00:11.350 --> 00:00:14.430 size:78% align:center
+My client wanted to automate selling the virtual currency of
+
+4
+00:00:14.430 --> 00:00:17.420 size:78% align:center
+a massive online game to one of the many sites that buy it.
+
+5
+00:00:17.420 --> 00:00:20.230 size:78% align:center
+Until then, the whole process was done by hand.
+
+6
+00:00:22.750 --> 00:00:23.550 size:78% align:center
+The proposal:
+
+7
+00:00:23.550 --> 00:00:26.060 size:78% align:center
+software that scrapes the prices of the servers
+
+8
+00:00:26.060 --> 00:00:29.310 size:78% align:center
+my client cares about on three of these sites.
+
+9
+00:00:29.310 --> 00:00:31.580 size:78% align:center
+With that data, the same software makes the decisions,
+
+10
+00:00:31.580 --> 00:00:36.350 size:78% align:center
+following my client's own rules: a minimum selling price and the amount to sell.
+
+11
+00:00:37.950 --> 00:00:42.180 size:78% align:center
+Prices are monitored 24/7, checking every minute.
+
+12
+00:00:43.450 --> 00:00:49.150 size:78% align:center
+When it finds a match, it first asks my client on Telegram whether to go ahead,
+
+13
+00:00:49.150 --> 00:00:51.090 size:78% align:center
+with a summary of the deal.
+
+14
+00:00:51.450 --> 00:00:54.380 size:78% align:center
+If the answer is yes, the script triggers the sale:
+
+15
+00:00:54.380 --> 00:00:58.790 size:78% align:center
+a bot opens a browser in the background, logs in to the buyer's site,
+
+16
+00:00:58.790 --> 00:01:01.480 size:78% align:center
+fills in the details and creates the sell order.
+
+17
+00:01:02.650 --> 00:01:06.520 size:78% align:center
+Once the order is created, a bot waits on standby with the order's details,
+
+18
+00:01:06.520 --> 00:01:11.480 size:78% align:center
+server and amount, until the site's staff contacts it to take the delivery.
+
+19
+00:01:11.950 --> 00:01:16.000 size:78% align:center
+When the delivery is done, the bot tells my client the operation was successful,
+
+20
+00:01:16.000 --> 00:01:17.610 size:78% align:center
+with a summary of the transaction.
+
+21
+00:01:17.610 --> 00:01:20.900 size:78% align:center
+All my client has to do is check that the site's payment arrived.

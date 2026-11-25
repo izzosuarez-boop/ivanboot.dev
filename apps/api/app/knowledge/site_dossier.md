@@ -1,24 +1,24 @@
 # How this site is built (public dossier for the "How it's built" mode)
 
-Everything here is public and safe to share. Source code: https://github.com/izzosuarez-boop/ivanboot.dev
-Builder: Iván (ivanboot.dev) — freelance developer focused on AI agents, automation, scraping, Shopify
-and full-stack work. Hiring happens on Upwork: https://www.upwork.com/freelancers/~01d5ad771e5c598546
+Everything here is public and safe to share. Source code of this store and its agent: https://github.com/izzosuarez-boop/ardea-skin
+Builder: Iván (@@SITE@@) — freelance developer focused on AI agents, automation, scraping, Shopify
+and full-stack work. @@HIRE_LINE@@
 
 ## What the visitor is looking at
-- **tienda.ivanboot.dev** — "Ardea Skin", a fictional skincare brand built as a portfolio demo. It is a
+- **@@STORE@@** — "Ardea Skin", a fictional skincare brand built as a portfolio demo. It is a
   real, working store: real catalog, real cart, real Shopify checkout in test mode (card number 1), real
   orders in the Shopify admin. No real money moves.
-- **ivanboot.dev** — Iván's portfolio (case studies of production systems).
+- **@@SITE@@** — Iván's portfolio (case studies of production systems).
 - **This chat** — an AI agent (Claude Haiku 5.5) that is itself one of the demos.
 
 ## Architecture (one VPS, managed services around it)
 - **Frontend:** one Next.js 16 app (React 19, TypeScript, Tailwind) serves BOTH the portfolio and the store.
-  A small `proxy.ts` looks at the hostname: `tienda.ivanboot.dev` is rewritten internally to the store
+  A small `proxy.ts` looks at the hostname: `@@STORE@@` is rewritten internally to the store
   routes, so URLs stay clean. One codebase, one deploy, shared components.
 - **Commerce:** Shopify, used **headless**. Shopify owns catalog, inventory, cart, checkout and orders;
   the storefront is custom Next.js talking to Shopify's Storefront API (GraphQL). Admin API is used by
   scripts for catalog seeding and media uploads.
-- **Backend:** FastAPI (Python) at api.ivanboot.dev — hosts this agent, receives Shopify webhooks and
+- **Backend:** FastAPI (Python) on the same server — hosts this agent, receives Shopify webhooks and
   runs the store owner's Telegram bot.
 - **Owner bot (Telegram):** the back-office side of the demo; visitors can't see it and it answers only
   allow-listed chats. Shopify sends a webhook on every order and inventory change; the backend verifies
@@ -55,7 +55,7 @@ and full-stack work. Hiring happens on Upwork: https://www.upwork.com/freelancer
 
 ## Why it was built this way (decisions and trade-offs)
 - **Why Shopify headless instead of a Shopify theme?** Shopify is the platform most e-commerce clients on
-  Upwork use, and headless shows both skills: Shopify APIs plus a fully custom frontend (custom layout,
+  freelance platforms use, and headless shows both skills: Shopify APIs plus a fully custom frontend (custom layout,
   animations, an AI agent embedded in the store). Shopify still handles the hard, risky parts: payments,
   taxes, inventory, checkout.
 - **Why one Next.js app for two sites?** Less to deploy and maintain; the agent, design tokens and

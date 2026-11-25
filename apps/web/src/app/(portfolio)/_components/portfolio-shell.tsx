@@ -13,13 +13,12 @@
 import { createContext, useCallback, useContext, useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { sections } from "@/content/portfolio";
-import { site } from "@/lib/site";
+import { SLUGS, visiblePath, type NavItem, type ShellUi } from "@/content/slugs";
 
 type Ring = { rot: number; R: number; cx: number; cy: number; band: number };
 type Viewport = { w: number; h: number };
 
-const STEP = 360 / sections.length;
+const STEP = 360 / SLUGS.length;
 const SECTION_STEP = 60; // segment width in a section header: what six sections had, so neighbours stay in view
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
@@ -90,11 +89,18 @@ export function useShown(delay: number | (() => number)) {
   return shown;
 }
 
-export function PortfolioShell({ children }: { children: React.ReactNode }) {
+const slugIndex = (slug: string) => (SLUGS as readonly string[]).indexOf(slug);
+
+// `nav` and `ui` come from the server for this version of the site only (English for Upwork, Spanish for Workana)
+export function PortfolioShell({ children, nav, ui }: { children: React.ReactNode; nav: NavItem[]; ui: ShellUi }) {
   const pathname = usePathname();
   const router = useRouter();
-  const slug = pathname.split("/")[1] || null;
-  const index = slug ? sections.findIndex((s) => s.slug === slug) : -1;
+  const slug = visiblePath(pathname)[0] ?? null;
+  const index = slug ? slugIndex(slug) : -1;
+  // the root layout says lang="en"; the Spanish version corrects it for screen readers and translators
+  useEffect(() => {
+    document.documentElement.lang = ui.lang;
+  }, [ui.lang]);
 
   const [vp, setVp] = useState<Viewport | null>(null);
   const [ring, setRing] = useState<Ring | null>(null);
@@ -142,7 +148,7 @@ export function PortfolioShell({ children }: { children: React.ReactNode }) {
   // every destination is one click away from anywhere: prefetch them all
   useEffect(() => {
     router.prefetch("/");
-    sections.forEach((s) => router.prefetch(`/${s.slug}`));
+    SLUGS.forEach((s) => router.prefetch(`/${s}`));
   }, [router]);
 
   // viewport size
@@ -183,7 +189,7 @@ export function PortfolioShell({ children }: { children: React.ReactNode }) {
   const go = useCallback(
     async (next: string | null) => {
       if (busy.current || !vp) return;
-      const nextIndex = next ? sections.findIndex((s) => s.slug === next) : -1;
+      const nextIndex = next ? slugIndex(next) : -1;
       if (nextIndex === index) return;
       busy.current = true;
       const path = next ? `/${next}` : "/";
@@ -230,9 +236,9 @@ export function PortfolioShell({ children }: { children: React.ReactNode }) {
   return (
     <ShellContext.Provider value={{ go, ringGrown, leaving, vp, hovered }}>
       <div className="relative flex min-h-svh flex-1 flex-col bg-night text-text">
-        <TopBar index={index} go={go} />
+        <TopBar index={index} go={go} ui={ui} />
         <div ref={wrap} className="pointer-events-none fixed inset-0 z-10 will-change-transform">
-          {vp && ring && <RingSvg vp={vp} ring={ring} active={index} onHover={setHovered} go={go} />}
+          {vp && ring && <RingSvg vp={vp} ring={ring} active={index} onHover={setHovered} go={go} nav={nav} title={ui.areasOfWork} />}
         </div>
         {children}
       </div>
@@ -240,13 +246,13 @@ export function PortfolioShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function TopBar({ index, go }: { index: number; go: (s: string | null) => void }) {
+function TopBar({ index, go, ui }: { index: number; go: (s: string | null) => void; ui: ShellUi }) {
   return (
     <header className="pointer-events-none fixed inset-x-0 top-0 z-30 flex items-start justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
       {index < 0 ? (
         <div className="pointer-events-auto leading-tight">
-          <p className="font-serif text-lg text-text sm:text-xl">{site.name}</p>
-          <p className="text-xs text-muted sm:text-sm">AI engineer · automation developer</p>
+          <p className="font-serif text-lg text-text sm:text-xl">{ui.name}</p>
+          <p className="text-xs text-muted sm:text-sm">{ui.roleLine}</p>
         </div>
       ) : (
         <Link
@@ -257,17 +263,17 @@ function TopBar({ index, go }: { index: number; go: (s: string | null) => void }
           }}
           className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-line bg-night/80 px-4 py-2 text-sm text-text backdrop-blur transition hover:border-glow/60 hover:text-white"
         >
-          <span aria-hidden>←</span> All work
+          <span aria-hidden>←</span> {ui.allWork}
         </Link>
       )}
-      {site.upworkUrl && (
+      {ui.hireUrl && (
         <a
-          href={site.upworkUrl}
+          href={ui.hireUrl}
           target="_blank"
           rel="noopener"
           className="pointer-events-auto rounded-full bg-glow px-4 py-2 text-sm font-medium text-night shadow-[0_0_24px_-6px_var(--glow)] transition hover:brightness-110"
         >
-          Hire me on Upwork
+          {ui.hire}
         </a>
       )}
     </header>
@@ -294,8 +300,9 @@ function sector(cx: number, cy: number, R: number, r: number, a: number, b: numb
   return `M${ax},${ay} A${R},${R} 0 ${large} 1 ${bx},${by} L${cx2},${cy2} A${r},${r} 0 ${large} 0 ${dx},${dy} Z`;
 }
 
-function RingSvg({ vp, ring, active, onHover, go }: {
+function RingSvg({ vp, ring, active, onHover, go, nav, title }: {
   vp: Viewport; ring: Ring; active: number; onHover: (i: number) => void; go: (s: string | null) => void;
+  nav: NavItem[]; title: string;
 }) {
   const uid = useId().replace(/:/g, "");
   const { rot, R, cx, cy, band } = ring;
@@ -325,12 +332,12 @@ function RingSvg({ vp, ring, active, onHover, go }: {
 
   return (
     <svg width={vp.w} height={vp.h} className="absolute inset-0" style={{ maskImage: mask, WebkitMaskImage: mask }}>
-      <title>Areas of work</title>
+      <title>{title}</title>
       <circle cx={cx} cy={cy} r={R + 10} fill="none" stroke="var(--line)" strokeWidth={1} opacity={0.7} />
       <path d={ticks} stroke="var(--muted)" strokeWidth={1} opacity={0.45} />
       <circle cx={cx} cy={cy} r={rIn - 9} fill="none" stroke="var(--line)" strokeWidth={1} opacity={0.8} />
 
-      {sections.map((s, i) => {
+      {nav.map((s, i) => {
         // In a section header the segments narrow to SECTION_STEP so the neighbours still peek in at the sides
         // (with four sections a 90° segment pushed them off screen, 2026-11-23). Only the drawing is squeezed,
         // around the top and in step with the ring's growth (k); rotation and navigation keep using STEP.

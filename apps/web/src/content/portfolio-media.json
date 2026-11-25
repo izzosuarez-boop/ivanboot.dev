@@ -40,6 +40,26 @@
           "en": "/portfolio/captions/ai-agents-es.en.vtt",
           "es": "/portfolio/captions/ai-agents-es.es.vtt"
         }
+      },
+      "es-workana": {
+        "poster": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/ai-agents-es-workana-poster.jpg?v=1795631913",
+        "duration": 67.4,
+        "sources": [
+          {
+            "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/ai-agents-es-workana-explainer-1080.mp4?v=1795632109",
+            "height": 1080,
+            "id": "gid://shopify/GenericFile/46940534046972"
+          },
+          {
+            "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/ai-agents-es-workana-explainer-720.mp4?v=1795632116",
+            "height": 720,
+            "id": "gid://shopify/GenericFile/46940535062780"
+          }
+        ],
+        "captions": {
+          "en": "/portfolio/captions/ai-agents-es-workana.en.vtt",
+          "es": "/portfolio/captions/ai-agents-es-workana.es.vtt"
+        }
       }
     }
   },
@@ -63,6 +83,26 @@
         "captions": {
           "en": "/portfolio/captions/ai-agents-overview.en.vtt",
           "es": "/portfolio/captions/ai-agents-overview.es.vtt"
+        }
+      },
+      "es-workana": {
+        "poster": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/ai-agents-overview-es-workana-poster.jpg?v=1795631762",
+        "duration": 75.2,
+        "sources": [
+          {
+            "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/ai-agents-overview-es-workana-explainer-1080.mp4?v=1795631770",
+            "height": 1080,
+            "id": "gid://shopify/GenericFile/46940477751548"
+          },
+          {
+            "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/ai-agents-overview-es-workana-explainer-720.mp4?v=1795631908",
+            "height": 720,
+            "id": "gid://shopify/GenericFile/46940504981756"
+          }
+        ],
+        "captions": {
+          "en": "/portfolio/captions/ai-agents-overview-es-workana.en.vtt",
+          "es": "/portfolio/captions/ai-agents-overview-es-workana.es.vtt"
         }
       }
     }
@@ -88,6 +128,26 @@
           "en": "/portfolio/captions/automation-overview.en.vtt",
           "es": "/portfolio/captions/automation-overview.es.vtt"
         }
+      },
+      "es-workana": {
+        "poster": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/automation-overview-es-workana-poster.jpg?v=1795632121",
+        "duration": 85.8,
+        "sources": [
+          {
+            "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/automation-overview-es-workana-explainer-1080.mp4?v=1795632136",
+            "height": 1080,
+            "id": "gid://shopify/GenericFile/46940539126012"
+          },
+          {
+            "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/automation-overview-es-workana-explainer-720.mp4?v=1795632144",
+            "height": 720,
+            "id": "gid://shopify/GenericFile/46940540338428"
+          }
+        ],
+        "captions": {
+          "en": "/portfolio/captions/automation-overview-es-workana.en.vtt",
+          "es": "/portfolio/captions/automation-overview-es-workana.es.vtt"
+        }
       }
     }
   },
@@ -112,6 +172,26 @@
           "en": "/portfolio/captions/web-api-overview.en.vtt",
           "es": "/portfolio/captions/web-api-overview.es.vtt"
         }
+      },
+      "es-workana": {
+        "poster": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/web-api-overview-es-workana-poster.jpg?v=1795632162",
+        "duration": 114.7,
+        "sources": [
+          {
+            "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/web-api-overview-es-workana-explainer-1080.mp4?v=1795632177",
+            "height": 1080,
+            "id": "gid://shopify/GenericFile/46940549218556"
+          },
+          {
+            "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/web-api-overview-es-workana-explainer-720.mp4?v=1795632184",
+            "height": 720,
+            "id": "gid://shopify/GenericFile/46940550725884"
+          }
+        ],
+        "captions": {
+          "en": "/portfolio/captions/web-api-overview-es-workana.en.vtt",
+          "es": "/portfolio/captions/web-api-overview-es-workana.es.vtt"
+        }
       }
     }
   },
@@ -135,6 +215,26 @@
         "captions": {
           "en": "/portfolio/captions/media-overview.en.vtt",
           "es": "/portfolio/captions/media-overview.es.vtt"
+        }
+      },
+      "es-workana": {
+        "poster": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/media-overview-es-workana-poster_87e1a929-6ba9-407e-bc63-11a92909b94a.jpg?v=1795632230",
+        "duration": 143.09,
+        "sources": [
+          {
+            "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/media-overview-es-workana-explainer-1080.mp4?v=1795632238",
+            "height": 1080,
+            "id": "gid://shopify/GenericFile/46940564685052"
+          },
+          {
+            "url": "https://cdn.shopify.com/s/files/1/0834/6445/4396/files/media-overview-es-workana-explainer-720.mp4?v=1795632255",
+            "height": 720,
+            "id": "gid://shopify/GenericFile/46940567601404"
+          }
+        ],
+        "captions": {
+          "en": "/portfolio/captions/media-overview-es-workana.en.vtt",
+          "es": "/portfolio/captions/media-overview-es-workana.es.vtt"
         }
       }
     }

@@ -1,44 +1,16 @@
-// Portfolio content: the four sections of the hub circle, clockwise from the top, and their projects.
+// English portfolio content (the Upwork site): the four sections of the hub circle, clockwise from the top, and
+// their projects. The Spanish version (Workana site) is portfolio-es.ts, with the same slugs and structure.
 // 2026-11-23 (user): the scraping section was dropped (scraping lives in section 2) and AI Media + Web & Shopify
 // were merged. Old URLs redirect in next.config.ts.
-// Videos and project images are filled in later (null = placeholder frame).
+import type { About, Content, HubIntro, Section, Ui } from "./types";
 
-export type ProjectStatus = "Live demo" | "Case study" | "In progress";
-
-export type Project = {
-  title: string;
-  status: ProjectStatus;
-  summary: string | string[];  // paragraphs; "[[link]]" places the link button inline
-  problem: string;
-  how: string;
-  result: string;
-  stack: string[];
-  link?: { label: string; href: string };
-  repos?: { label: string; href: string }[];  // GitHub repos with this project's code
-  demoHref?: string;            // makes the status badge a button that opens the live demo
-  video?: { media: string; title: string };  // key in portfolio-media.json, shown instead of screenshots
-  loop?: { media: string; label: string };   // key in portfolio-loops.json: a 6 s silent loop, shown first
-  image?: string | null;
-};
-
-export type Section = {
-  slug: string;
-  label: string;      // section name (page header, links), also on the circle unless `ring` is set
-  ring?: string;      // shorter text on the circle when `label` doesn't fit a segment
-  short: string;      // compact label for small screens
-  pitch: string;      // headline inside the section
-  intro: string;
-  // big section video above the projects; media: key in portfolio-media.json. Leave it out to show no panel at all
-  video?: { title: string; media?: string; src?: string | null };
-  projects: Project[];
-};
-
-const STORE = "https://tienda.ivanboot.dev";
-// opens the store with the agent's chat already open and a greeting for visitors coming from the portfolio
-const STORE_CHAT = `${STORE}/?ref=portfolio&chat=1`;
 const GH = "https://github.com/izzosuarez-boop";
 
-export const sections: Section[] = [
+/** The English version (Upwork site). `store` is the demo store's address for this version (server env). */
+export function english(store: string): Content {
+  // opens the store with the agent's chat already open and a greeting for visitors coming from the portfolio
+  const STORE_CHAT = `${store}/?ref=portfolio&chat=1`;
+  const sections: Section[] = [
   {
     slug: "ai-agents",
     label: "AI Agents & LLMs",
@@ -217,7 +189,7 @@ export const sections: Section[] = [
           + "carries into every part of the store and every new product, making the store much simpler and more "
           + "automated to run without losing the human touch users look for.",
         stack: ["Shopify Storefront API", "Next.js 16", "React 19", "Tailwind 4", "TypeScript", "Claude API", "Supabase", "Telegram"],
-        link: { label: "Open the store", href: STORE },
+        link: { label: "Open the store", href: store },
         repos: [{ label: "Code on GitHub", href: `${GH}/ardea-skin` }],
         loop: { media: "loop-ardea", label: "Ardea Skin: one identity on every page, and the store run from Telegram" },
       },
@@ -225,25 +197,23 @@ export const sections: Section[] = [
   },
 ];
 
-export const sectionBySlug = (slug: string) => sections.find((s) => s.slug === slug);
-
-// About card (opened from the photo in the hub). Empty fields are hidden until filled in.
-// The hub's intro video, beside the circle (2026-11-22). `media` is its key in portfolio-media.json.
-export const hubIntro = {
+  // The hub's intro video, beside the circle (2026-11-22). `media` is its key in portfolio-media.json.
+  const hubIntro: HubIntro = {
   eyebrow: "Start here",
   title: "How I put AI to work for you and plug its tools into your workflows to make you more productive.",
   videoTitle: "How AI agents fit into your work, in 70 seconds",
   media: "ai-agents-overview",
 };
 
-export const about = {
+  // About card (opened from the photo in the hub). Empty fields are hidden until filled in.
+  const about: About = {
   name: "Iván",
   role: "AI engineer & automation developer",
   bio:
     "I build AI agents, automations and the software around them — from production LLM systems and scraping " +
     "pipelines to Shopify stores and 24/7 Linux workers. I measure before I conclude and write down why each " +
     "decision was made, so clients know what they are paying for.",
-  education: [] as { title: string; place: string; years: string }[],
+  education: [],
   highlights: [
     "LLM systems in production on Anthropic and DeepSeek",
     "Headless Shopify, Next.js and FastAPI",
@@ -253,3 +223,38 @@ export const about = {
   skills: ["Claude / LLM APIs", "AI agents & tool use", "Python", "TypeScript", "Next.js", "FastAPI", "Shopify",
     "Web scraping", "Playwright", "Supabase / Postgres", "Docker", "Linux"],
 };
+
+  return { lang: "en", sections, hubIntro, about, ui: UI };
+}
+
+const UI: Ui = {
+  srTitle: "Iván — AI agents, automation and full-stack development",
+  roleLine: "AI engineer · automation developer",
+  allWork: "All work",
+  hire: "Hire me on Upwork",
+  hireTitle: "Have a project like this?",
+  hireBody: "Tell me what you need on Upwork and I'll reply with a plan and an estimate.",
+  chooseArea: "Choose an area of work",
+  aboutMe: "About me",
+  aboutOf: (name) => `About ${name}`,
+  sceneAlt: (name) => `${name} working at a desk with three monitors`,
+  portraitAlt: (name) => `Portrait of ${name}`,
+  close: "Close",
+  education: "Education",
+  highlights: "Highlights",
+  skills: "Skills",
+  introVideo: "Intro video",
+  explainerVideo: "Explainer video",
+  projects: "Projects",
+  otherAreas: "Other areas",
+  areasOfWork: "Areas of work",
+  problem: "The problem",
+  how: "How I built it",
+  result: "Result",
+  status: { "Live demo": "Live demo", "Case study": "Case study", "In progress": "In progress" },
+  screenshotsSoon: "Screenshots coming soon",
+  videoSoon: "Explainer video · coming soon",
+  onGithub: (label) => `${label} on GitHub`,
+  player: { voice: "Voice", subtitles: "Subtitles", tapForSound: "Tap for sound", fullScreen: "Full screen", exitFullScreen: "Exit full screen" },
+};
+

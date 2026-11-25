@@ -1,4 +1,5 @@
 # Caddy obtains and renews HTTPS certificates automatically for every site below.
+# The domains come from sites.env (outside the public repo): two versions of the portfolio, each with its own store.
 (common) {
 	encode zstd gzip
 	header {
@@ -9,7 +10,16 @@
 	}
 }
 
-ivanboot.dev {
+# The store's chat reaches the API on the store's own domain, so a store never calls another domain. The Host
+# header passes through, which is how the API knows which version of the portfolio the visitor is on.
+(agent) {
+	handle_path /agent-api/* {
+		reverse_proxy api:8000
+	}
+}
+
+# ── the Upwork version (English) ──
+{$UPWORK_SITE_HOST} {
 	import common
 	# Videos hosted on the VPS itself (/opt/ivanboot/media, mounted read-only). 2026-11-23: testing whether
 	# iPhone Safari plays the portfolio videos from here (PLAYBOOK E28)
@@ -22,16 +32,38 @@ ivanboot.dev {
 	}
 }
 
-www.ivanboot.dev {
-	redir https://ivanboot.dev{uri} permanent
+www.{$UPWORK_SITE_HOST} {
+	redir https://{$UPWORK_SITE_HOST}{uri} permanent
 }
 
-tienda.ivanboot.dev {
+{$UPWORK_STORE_HOST} {
+	import common
+	import agent
+	handle {
+		reverse_proxy web:3000
+	}
+}
+
+# Shopify and Telegram webhooks, and the chat of pages loaded before the /agent-api path existed
+api.{$UPWORK_SITE_HOST} {
+	import common
+	reverse_proxy api:8000
+}
+
+# ── the Workana version (Spanish) ──
+{$WORKANA_SITE_HOST} {
 	import common
 	reverse_proxy web:3000
 }
 
-api.ivanboot.dev {
+www.{$WORKANA_SITE_HOST} {
+	redir https://{$WORKANA_SITE_HOST}{uri} permanent
+}
+
+{$WORKANA_STORE_HOST} {
 	import common
-	reverse_proxy api:8000
+	import agent
+	handle {
+		reverse_proxy web:3000
+	}
 }

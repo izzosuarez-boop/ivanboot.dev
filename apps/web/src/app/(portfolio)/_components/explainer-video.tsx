@@ -4,13 +4,15 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useVideoRecovery } from "@/lib/use-video-recovery";
 import { attachSubtitles } from "@/lib/vtt";
 
-type Version = {
+export type Version = {
   poster: string;
   duration: number;
   sources: { url: string; height: number }[];
   captions: { en: string; es: string };
 };
-export type ExplainerMedia = { versions: { en: Version; es?: Version } };
+export type ExplainerMedia = { versions: { en?: Version; es?: Version } };   // the Workana site gets a Spanish cut only
+export type PlayerUi = { voice: string; subtitles: string; tapForSound: string; fullScreen: string; exitFullScreen: string; off?: string };
+const PLAYER_EN: PlayerUi = { voice: "Voice", subtitles: "Subtitles", tapForSound: "Tap for sound", fullScreen: "Full screen", exitFullScreen: "Exit full screen" };
 
 type Lang = "en" | "es";
 type Subs = Lang | "off";
@@ -20,8 +22,8 @@ const LABEL: Record<Subs, string> = { en: "EN", es: "ES", off: "Off" };
 const noop = () => () => {};
 const browserLang = (): Lang => (navigator.language?.toLowerCase().startsWith("es") ? "es" : "en");
 
-function Switch<T extends string>({ label, options, value, onChange }: {
-  label: string; options: T[]; value: T; onChange: (v: T) => void;
+function Switch<T extends string>({ label, options, value, onChange, offLabel = "Off" }: {
+  label: string; options: T[]; value: T; onChange: (v: T) => void; offLabel?: string;
 }) {
   return (
     <span className="flex items-center gap-1.5" role="group" aria-label={label}>
@@ -36,7 +38,7 @@ function Switch<T extends string>({ label, options, value, onChange }: {
             value === o ? "border-glow/60 bg-glow/10 text-glow" : "border-line text-muted hover:text-text"
           }`}
         >
-          {LABEL[o as Subs]}
+          {o === "off" ? offLabel : LABEL[o as Subs]}
         </button>
       ))}
     </span>
@@ -65,8 +67,9 @@ const autoStarted = new Set<string>();
  *   - only one explainer plays at a time.
  *  Browsers refuse autoplay WITH sound until the visitor has interacted with the page (a direct visit or a
  *  reload), so it tries with sound first and falls back to muted playback plus a "Tap for sound" button. */
-export function ExplainerVideo({ media, title, largeCues = false }: {
+export function ExplainerVideo({ media, title, largeCues = false, ui = PLAYER_EN }: {
   media: ExplainerMedia; title: string; largeCues?: boolean; // largeCues: subtitles 50% bigger outside full screen
+  ui?: PlayerUi;
 }) {
   const video = useRef<HTMLVideoElement>(null);
   const stage = useRef<HTMLDivElement>(null);
@@ -84,9 +87,9 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
   const [voiceChoice, setVoiceChoice] = useState<Lang | null>(null);
   const [subsChoice, setSubsChoice] = useState<Subs | null>(null);
   const voices = (Object.keys(media.versions) as Lang[]).filter((l) => media.versions[l]);
-  const voice: Lang = voiceChoice ?? (media.versions[detected] ? detected : "en");
+  const voice: Lang = voiceChoice ?? (media.versions[detected] ? detected : media.versions.en ? "en" : voices[0]);
   const subs: Subs = subsChoice ?? detected;
-  const v = media.versions[voice] ?? media.versions.en;
+  const v = (media.versions[voice] ?? media.versions.en ?? media.versions[voices[0]])!;
   // One file, picked on the client and set as the video's src, the way the store's players do it (they always
   // played on the user's iPhone). The <source> list sent in the page's HTML started loading before the page's
   // code ran and failed on reloads on iPhone Safari (2026-11-23, PLAYBOOK E27). Wide screens get 1080p,
@@ -252,8 +255,8 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
         <button
           type="button"
           onClick={toggleFull}
-          aria-label={full ? "Exit full screen" : "Full screen"}
-          title={full ? "Exit full screen" : "Full screen"}
+          aria-label={full ? ui.exitFullScreen : ui.fullScreen}
+          title={full ? ui.exitFullScreen : ui.fullScreen}
           className={`absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full border border-line bg-night/75 text-text-2 backdrop-blur transition hover:text-glow focus-visible:opacity-100 ${
             lifted ? "opacity-100" : "opacity-0"
           }`}
@@ -274,7 +277,7 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
             }}
             className="absolute left-3 top-3 z-10 rounded-full border border-glow/50 bg-night/80 px-3.5 py-1.5 text-xs text-glow backdrop-blur transition hover:bg-night"
           >
-            🔊 Tap for sound
+            🔊 {ui.tapForSound}
           </button>
         )}
         <video
@@ -337,14 +340,14 @@ export function ExplainerVideo({ media, title, largeCues = false }: {
           }}
           className="mt-3 inline-flex items-center gap-2 rounded-full border border-glow/60 bg-glow/10 px-4 py-2 text-sm text-glow transition hover:bg-glow/20"
         >
-          🔊 Tap for sound
+          🔊 {ui.tapForSound}
         </button>
       )}
       <figcaption className="mt-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 text-sm text-muted">
         <span>{title}</span>
         <span className="flex flex-wrap items-center gap-x-5 gap-y-2">
-          {voices.length > 1 && <Switch label="Voice" options={voices} value={voice} onChange={changeVoice} />}
-          <Switch label="Subtitles" options={["en", "es", "off"] as Subs[]} value={subs} onChange={setSubsChoice} />
+          {voices.length > 1 && <Switch label={ui.voice} options={voices} value={voice} onChange={changeVoice} />}
+          <Switch label={ui.subtitles} options={["en", "es", "off"] as Subs[]} value={subs} onChange={setSubsChoice} offLabel={ui.off} />
         </span>
       </figcaption>
     </figure>

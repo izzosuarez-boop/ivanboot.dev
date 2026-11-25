@@ -7,7 +7,6 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 const fraunces = Fraunces({ variable: "--font-fraunces", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://ivanboot.dev"),
   title: { default: "Iván — AI agents, automation & full-stack", template: "%s" },
   description:
     "I build AI agents, automations and the software around them: production LLM systems, scraping, Shopify and workflow automation.",

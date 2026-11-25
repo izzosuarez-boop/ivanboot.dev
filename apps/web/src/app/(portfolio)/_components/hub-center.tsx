@@ -2,15 +2,19 @@
 
 import Image from "next/image";
 import { useRef } from "react";
-import { about, hubIntro, sections } from "@/content/portfolio";
-import portfolioMedia from "@/content/portfolio-media.json";
+import type { About, HubIntro, Ui } from "@/content/types";
 import { ExplainerVideo, type ExplainerMedia } from "./explainer-video";
 import { hubGeometry, useShell, useShown } from "./portfolio-shell";
 
-const MEDIA = portfolioMedia as Record<string, ExplainerMedia>;
+export type HubUi = Pick<Ui, "chooseArea" | "aboutMe" | "close" | "education" | "highlights" | "skills" | "introVideo" | "player"> & {
+  aboutOf: string; sceneAlt: string; portraitAlt: string;
+};
 // The hub: the desk scene inside the circle (and the About card it opens), plus the intro video: beside the
 // circle on wide screens, below it on narrow ones.
-export function HubCenter() {
+// Everything comes from the server for this version of the site only (see content/channel.ts)
+export function HubCenter({ about, hubIntro, pitches, intro, ui }: {
+  about: About; hubIntro: HubIntro; pitches: string[]; intro?: ExplainerMedia; ui: HubUi;
+}) {
   const { vp, leaving, hovered, ringGrown } = useShell();
   const dialog = useRef<HTMLDialogElement>(null);
   // coming back from a section the ring is still large: appear once it has nearly shrunk home
@@ -19,9 +23,8 @@ export function HubCenter() {
 
   const { R, cx, cy, band, wide } = hubGeometry(vp);
   const r = R - band - 16;
-  const hint = hovered >= 0 ? sections[hovered].pitch : "Choose an area of work";
+  const hint = hovered >= 0 ? pitches[hovered] : ui.chooseArea;
   const below = cy + R + 18;
-  const intro = MEDIA[hubIntro.media];
   const visible = shown && !leaving;
 
   return (
@@ -40,11 +43,11 @@ export function HubCenter() {
           type="button"
           onClick={() => dialog.current?.showModal()}
           className="group relative block h-full w-full cursor-pointer overflow-hidden rounded-full outline-none focus-visible:ring-2 focus-visible:ring-glow"
-          aria-label={`About ${about.name}`}
+          aria-label={ui.aboutOf}
         >
           <Image
             src="/portfolio/scene.webp"
-            alt={`${about.name} working at a desk with three monitors`}
+            alt={ui.sceneAlt}
             fill
             priority
             sizes="(max-width: 640px) 90vw, 700px"
@@ -52,7 +55,7 @@ export function HubCenter() {
             style={{ maskImage: "radial-gradient(closest-side, #000 74%, transparent 100%)" }}
           />
           <span className="absolute bottom-[9%] left-1/2 -translate-x-1/2 rounded-full border border-line bg-night/75 px-4 py-1.5 text-xs text-text-2 backdrop-blur transition group-hover:border-glow/60 group-hover:text-white sm:text-sm">
-            About me
+            {ui.aboutMe}
           </span>
         </button>
       </div>
@@ -67,7 +70,7 @@ export function HubCenter() {
       )}
 
       <section
-        aria-label="Intro video"
+        aria-label={ui.introVideo}
         // its box (and, on narrow screens, the space reserved above it for the circle) must not catch the ring's clicks
         className={`pointer-events-none z-20 transition-opacity duration-700 ${visible ? "opacity-100" : "opacity-0"} ${
           wide ? "absolute flex flex-col justify-center" : "relative px-4 pb-16"
@@ -79,7 +82,7 @@ export function HubCenter() {
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-glow">{hubIntro.eyebrow}</p>
           <h2 className="mt-3 font-serif text-2xl leading-snug sm:text-3xl xl:text-[2.1rem]">{hubIntro.title}</h2>
           <div className="mt-6">
-            {intro ? <ExplainerVideo media={intro} title={hubIntro.videoTitle} largeCues />
+            {intro ? <ExplainerVideo media={intro} title={hubIntro.videoTitle} largeCues ui={ui.player} />
               : <div className="aspect-video rounded-2xl border border-line bg-ink-2" />}
           </div>
         </div>
@@ -91,7 +94,7 @@ export function HubCenter() {
         onClick={(e) => e.target === dialog.current && dialog.current?.close()}
       >
         <div className="relative p-6 sm:p-8">
-          <button type="button" onClick={() => dialog.current?.close()} className="absolute right-3 top-3 rounded-full border border-line bg-ink-2 px-2.5 py-0.5 text-sm text-muted hover:text-text sm:right-4 sm:top-4" aria-label="Close">
+          <button type="button" onClick={() => dialog.current?.close()} className="absolute right-3 top-3 rounded-full border border-line bg-ink-2 px-2.5 py-0.5 text-sm text-muted hover:text-text sm:right-4 sm:top-4" aria-label={ui.close}>
             ✕
           </button>
           <div className="flex items-center justify-between gap-4 pr-8 sm:pr-10">
@@ -101,7 +104,7 @@ export function HubCenter() {
             </div>
             <Image
               src="/portfolio/ivan.webp"
-              alt={`Portrait of ${about.name}`}
+              alt={ui.portraitAlt}
               width={480}
               height={480}
               unoptimized // a 14 KB 480 px webp: sharp on retina at 112 px, no resize step needed
@@ -112,7 +115,7 @@ export function HubCenter() {
 
           {about.education.length > 0 && (
             <>
-              <h3 className="mt-6 font-mono text-xs uppercase tracking-widest text-muted">Education</h3>
+              <h3 className="mt-6 font-mono text-xs uppercase tracking-widest text-muted">{ui.education}</h3>
               <ul className="mt-3 space-y-2">
                 {about.education.map((e) => (
                   <li key={e.title} className="text-sm">
@@ -123,14 +126,14 @@ export function HubCenter() {
             </>
           )}
 
-          <h3 className="mt-6 font-mono text-xs uppercase tracking-widest text-muted">Highlights</h3>
+          <h3 className="mt-6 font-mono text-xs uppercase tracking-widest text-muted">{ui.highlights}</h3>
           <ul className="mt-3 space-y-1.5 text-sm text-text-2">
             {about.highlights.map((h) => (
               <li key={h} className="flex gap-2"><span className="text-lamp">▸</span>{h}</li>
             ))}
           </ul>
 
-          <h3 className="mt-6 font-mono text-xs uppercase tracking-widest text-muted">Skills</h3>
+          <h3 className="mt-6 font-mono text-xs uppercase tracking-widest text-muted">{ui.skills}</h3>
           <ul className="mt-3 flex flex-wrap gap-2">
             {about.skills.map((s) => (
               <li key={s} className="rounded-md border border-line px-2.5 py-1 font-mono text-xs text-text-2">{s}</li>

@@ -77,7 +77,10 @@ async def chat(body: ChatIn, request: Request):
     if conv.user_turns >= config.MAX_USER_TURNS:
         return friendly(429, "This conversation is getting long — please start a new chat.")
     try:
-        return await agent.chat(conv, body.message.strip(), body.mode, body.ref)
+        # which portfolio version: the store's own domain reaches the API through its /agent-api path (Caddy keeps Host)
+        host = (request.headers.get("x-forwarded-host") or request.headers.get("host") or "").split(":")[0].lower()
+        channel = "workana" if config.WORKANA_STORE_HOST and host == config.WORKANA_STORE_HOST else "upwork"
+        return await agent.chat(conv, body.message.strip(), body.mode, body.ref, channel)
     except anthropic.RateLimitError:
         return friendly(503, "The assistant is busy right now. Please try again in a moment.")
     except anthropic.APIStatusError as e:

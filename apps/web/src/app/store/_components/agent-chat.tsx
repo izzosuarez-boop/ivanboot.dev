@@ -7,7 +7,18 @@ import { useRouter } from "next/navigation";
 import { storeHref } from "@/lib/site";
 import { addToCart } from "../cart-client";
 
-const AGENT_URL = process.env.NEXT_PUBLIC_AGENT_URL ?? "https://api.ivanboot.dev";
+// The agent is reached on the store's own domain (Caddy sends /agent-api to the API, keeping the Host header, so the
+// API knows which version of the portfolio the visitor is on). Local dev sets NEXT_PUBLIC_AGENT_URL.
+const agentUrl = () => process.env.NEXT_PUBLIC_AGENT_URL || `${window.location.origin}/agent-api`;
+// links to this store or its portfolio open in the same tab; anything else in a new one
+const isOwnSite = (href: string) => {
+  try {
+    const base = window.location.hostname.replace(/^tienda\./, "");
+    return new URL(href, window.location.href).hostname.endsWith(base);
+  } catch {
+    return false;
+  }
+};
 const STORE_KEY = "ardea-chat-v1";
 
 type Mode = "skin" | "builder";
@@ -68,7 +79,7 @@ function Markdown({ text }: { text: string }) {
     while ((m = re.exec(s))) {
       if (m.index > last) out.push(s.slice(last, m.index));
       if (m[1]) out.push(<strong key={`${key}b${i++}`}>{m[1]}</strong>);
-      else out.push(<a key={`${key}a${i++}`} href={m[3]} target={m[3].includes("ivanboot.dev") ? undefined : "_blank"} rel="noopener noreferrer" className="underline underline-offset-2">{m[2]}</a>);
+      else out.push(<a key={`${key}a${i++}`} href={m[3]} target={isOwnSite(m[3]) ? undefined : "_blank"} rel="noopener noreferrer" className="underline underline-offset-2">{m[2]}</a>);
       last = m.index + m[0].length;
     }
     if (last < s.length) out.push(s.slice(last));
@@ -129,7 +140,7 @@ export function AgentChat() {
       // ?chat=1 (the portfolio's "Live demo" button): open the chat at once, greet the visitor as coming from the
       // portfolio and leave both options to them instead of preselecting "how it's built"
       const openChat = q.get("chat") === "1";
-      if (r) { setRef(r.slice(0, 40)); if (!saved?.mode && !openChat && /upwork|workana|portfolio/i.test(r)) setMode("builder"); }
+      if (r) { setRef(r.slice(0, 40)); if (!saved?.mode && !openChat && r.length > 0) setMode("builder"); }
       if (openChat) setOpen(true);
     } catch { /* storage may be blocked — chat still works */ }
   }, []);
@@ -159,7 +170,7 @@ export function AgentChat() {
     setInput("");
     setBusy(true);
     try {
-      const res = await fetch(`${AGENT_URL}/chat`, {
+      const res = await fetch(`${agentUrl()}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: clean, conversation_id: convId, mode: chosenMode, ref }),

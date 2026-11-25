@@ -2,6 +2,8 @@
 .env
 .env.*
 !.env.example
+# Domains and hiring profiles of the two portfolio versions (outside the public repo on purpose)
+sites.env
 
 # Dependencies & builds
 node_modules/

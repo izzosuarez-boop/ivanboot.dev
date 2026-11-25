@@ -1,27 +1,26 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { sections, sectionBySlug, type Project } from "@/content/portfolio";
-import { site } from "@/lib/site";
-import { GoLink, Stage } from "../_components/stage";
-import { ExplainerVideo, type ExplainerMedia } from "../_components/explainer-video";
-import portfolioMedia from "@/content/portfolio-media.json";
-import portfolioLoops from "@/content/portfolio-loops.json";
-import { LoopVideo } from "../_components/loop-video";
+import type { Project, Ui } from "@/content/types";
+import { SLUGS } from "@/content/slugs";
+import { channelOf, channelSite, type ChannelSite } from "@/content/channel";
+import { GoLink, Stage } from "../../_components/stage";
+import { ExplainerVideo } from "../../_components/explainer-video";
+import { LoopVideo } from "../../_components/loop-video";
 
 export function generateStaticParams() {
-  return sections.map((s) => ({ section: s.slug }));
+  return SLUGS.map((section) => ({ section }));
 }
 
-export async function generateMetadata({ params }: PageProps<"/[section]">): Promise<Metadata> {
-  const s = sectionBySlug((await params).section);
+export async function generateMetadata({ params }: PageProps<"/[ch]/[section]">): Promise<Metadata> {
+  const { ch: seg, section } = await params;
+  const ch = channelOf(seg);
+  if (!ch) return {};
+  const s = channelSite(ch).sections.find((x) => x.slug === section);
   return s ? { title: `${s.label} — Iván`, description: s.pitch } : {};
 }
 
-const MEDIA = portfolioMedia as Record<string, ExplainerMedia>;
-const LOOPS = portfolioLoops as Record<string, { src: string; poster: string }>;
-
-function StatusBadge({ status, href }: { status: Project["status"]; href?: string }) {
+function StatusBadge({ status, href, ui }: { status: Project["status"]; href?: string; ui: Ui }) {
   const style =
     status === "Live demo" ? "border-glow/40 bg-glow/10 text-glow"
       : status === "In progress" ? "border-lamp/40 bg-lamp/10 text-lamp"
@@ -31,11 +30,11 @@ function StatusBadge({ status, href }: { status: Project["status"]; href?: strin
     return (
       <a href={href} target="_blank" rel="noopener"
         className="shrink-0 rounded-full border border-glow/60 bg-glow/15 px-3.5 py-1 text-xs font-medium text-glow shadow-[0_0_18px_-6px_var(--glow)] transition hover:bg-glow hover:text-night">
-        {status} <span aria-hidden>↗</span>
+        {ui.status[status]} <span aria-hidden>↗</span>
       </a>
     );
   }
-  return <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs ${style}`}>{status}</span>;
+  return <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs ${style}`}>{ui.status[status]}</span>;
 }
 
 function LinkButton({ link }: { link: NonNullable<Project["link"]> }) {
@@ -89,14 +88,17 @@ function MediaFrame({ label, ratio = "aspect-video" }: { label: string; ratio?: 
   );
 }
 
-function ProjectCard({ p, flip }: { p: Project; flip: boolean }) {
+function ProjectCard({ p, flip, site }: { p: Project; flip: boolean; site: ChannelSite }) {
+  const { ui } = site;
+  const loop = p.loop ? site.loop(p.loop.media) : undefined;
+  const video = p.video ? site.media(p.video.media) : undefined;
   const detailed = Boolean(p.problem);
   if (!detailed) {
     return (
       <article className="rounded-2xl border border-dashed border-line p-6">
         <div className="flex items-start justify-between gap-4">
           <h3 className="text-xl font-semibold tracking-tight">{p.title}</h3>
-          <StatusBadge status={p.status} />
+          <StatusBadge status={p.status} ui={ui} />
         </div>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-text-2">{Array.isArray(p.summary) ? p.summary.join(" ") : p.summary}</p>
         <ul className="mt-4 flex flex-wrap gap-2">
@@ -108,22 +110,22 @@ function ProjectCard({ p, flip }: { p: Project; flip: boolean }) {
   return (
     <article className="grid items-start gap-6 md:grid-cols-2 md:gap-10">
       <div className={`${flip ? "md:order-2" : ""} ${p.video || p.loop ? "md:sticky md:top-24" : ""}`}>
-        {p.loop && LOOPS[p.loop.media] ? (
-          <LoopVideo src={LOOPS[p.loop.media].src} poster={LOOPS[p.loop.media].poster} label={p.loop.label} />
-        ) : p.video && MEDIA[p.video.media] ? (
-          <ExplainerVideo media={MEDIA[p.video.media]} title={p.video.title} />
+        {p.loop && loop ? (
+          <LoopVideo src={loop.src} poster={loop.poster} label={p.loop.label} />
+        ) : p.video && video ? (
+          <ExplainerVideo media={video} title={p.video.title} ui={ui.player} />
         ) : (
-          <MediaFrame label="Screenshots coming soon" ratio="aspect-[4/3]" />
+          <MediaFrame label={ui.screenshotsSoon} ratio="aspect-[4/3]" />
         )}
       </div>
       <div>
         <div className="flex items-start justify-between gap-4">
           <h3 className="text-2xl font-semibold tracking-tight">{p.title}</h3>
-          <StatusBadge status={p.status} href={p.demoHref} />
+          <StatusBadge status={p.status} href={p.demoHref} ui={ui} />
         </div>
         <Summary p={p} />
         <dl className="mt-5 space-y-4 text-sm leading-relaxed">
-          {([["The problem", p.problem], ["How I built it", p.how], ["Result", p.result]] as const).map(([k, v]) => (
+          {([[ui.problem, p.problem], [ui.how, p.how], [ui.result, p.result]] as const).map(([k, v]) => (
             <div key={k}>
               <dt className="font-mono text-xs uppercase tracking-widest text-lamp">{k}</dt>
               <dd className="mt-1 text-text-2">{v}</dd>
@@ -141,7 +143,7 @@ function ProjectCard({ p, flip }: { p: Project; flip: boolean }) {
               </a>
             )}
             {p.repos?.map((r) => (
-              <a key={r.href} href={r.href} target="_blank" rel="noopener" aria-label={`${r.label} on GitHub`}
+              <a key={r.href} href={r.href} target="_blank" rel="noopener" aria-label={ui.onGithub(r.label)}
                 className="inline-flex items-center gap-1.5 text-text-2 transition hover:text-glow">
                 <GitHubMark /> {r.label} <span aria-hidden>↗</span>
               </a>
@@ -153,7 +155,7 @@ function ProjectCard({ p, flip }: { p: Project; flip: boolean }) {
   );
 }
 
-export default function SectionPage({ params }: PageProps<"/[section]">) {
+export default function SectionPage({ params }: PageProps<"/[ch]/[section]">) {
   return (
     <Suspense fallback={<main className="min-h-svh" />}>
       <SectionContent params={params} />
@@ -161,14 +163,18 @@ export default function SectionPage({ params }: PageProps<"/[section]">) {
   );
 }
 
-async function SectionContent({ params }: { params: PageProps<"/[section]">["params"] }) {
-  const { section } = await params;
+async function SectionContent({ params }: { params: PageProps<"/[ch]/[section]">["params"] }) {
+  const { ch: seg, section } = await params;
+  const ch = channelOf(seg);
+  if (!ch) notFound();
+  const site = channelSite(ch);
+  const { sections, ui } = site;
   const i = sections.findIndex((s) => s.slug === section);
   if (i < 0) notFound();
   const s = sections[i];
   const prev = sections[(i + sections.length - 1) % sections.length];
   const next = sections[(i + 1) % sections.length];
-  const media = s.video?.media ? MEDIA[s.video.media] : undefined;
+  const media = s.video?.media ? site.media(s.video.media) : undefined;
 
   return (
     <main className="relative z-0 px-4 pb-24 pt-[190px] sm:px-6">
@@ -182,36 +188,36 @@ async function SectionContent({ params }: { params: PageProps<"/[section]">["par
         </header>
 
         {s.video && (
-          <section id="section-video" aria-label="Explainer video" className="mt-14">
+          <section id="section-video" aria-label={ui.explainerVideo} className="mt-14">
             {media ? (
-              <ExplainerVideo media={media} title={s.video.title} />
+              <ExplainerVideo media={media} title={s.video.title} ui={ui.player} />
             ) : (
               <>
-                <MediaFrame label="Explainer video · coming soon" />
+                <MediaFrame label={ui.videoSoon} />
                 <p className="mt-3 text-center text-sm text-muted">{s.video.title}</p>
               </>
             )}
           </section>
         )}
 
-        <section aria-label="Projects" className={`${s.video ? "mt-20" : "mt-14"} space-y-16 sm:space-y-24`}>
-          {s.projects.map((p, k) => <ProjectCard key={p.title} p={p} flip={k % 2 === 1} />)}
+        <section aria-label={ui.projects} className={`${s.video ? "mt-20" : "mt-14"} space-y-16 sm:space-y-24`}>
+          {s.projects.map((p, k) => <ProjectCard key={p.title} p={p} flip={k % 2 === 1} site={site} />)}
         </section>
 
         <section className="mt-24 rounded-3xl border border-line bg-ink-2/60 p-8 text-center sm:p-12">
-          <h2 className="font-serif text-2xl sm:text-3xl">Have a project like this?</h2>
-          <p className="mx-auto mt-3 max-w-xl text-text-2">Tell me what you need on Upwork and I&apos;ll reply with a plan and an estimate.</p>
-          {site.upworkUrl && (
-            <a href={site.upworkUrl} target="_blank" rel="noopener"
+          <h2 className="font-serif text-2xl sm:text-3xl">{ui.hireTitle}</h2>
+          <p className="mx-auto mt-3 max-w-xl text-text-2">{ui.hireBody}</p>
+          {site.hireUrl && (
+            <a href={site.hireUrl} target="_blank" rel="noopener"
               className="mt-6 inline-block rounded-full bg-glow px-6 py-3 text-sm font-medium text-night transition hover:brightness-110">
-              Hire me on Upwork
+              {ui.hire}
             </a>
           )}
         </section>
 
-        <nav aria-label="Other areas" className="mt-12 flex items-center justify-between gap-4 text-sm">
+        <nav aria-label={ui.otherAreas} className="mt-12 flex items-center justify-between gap-4 text-sm">
           <GoLink to={prev.slug} className="text-muted transition hover:text-text">← {prev.label}</GoLink>
-          <GoLink to={null} className="text-muted transition hover:text-text">All work</GoLink>
+          <GoLink to={null} className="text-muted transition hover:text-text">{ui.allWork}</GoLink>
           <GoLink to={next.slug} className="text-right text-muted transition hover:text-text">{next.label} →</GoLink>
         </nav>
       </Stage>

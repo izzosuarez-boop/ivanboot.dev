@@ -18,15 +18,17 @@ echo "==> uploading source ($VERSION) to $HOST:$DIR"
 tar --exclude=node_modules --exclude=.next --exclude=__pycache__ --exclude='.env*' -czf - apps infra \
   | ssh "$HOST" "mkdir -p $DIR && rm -rf $DIR/apps $DIR/infra && tar -xzf - -C $DIR"
 
-echo "==> syncing .env (mode 600)"
+echo "==> syncing .env and sites.env (mode 600)"
 scp -q .env "$HOST:$DIR/.env"
-ssh "$HOST" "chmod 600 $DIR/.env"
+scp -q sites.env "$HOST:$DIR/sites.env"   # the two portfolio versions' domains and profiles (not in the repo)
+ssh "$HOST" "chmod 600 $DIR/.env $DIR/sites.env"
 
 echo "==> building and starting containers"
-ssh "$HOST" "cd $DIR && APP_VERSION=$VERSION docker compose -f infra/docker-compose.yml up -d --build ${SERVICES:---remove-orphans} && docker image prune -f >/dev/null && docker compose -f infra/docker-compose.yml ps"
+ssh "$HOST" "cd $DIR && APP_VERSION=$VERSION docker compose --env-file sites.env -f infra/docker-compose.yml up -d --build ${SERVICES:---remove-orphans} && docker image prune -f >/dev/null && docker compose --env-file sites.env -f infra/docker-compose.yml ps"
 
 echo "==> smoke test"
 sleep 5
-for url in https://ivanboot.dev https://tienda.ivanboot.dev https://api.ivanboot.dev/health; do
+set -a; . ./sites.env; set +a
+for url in "https://$UPWORK_SITE_HOST" "https://$UPWORK_STORE_HOST" "https://api.$UPWORK_SITE_HOST/health"            "https://$WORKANA_SITE_HOST" "https://$WORKANA_STORE_HOST"; do
   printf '%-36s %s\n' "$url" "$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$url" || echo FAIL)"
 done
