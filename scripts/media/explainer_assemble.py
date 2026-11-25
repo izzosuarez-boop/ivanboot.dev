@@ -38,7 +38,9 @@ CHANNEL = "upwork"  # hiring platform of the version (--channel workana: Workana
 
 
 def sfx() -> str:
-    return ("" if LANG == "en" else f"-{LANG}") + ("" if CHANNEL == "upwork" else f"-{CHANNEL}")
+    if CHANNEL == "upwork":
+        return "" if LANG == "en" else f"-{LANG}"
+    return f"-{LANG}-{CHANNEL}"                     # -en-workana, -es-workana
 
 
 def voice_dir() -> Path:
@@ -100,7 +102,7 @@ def latest(pattern: str) -> Path:
 # Timeline. phone parts: (from s, to s, speed). zoom: (t in segment, zoom, focus y as a fraction of the screen)
 def segments() -> list[dict]:
     return [
-        {"kind": "intro", "src": OUT / "brand/intro-by-ivan-dev.mp4"},
+        {"kind": "intro", "src": OUT / ("brand/intro-by-ivan-dev.mp4" if CHANNEL == "upwork" else "brand/intro-by-ivan-dev-neutral.mp4")},
         {"kind": "clip", "src": latest("couch-*.mp4"), "in": 0.0, "out": 7.0, "vo": "customer", "title": "Are you a customer?"},
         # zoom ~2x on every reading moment: at 1x the phone is a quarter of the frame and its text unreadable in
         # a ~1000 px wide player. Focus values come from measured positions in the recordings (fraction of screen).

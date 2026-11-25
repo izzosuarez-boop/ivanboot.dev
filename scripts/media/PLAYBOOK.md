@@ -762,3 +762,21 @@ Workana", sin la dirección del sitio.
 - **Pendiente (decisión del usuario):** en las secciones 2-4 los textos dibujados en pantalla siguen en inglés. El
   video de inicio y la sección 1 tienen los textos en pantalla según el idioma.
 - **Costo:** solo las voces, unos céntimos (33 frases + 4 reintentos de Gemini TTS).
+
+## 13. Dos voces en los dos sitios, escenas en español y nada que nombre al otro sitio (2026-11-25)
+
+- **Voces:** cada sitio ofrece inglés y español. Cada versión lleva la tarjeta final de su propia plataforma:
+  - ivanboot.dev: `en` y `es`, tarjeta de Upwork.
+  - ivanboot.com: `en-workana` y `es-workana`, tarjeta de Workana.
+  - Cómo se eligen: `content/channel.ts` → `media()`.
+  - Sufijos de archivo: `-es`, `-en-workana`, `-es-workana`. Se publican con `publish_explainer.py <slug> --lang es | en-workana | es-workana`.
+- **Escenas en español:** `scene_i18n.py` (diccionario `ES`). `automation_assemble.scene(name, "", lang, channel)` cambia en cada fotograma cada texto que coincida.
+  - El texto que se está tecleando (prefijo de una frase) recibe la misma proporción de su traducción.
+  - Para sacar los textos de una escena nueva, se renderiza cada 0,5 s y se recogen los nodos de texto.
+  - Los globos de Telegram (Python): `tr()` / `CARD_ES`, con `couch ask es`.
+- **Direcciones en pantalla:** las versiones de Workana muestran tienda.ivanboot.com / ivanboot.com en la barra del navegador y en la publicación del loop (`DOMAINS`, leídos de `sites.env`, nunca escritos en el código).
+- **Tres fugas encontradas y corregidas:**
+  1. La claqueta de la intro decía "PROD · IVANBOOT.DEV". Ahora existe `intro-by-ivan-dev-neutral.mp4` ("IVAN DEV", con `intro_clapper.py --neutral`), y lo usan todas las versiones de Workana.
+  2. El aviso de la tienda "built by ivanboot.dev" se veía en las capturas: `store/{home,cleansers,product}.png` y `loops/store_0.9.png`. Se pintó un aviso neutro encima; los originales quedan como `*-original.png`.
+  3. Las escenas de la sección 4 mostraban trozos de los videos en inglés. Ahora, en español, muestran los trozos en español (`window.__LANG`, `m-common.js`). Los momentos que se muestran no nombran ningún sitio.
+- **Orden de producción:** escenas de automatización y KamasMarket → montaje de esas versiones → escenas de la sección 4 (que muestran trozos de las anteriores) → su montaje → inicio y sección 1 → loops `-es-workana`.

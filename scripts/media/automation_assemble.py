@@ -255,31 +255,67 @@ def app_shot() -> Path:
 SCENES = HERE / "scenes"
 
 
-def scene(name: str, preview: str = "") -> Path:
+import scene_i18n  # noqa: E402  (Spanish scene text, the Workana version's addresses)
+
+SCENE_LANG = "en"           # language of the Python-drawn bubbles (card / banner) being made
+
+
+def tr(text: str) -> str:
+    return scene_i18n.CARD_ES.get(text, text) if SCENE_LANG == "es" else text
+
+
+def suffix(lang: str = "en", channel: str = "upwork") -> str:
+    """File suffix of a shot made for a voice language and a portfolio version: '' (English, Upwork), '-es',
+    '-workana' (English for the Workana site), '-es-workana'."""
+    return ("" if lang == "en" else f"-{lang}") + ("" if channel == "upwork" else f"-{channel}")
+
+
+def shot_file(comp: str, lang: str, channel: str) -> Path:
+    """The most specific composite that exists: this language and version, this language, then the original."""
+    for sfx in dict.fromkeys([suffix(lang, channel), suffix(lang), ""]):
+        f = WORK / comp.replace(".mp4", f"{sfx}.mp4")
+        if f.exists():
+            return f
+    return WORK / comp
+
+
+def scene(name: str, preview: str = "", lang: str = "en", channel: str = "upwork") -> Path:
     """Film scenes/<name>.html: render(t) for every frame, screenshot, encode. `preview` = comma-separated times:
-    only those frames, saved as JPEGs."""
+    only those frames, saved as JPEGs. `lang` / `channel`: the scene's text in Spanish and the addresses of the
+    Workana version (scene_i18n), swapped on every frame; files get suffix(lang, channel)."""
     import io
     from playwright.sync_api import sync_playwright
-    out = WORK / f"{name}-composite.mp4"
+    sfx = suffix(lang, channel)
+    out = WORK / f"{name}-composite{sfx}.mp4"
     with sync_playwright() as p:
         b = p.chromium.launch(channel="chrome")
         pg = b.new_page(viewport={"width": W, "height": H})
+        if lang != "en":
+            pg.add_init_script(f"window.__LANG = {lang!r}")
         pg.goto((SCENES / f"{name}.html").as_uri())
         pg.wait_for_function("document.fonts.ready.then(() => true)")
         pg.evaluate("document.fonts.ready")
         dur = pg.evaluate("window.DUR")
         size = pg.evaluate("window.SIZE || null") or [W, H]
         pg.set_viewport_size({"width": size[0], "height": size[1]})
+        swap = lang != "en" or channel != "upwork"
+        if swap:
+            pg.evaluate(scene_i18n.TRANSLATE_JS, {"dict": scene_i18n.ES if lang == "es" else {},
+                                                  "domains": scene_i18n.DOMAINS.get(channel, [])})
         if preview:
             for t in [float(x) for x in preview.split(",")]:
                 pg.evaluate(f"render({t})")
-                pg.screenshot(path=str(WORK / f"_{name}_{t:05.2f}.jpg"), type="jpeg", quality=88)
+                if swap:
+                    pg.evaluate("window.__tr()")
+                pg.screenshot(path=str(WORK / f"_{name}{sfx}_{t:05.2f}.jpg"), type="jpeg", quality=88)
             b.close()
             print("previews:", preview)
             return out
         enc = encoder(out, *size)
         for i in range(round(dur * FPS)):
             pg.evaluate(f"render({i / FPS})")
+            if swap:
+                pg.evaluate("window.__tr()")
             img = Image.open(io.BytesIO(pg.screenshot(type="png"))).convert("RGB")
             enc.stdin.write(np.asarray(img).tobytes())
         enc.stdin.close(); enc.wait()
@@ -289,10 +325,10 @@ def scene(name: str, preview: str = "") -> Path:
         LOOPS.mkdir(exist_ok=True)
         subprocess.run([g.ffmpeg(), "-y", "-loglevel", "error", "-i", str(out), "-vf", "scale=1200:-2", "-an",
                         "-c:v", "libx264", "-crf", "24", "-preset", "slow", "-pix_fmt", "yuv420p", "-movflags", "+faststart",
-                        str(LOOPS / f"{name}.mp4")], check=True)
+                        str(LOOPS / f"{name}{sfx}.mp4")], check=True)
         subprocess.run([g.ffmpeg(), "-y", "-loglevel", "error", "-i", str(out), "-frames:v", "1", "-vf", "scale=1200:-2",
-                        "-q:v", "3", str(LOOPS / f"{name}-poster.jpg")], check=True)
-        print("web loop ->", LOOPS / f"{name}.mp4", f"{(LOOPS / f'{name}.mp4').stat().st_size // 1024} KB")
+                        "-q:v", "3", str(LOOPS / f"{name}{sfx}-poster.jpg")], check=True)
+        print("web loop ->", LOOPS / f"{name}{sfx}.mp4", f"{(LOOPS / f'{name}{sfx}.mp4').stat().st_size // 1024} KB")
     return out
 
 
@@ -368,43 +404,43 @@ def card(kind: str, state: str = "", press: float = 0.0, hilite: float = 0.0, ta
     d = ImageDraw.Draw(im)
     d.rounded_rectangle([0, 0, w - 1, h - 1], 26 * SS, fill=(255, 255, 255, 250))
     app_icon(d, 26 * SS, 24 * SS, 50 * SS)
-    d.text((90 * SS, 26 * SS), "Sale bot", font=inter(23, 700), fill=(15, 30, 54))
-    d.text((90 * SS, 54 * SS), "Telegram · now", font=inter(18), fill=(107, 118, 137))
+    d.text((90 * SS, 26 * SS), tr("Sale bot"), font=inter(23, 700), fill=(15, 30, 54))
+    d.text((90 * SS, 54 * SS), tr("Telegram · now"), font=inter(18), fill=(107, 118, 137))
     ink, muted = (27, 36, 51), (107, 118, 137)
     x0, y = 28 * SS, 100 * SS
     if kind == "ask":
-        d.text((x0, y), "Do you want to make this sale", font=inter(28, 700), fill=ink)
-        d.text((x0, y + 38 * SS), "for 140.80 USDT?", font=inter(28, 700), fill=ink)
+        d.text((x0, y), tr("Do you want to make this sale"), font=inter(28, 700), fill=ink)
+        d.text((x0, y + 38 * SS), tr("for 140.80 USDT?"), font=inter(28, 700), fill=ink)
         y += 92 * SS
-        d.text((x0, y), "Server", font=inter(20), fill=muted)
-        sx = x0 + d.textlength("Server ", font=inter(20))
+        d.text((x0, y), tr("Server"), font=inter(20), fill=muted)
+        sx = x0 + d.textlength(tr("Server "), font=inter(20))
         pill = Image.new("RGBA", (130 * SS, 22 * SS), (0, 0, 0, 0))
         ImageDraw.Draw(pill).rounded_rectangle([4 * SS, 4 * SS, 126 * SS, 18 * SS], 7 * SS, fill=(170, 180, 194, 255))
         im.alpha_composite(pill.filter(ImageFilter.GaussianBlur(3 * SS)), (int(sx), int(y + 2 * SS)))
         d.text((sx + 140 * SS, y), "· 40 M · 3.52 USDT / M", font=inter(20), fill=muted)
-        d.text((x0, y + 32 * SS), "Buyer site A · price matched at 21:05", font=inter(20), fill=muted)
+        d.text((x0, y + 32 * SS), tr("Buyer site A · price matched at 21:05"), font=inter(20), fill=muted)
         by = y + 84 * SS
         bw = (w - 2 * x0 - 16 * SS) / 2
         acc = state == "accepted"
         g = (20, 110, 70) if press > 0.5 or acc else (30, 142, 90)
         shrink = 4 * SS * press
         d.rounded_rectangle([x0 + shrink, by + shrink, x0 + bw - shrink, by + 60 * SS - shrink], 14 * SS, fill=g)
-        d.text((x0 + bw / 2, by + 30 * SS), "✓ Accepted" if acc else "✓ Accept", font=inter(24, 700), fill=(255, 255, 255), anchor="mm")
+        d.text((x0 + bw / 2, by + 30 * SS), tr("✓ Accepted") if acc else tr("✓ Accept"), font=inter(24, 700), fill=(255, 255, 255), anchor="mm")
         cx = x0 + bw + 16 * SS
         d.rounded_rectangle([cx, by, cx + bw, by + 60 * SS], 14 * SS, fill=(243, 245, 249))
-        d.text((cx + bw / 2, by + 30 * SS), "× Cancel", font=inter(24, 600), fill=(198, 47, 59) if not acc else (190, 196, 205), anchor="mm")
+        d.text((cx + bw / 2, by + 30 * SS), tr("× Cancel"), font=inter(24, 600), fill=(198, 47, 59) if not acc else (190, 196, 205), anchor="mm")
         im.info["accept"] = ((x0 + bw / 2) / SS, (by + 30 * SS) / SS)
     else:
-        d.text((x0, y), "Transaction complete", font=inter(28, 700), fill=(30, 142, 90))
-        d.text((x0, y + 46 * SS), "Sold 40 M for 140.80 USDT on Buyer site A.", font=inter(21), fill=ink)
-        d.text((x0, y + 76 * SS), "Order #48213 · delivered at 21:19", font=inter(20), fill=muted)
+        d.text((x0, y), tr("Transaction complete"), font=inter(28, 700), fill=(30, 142, 90))
+        d.text((x0, y + 46 * SS), tr("Sold 40 M for 140.80 USDT on Buyer site A."), font=inter(21), fill=ink)
+        d.text((x0, y + 76 * SS), tr("Order #48213 · delivered at 21:19"), font=inter(20), fill=muted)
         ly = y + 126 * SS
         if hilite > 0:
             # solid colors mixed by hand: drawing a translucent fill would punch a hole in the white card
             mixc = lambda a, b: tuple(int(x + (y - x) * hilite) for x, y in zip(a, b)) + (255,)
             d.rounded_rectangle([x0 - 10 * SS, ly - 8 * SS, w - x0 + 10 * SS, ly + 42 * SS], 12 * SS,
                                 fill=mixc((255, 255, 255), (214, 247, 240)), outline=mixc((255, 255, 255), (38, 166, 154)), width=2 * SS)
-        d.text((x0, ly), "Check your balance to confirm the payment.", font=inter(22, 650), fill=(15, 30, 54))
+        d.text((x0, ly), tr("Check your balance to confirm the payment."), font=inter(22, 650), fill=(15, 30, 54))
     acc = im.info.get("accept")
     out = finish(im, tail_x, (255, 255, 255, 250))
     if acc:
@@ -469,7 +505,9 @@ COUCH = {
 }
 
 
-def couch_shot(key: str) -> Path:
+def couch_shot(key: str, lang: str = "en") -> Path:
+    global SCENE_LANG
+    SCENE_LANG = lang
     c = COUCH[key]
     raw = ov_latest(c["clip"])
     src = raw
@@ -480,8 +518,8 @@ def couch_shot(key: str) -> Path:
     offs = track(src, c["hold_box"], c["ref_t"], c["hold_from"])
     print(f"{key}: phone in hand moves up to {max(abs(v[0]) for v in offs.values()):.0f}px x, "
           f"{max(abs(v[1]) for v in offs.values()):.0f}px y")
-    ban = banner(*c["banner"][:2], tail_x=0.5)
-    out = WORK / f"{key}-composite.mp4"
+    ban = banner(*(tr(x) for x in c["banner"][:2]), tail_x=0.5)
+    out = WORK / f"{key}-composite{suffix(lang)}.mp4"
     enc = encoder(out)
     cards = {}
     for i, fr in enumerate(ov.frames(src)):
@@ -550,6 +588,7 @@ SHOTS = [("pipeline", "pipeline-composite.mp4", 9.0, None),
          ("done", "done-composite.mp4", 11.0, "couch-profile-still.png")]
 CARD_DUR = 3.2
 INTRO = HERE / "out/brand/intro-by-ivan-dev.mp4"
+INTRO_NEUTRAL = HERE / "out/brand/intro-by-ivan-dev-neutral.mp4"   # no site address on the slate: Workana versions
 
 
 def still_clip(png: Path, dur: float) -> Path:
@@ -592,15 +631,15 @@ def assemble(name: str = "sample", lang: str = "en", channel: str = "upwork") ->
     sys.path.insert(0, str(HERE))
     import explainer_assemble as ea
     ea.LANG, ea.CHANNEL = lang, channel
-    tag = ("" if lang == "en" else f"-{lang}") + ("" if channel == "upwork" else f"-{channel}")
+    tag = "" if (lang, channel) == ("en", "upwork") else f"-{lang}" + ("" if channel == "upwork" else f"-{channel}")
     card = WORK / f"end-card{tag}.png"
     ea.end_card().save(card)
     placed = []
-    ins, vf, af, mix = ["-i", str(INTRO)], [f"[0:v]fps={FPS},scale={W}:{H},setsar=1[v0]"], ["[0:a]aresample=48000[a0]"], ["[a0]"]
+    ins, vf, af, mix = ["-i", str(INTRO if channel == "upwork" else INTRO_NEUTRAL)], [f"[0:v]fps={FPS},scale={W}:{H},setsar=1[v0]"], ["[0:a]aresample=48000[a0]"], ["[a0]"]
     t0, k = 2.0, 1
     starts = {}
     for n, (key, comp, dur, still) in enumerate(SHOTS, 1):
-        src = WORK / comp
+        src = shot_file(comp, lang, channel)
         if not src.exists():
             src = still_clip(WORK / still, dur)
         voice_, hold = voice_for(key, lang, dur)

@@ -1,11 +1,14 @@
 // Shared helpers for the section 4 video (scenes/m-*.html). Load after k-common.js (easing, popIn, tile).
 // Real videos are shown by seeking them to the exact frame for each render(t): render is async and the filming
 // script (automation_assemble.scene) waits for it before taking the screenshot.
+// The Spanish versions of this video show the Spanish cuts of the other videos (window.__LANG is set by
+// automation_assemble.scene before the page loads). The moments shown carry nothing that names a site.
+const ES_CUT = window.__LANG === "es" ? "-es-workana" : "";
 const VID = {
-  hub: "../out/portfolio-ai-agents-overview/ai-agents-overview-explainer-720.mp4",
-  ai: "../out/portfolio-ai-agents/ai-agents-explainer-720.mp4",
-  auto: "../out/portfolio-automation-overview/automation-overview-explainer-720.mp4",
-  web: "../out/portfolio-web-api-overview/web-api-overview-explainer-720.mp4",
+  hub: `../out/portfolio-ai-agents-overview/ai-agents-overview${ES_CUT}-explainer-720.mp4`,
+  ai: `../out/portfolio-ai-agents/ai-agents${ES_CUT}-explainer-720.mp4`,
+  auto: `../out/portfolio-automation-overview/automation-overview${ES_CUT}-explainer-720.mp4`,
+  web: `../out/portfolio-web-api-overview/web-api-overview${ES_CUT}-explainer-720.mp4`,
   howto: "../out/cleansers/cleansers-howto.mp4",
   brand: "../out/home/brand-720.mp4",
 };

@@ -52,12 +52,17 @@ export function channelSite(ch: Channel): ChannelSite {
     ch,
     hireUrl: e.profile,
     origin: e.site ? `https://${e.site}` : "",
+    // both voices on both sites (2026-11-25): each site plays its own cut of each voice (end card with its own
+    // platform), never the other site's
     media: (key) => {
       const v = MEDIA[key]?.versions;
       if (!v) return undefined;
-      if (ch === "workana") return v["es-workana"] ? { versions: { es: v["es-workana"] } } : undefined;
-      return v.en ? { versions: { en: v.en, ...(v.es ? { es: v.es } : {}) } } : undefined;
+      const [en, es] = ch === "workana" ? [v["en-workana"], v["es-workana"]] : [v.en, v.es];
+      if (!en && !es) return undefined;
+      return { versions: { ...(en ? { en } : {}), ...(es ? { es } : {}) } };
     },
-    loop: (key) => LOOPS[key],
+    // silent loops: the Workana site's are in Spanish, with its own addresses on screen
+    // (never the English loop as a fallback there: two of them show the Upwork site's address)
+    loop: (key) => LOOPS[ch === "workana" ? `${key}-es-workana` : key],
   };
 }

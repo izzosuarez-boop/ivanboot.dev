@@ -1492,7 +1492,7 @@ def final_variant(lang: str = "es", channel: str = "workana") -> Path:
     base = f"{SLUG}-{lang}{chan()}"
     card_png = WORK / f"end-card{chan()}.png"
     ea.end_card().save(card_png)
-    intro = HERE / "out/brand/intro-by-ivan-dev.mp4"
+    intro = HERE / ("out/brand/intro-by-ivan-dev.mp4" if channel == "upwork" else "out/brand/intro-by-ivan-dev-neutral.mp4")
     ins = ["-i", str(intro)]
     vf = [f"[0:v]fps={FPS},scale={W}:{H},setsar=1[v0]"]
     af = ["[0:a]aresample=48000[a0]"]

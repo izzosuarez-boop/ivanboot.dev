@@ -135,9 +135,9 @@ def capture() -> None:
     print("->", out)
 
 
-def scene(name: str, preview: str = "") -> Path:
+def scene(name: str, preview: str = "", lang: str = "en", channel: str = "upwork") -> Path:
     point_aa()
-    return aa.scene(name, preview)
+    return aa.scene(name, preview, lang, channel)
 
 
 def assemble(name: str = "sample", lang: str = "en", channel: str = "upwork") -> Path:

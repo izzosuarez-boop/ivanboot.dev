@@ -2,6 +2,7 @@
 
     python scripts/media/intro_clapper.py --reuse-frames       # -> scripts/media/out/brand/intro-by-ivan-dev.mp4 (real clap)
     python scripts/media/intro_clapper.py --variants --reuse-frames  # intro-sound-A/B/C.mp4 to choose by ear
+    python scripts/media/intro_clapper.py --neutral    # -> intro-by-ivan-dev-neutral.mp4: no site address on the slate
 
 Made in code, not with a video model, so it is identical in every video, the lettering is exact and it costs
 nothing. Frames are drawn with Pillow at 2x and downsampled (clean edges); the clap is synthesized with numpy
@@ -102,6 +103,11 @@ ARM = None
 BAR_FIXED = None
 
 
+# the slate's PROD line: the Upwork site's address on the original intro; "IVAN DEV" on the neutral one, used by
+# the Workana versions (2026-11-25: nothing in them may name the other site)
+PROD = "IVAN DEV" if "--neutral" in sys.argv else "IVANBOOT.DEV"
+
+
 def frame(t: float) -> Image.Image:
     global BG, ARM, BAR_FIXED
     if BG is None:
@@ -134,7 +140,7 @@ def frame(t: float) -> Image.Image:
     for ry in rows_y:
         d.line([(BX + 24) * S, ry * S, (BX + BW - 24) * S, ry * S], fill=LINE, width=2 * S)
     d.line([(BX + BW // 2) * S, rows_y[0] * S, (BX + BW // 2) * S, (BY + BH - 12) * S], fill=LINE, width=2 * S)
-    for (lx, ly, label, value) in ((BX + 24, rows_y[0] + 10, "PROD", "IVANBOOT.DEV"), (BX + BW // 2 + 18, rows_y[0] + 10, "SCENE", "01"),
+    for (lx, ly, label, value) in ((BX + 24, rows_y[0] + 10, "PROD", PROD), (BX + BW // 2 + 18, rows_y[0] + 10, "SCENE", "01"),
                                    (BX + 24, rows_y[1] + 10, "DIR", "IVAN"), (BX + BW // 2 + 18, rows_y[1] + 10, "TAKE", "01")):
         d.text((lx * S, ly * S), label, font=small, fill=MUTED)
         d.text(((lx + 64) * S, ly * S), value, font=small, fill=TEXT)
@@ -294,7 +300,8 @@ def main() -> None:
     import imageio_ffmpeg
     ff = imageio_ffmpeg.get_ffmpeg_exe()
     OUT.mkdir(parents=True, exist_ok=True)
-    frames_dir = OUT / "frames"
+    neutral = "--neutral" in sys.argv
+    frames_dir = OUT / ("frames-neutral" if neutral else "frames")
     frames_dir.mkdir(exist_ok=True)
     total = int(FPS * DURATION)
     if "--reuse-frames" not in sys.argv or not (frames_dir / f"{total - 1:03d}.png").exists():
@@ -305,7 +312,7 @@ def main() -> None:
             render(ff, frames_dir, k, OUT / f"intro-sound-{k}.mp4")
         return
     sound = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--sound=")), "real")
-    render(ff, frames_dir, sound, OUT / "intro-by-ivan-dev.mp4")
+    render(ff, frames_dir, sound, OUT / ("intro-by-ivan-dev-neutral.mp4" if neutral else "intro-by-ivan-dev.mp4"))
     if "--preview" in sys.argv:
         picks = [0, 6, 18, 28, 33, 34, 38, 59]
         thumbs = [Image.open(frames_dir / f"{i:03d}.png").resize((480, 270)) for i in picks]
