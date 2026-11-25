@@ -38,10 +38,11 @@ with sync_playwright() as p:
         pg.wait_for_timeout(1500)
         s = pg.evaluate(STATE)
         print(label, {k: s[k] for k in ("dur", "paused", "t")}, s["tracks"], s["src"][:70])
-        c[f"[{label}] video del CDN (~74.6 s)"] = "cdn.shopify.com" in s["src"] and abs(s["dur"] - 74.6) < 0.6
+        # English 74.6 s, Spanish 75.2 s: the browser's language picks the voice (both voices since 2026-11-25)
+        c[f"[{label}] video del CDN (~75 s)"] = "cdn.shopify.com" in s["src"] and 74.0 < s["dur"] < 76.0
         c[f"[{label}] arranca solo al verse"] = not s["paused"] and s["t"] > 0.5
         c[f"[{label}] subtítulos EN y ES"] = all(t["n"] > 10 for t in s["tracks"]) and len(s["tracks"]) == 2
-        c[f"[{label}] sin selector de voz (solo inglés)"] = pg.locator("[role=group][aria-label=Voice]").count() == 0
+        c[f"[{label}] selector de voz EN / ES"] = pg.locator("[role=group][aria-label=Voice]").count() == 1
         if label == "desktop":
             # full screen goes to the player box (video + the page's own subtitles), and the subtitles stay
             # visible once the control bar would have hidden (Chrome dropped native cues there on some GPUs)
