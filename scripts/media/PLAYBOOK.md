@@ -736,3 +736,29 @@ transcritas) y subtítulos en español. **Costo: solo la voz.** Script: `scripts
   `notify.stock_alert`). Filmar: `python automation_assemble.py scene loop-media` y subir con `publish-loops loop-media
   loop-ardea`. Para que el loop no tenga costura, la última fase vuelve a lo que se ve en `render(0)`; en `loop-ardea`
   el video de marca también vuelve a su segundo 1,5.
+
+## 12. Versiones para Workana: voz en español y sin Upwork (2026-11-25)
+
+El usuario quiere un sitio aparte para Workana (dominio nuevo, aún sin comprar). **Nunca** debe aparecer Upwork en él, ni
+la versión de Upwork debe llevar a Workana. Los videos de Workana van con voz en español y tarjeta final "Contrátame en
+Workana", sin la dirección del sitio.
+
+- **Archivos:** `<slug>-es-workana-explainer{,-1080,-720}.mp4` y `<slug>-es-workana-poster.jpg` en cada carpeta
+  `out/portfolio-*`; subtítulos en `video-cues/<slug>-es-workana.json` (ES como idioma hablado, EN como traducción).
+  Aún no se publican en el CDN: se suben cuando exista el sitio de Workana.
+- **Comandos:**
+  - inicio: `overview_assemble.py variant-shots es workana` (pizarra, teléfono, peticiones, preguntas y la toma del
+    teléfono final con el botón de Workana) y luego `final-variant es workana`.
+  - sección 1: `explainer_assemble.py --lang es --channel workana render` (la voz en español ya existía).
+  - secciones 2-4: `automation_assemble.py` / `kamas_assemble.py` / `media_assemble.py assemble explainer es workana`.
+- **Tarjeta final:** `explainer_assemble.CARD_BY_CHANNEL`. La de Upwork sigue igual para ivanboot.dev.
+- **Toma del teléfono (inicio):** se captura la página real y se cambian sus textos antes de la foto (`WORKANA_PAGE`
+  en `overview_assemble.py`): botón "Contrátame en Workana", cargo, titular y título del video en español.
+- **Encajar la voz:** el español dura ~10 % más que el inglés con el que se cronometraron las tomas. `fit_voice` /
+  `voice_for` la aceleran lo justo (`atempo`, máximo ×1,12) y, si aun así no cabe, la toma congela su último
+  fotograma (`tpad`). Resultado: ×1,04–1,12 en 7 frases; solo una toma necesitó +0,09 s.
+- **Comprobar la voz:** cada frase se transcribe y se compara palabra por palabra con el guion. Hubo que regenerar
+  3: "integrarle" por "integrarla", "confirme" por "confirma" y "Ardeas Skin". "Sabú" por Zavu es correcto en español.
+- **Pendiente (decisión del usuario):** en las secciones 2-4 los textos dibujados en pantalla siguen en inglés. El
+  video de inicio y la sección 1 tienen los textos en pantalla según el idioma.
+- **Costo:** solo las voces, unos céntimos (33 frases + 4 reintentos de Gemini TTS).

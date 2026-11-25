@@ -1097,6 +1097,22 @@ def questions_shot(lang: str = "en") -> Path:
 VIEW_Q = [(581, 793), (848, 772), (864, 895), (600, 919)]   # screen corners on the clip (camera and phone static)
 VIEW_TAP = 4.0               # her fingertip presses the glass on the button (measured on viewer-202559)
 VIEW_DUR = 7.0
+CHANNEL = "upwork"           # which hiring platform this version points to: "upwork" (ivanboot.dev) or "workana"
+# Workana version (2026-11-25, user): the hub page on the phone shows the Workana button and the Spanish texts the
+# Workana site will carry. Applied to the live page before the screenshot.
+WORKANA_PAGE = {
+    "Hire me on Upwork": "Contrátame en Workana",
+    "Start here": "Empieza aquí",
+    "How I put AI to work for you and plug its tools into your workflows to make you more productive.":
+        "Cómo pongo la IA a trabajar para ti e integro sus herramientas en tus flujos de trabajo para que seas más productivo.",
+    "How AI agents fit into your work, in 70 seconds": "Cómo encajan los agentes de IA en tu trabajo, en 70 segundos",
+    "AI engineer · automation developer": "Ingeniero de IA · desarrollador de automatizaciones",
+    "Subtitles": "Subtítulos",
+}
+
+
+def chan() -> str:
+    return "" if CHANNEL == "upwork" else f"-{CHANNEL}"
 
 
 def capture_page(path: Path, base: str = "http://localhost:3100") -> dict:
@@ -1113,8 +1129,15 @@ def capture_page(path: Path, base: str = "http://localhost:3100") -> dict:
         pg.wait_for_timeout(2500)
         pg.evaluate("() => document.querySelector('video.explainer').scrollIntoView({block: 'center'})")
         pg.wait_for_timeout(1200)
+        button = "Hire me on Upwork"
+        if CHANNEL == "workana":
+            pg.evaluate("""(map) => { const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+                for (let n; (n = w.nextNode());) { const t = n.nodeValue.trim(); if (map[t]) n.nodeValue = n.nodeValue.replace(t, map[t]); } }""",
+                        WORKANA_PAGE)
+            pg.wait_for_timeout(400)
+            button = WORKANA_PAGE[button]
         pg.screenshot(path=str(path))
-        box = pg.get_by_role("link", name="Hire me on Upwork").first.bounding_box()
+        box = pg.get_by_role("link", name=button).first.bounding_box()
         b.close()
     path.with_suffix(".json").write_text(json.dumps(box), encoding="utf-8")
     return box
@@ -1144,9 +1167,9 @@ def cam_keys(t: float) -> tuple[float, tuple[float, float]]:
 def viewer_shot(lang: str = "en") -> Path:
     src = latest("viewer-[0-9]*.mp4")
     import json
-    page_path = WORK / "page-hub-landscape.png"
+    page_path = WORK / f"page-hub-landscape{chan()}.png"
     if not page_path.exists():
-        capture_page(page_path)
+        capture_page(page_path, "https://ivanboot.dev" if CHANNEL != "upwork" else "http://localhost:3100")
     page = Image.open(page_path).convert("RGB")
     btn = json.loads(page_path.with_suffix(".json").read_text())
     PW, PH = page.size
@@ -1165,7 +1188,7 @@ def viewer_shot(lang: str = "en") -> Path:
     smask = np.asarray(scr_mask.filter(ImageFilter.MinFilter(5)), np.float32) / 255.0
     bx, by, bw, bh = (btn[k] * 3 for k in ("x", "y", "width", "height"))
     btn_c = (bx + bw / 2, by + bh / 2)
-    out = WORK / f"viewer-composite-{lang}.mp4"
+    out = WORK / f"viewer-composite-{lang}{chan()}.mp4"
     enc = subprocess.Popen([g.ffmpeg(), "-loglevel", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24",
                             "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-crf", "15",
                             "-preset", "slow", "-pix_fmt", "yuv420p", str(out)], stdin=subprocess.PIPE)
@@ -1439,6 +1462,99 @@ def final() -> Path:
     return master
 
 
+# ── another version of the finished video: voice language + hiring platform (2026-11-25, Workana in Spanish) ──────
+def fit_voice(key: str, lang: str, room: float) -> Path:
+    """The voice line, sped up just enough (atempo) to end before the next shot starts. Spanish runs ~10% longer."""
+    src = WORK / f"v-{key}-{lang}.wav"
+    if not src.exists():
+        g.tts_line("portfolio", VOICE[lang][key], src, "Charon")
+    d = g.media_seconds(src)
+    if d <= room:
+        return src
+    out = WORK / f"v-{key}-{lang}-fit.wav"
+    subprocess.run([g.ffmpeg(), "-y", "-loglevel", "error", "-i", str(src), "-filter:a", f"atempo={d / room:.4f}",
+                    str(out)], check=True)
+    print(f"  {key}: {d:.2f}s -> {g.media_seconds(out):.2f}s (x{d / room:.3f})")
+    return out
+
+
+def final_variant(lang: str = "es", channel: str = "workana") -> Path:
+    """The hub video for another platform and voice: shots with on-screen text in `lang`, the phone shot showing the
+    platform's button, voice in `lang`, end card for that platform. Files: <slug>-<channel>-explainer*.mp4."""
+    global CHANNEL
+    import json
+    sys.path.insert(0, str(HERE))
+    import explainer_assemble as ea
+    CHANNEL = channel
+    VOICE.setdefault("es", VOICE_ES)
+    ea.LANG = lang
+    ea.CHANNEL = channel                       # end card: explainer_assemble.CARD_BY_CHANNEL
+    base = f"{SLUG}-{lang}{chan()}"
+    card_png = WORK / f"end-card{chan()}.png"
+    ea.end_card().save(card_png)
+    intro = HERE / "out/brand/intro-by-ivan-dev.mp4"
+    ins = ["-i", str(intro)]
+    vf = [f"[0:v]fps={FPS},scale={W}:{H},setsar=1[v0]"]
+    af = ["[0:a]aresample=48000[a0]"]
+    mix = ["[a0]"]
+    t0, k, starts, placed = 2.0, 1, {}, []
+    for n, (key, comp, raw) in enumerate(SHOTS, 1):
+        name = comp.format(lang=lang)
+        shot = WORK / (name.replace(".mp4", f"{chan()}.mp4") if key == "viewer" else name)
+        d = g.media_seconds(shot)
+        voice = fit_voice(key, lang, d - VOICE_OFFSET - 0.15)
+        ins += ["-i", str(shot), "-i", str(latest(raw)), "-i", str(voice)]
+        nxt = SHOTS[n][0] if n < len(SHOTS) else None
+        fin = "" if key in JOINED else "fade=t=in:st=0:d=0.25,"
+        fout = "" if nxt in JOINED else f"fade=t=out:st={d - 0.35:.2f}:d=0.35,"
+        vf.append(f"[{k}:v]setsar=1,{fin}{fout}null[v{n}]")
+        ms, vs = int(t0 * 1000), int((t0 + VOICE_OFFSET) * 1000)
+        af.append(f"[{k + 1}:a]aresample=48000,volume=0.30,afade=t=in:d=0.3,afade=t=out:st={d - 0.5:.2f}:d=0.5,adelay={ms}|{ms}[r{n}]")
+        af.append(f"[{k + 2}:a]aresample=48000,adelay={vs}|{vs}[s{n}]")
+        mix += [f"[r{n}]", f"[s{n}]"]
+        starts[key] = t0
+        placed.append((key, t0 + VOICE_OFFSET, voice))
+        t0 += d
+        k += 3
+    n_card = len(SHOTS) + 1
+    ins += ["-loop", "1", "-t", f"{CARD_DUR}", "-i", str(card_png)]
+    vf.append(f"[{k}:v]fps={FPS},scale={W}:{H},setsar=1,format=yuv420p,fade=t=in:st=0:d=0.4[v{n_card}]")
+    total = t0 + CARD_DUR
+    graph = ";".join(vf + ["".join(f"[v{i}]" for i in range(n_card + 1)) + f"concat=n={n_card + 1}:v=1:a=0[v]"] + af +
+                     ["".join(mix) + f"amix=inputs={len(mix)}:normalize=0:duration=longest,apad,atrim=0:{total:.2f},"
+                      "loudnorm=I=-16:TP=-1.5:LRA=11[a]"])
+    master = WORK / f"{base}-explainer.mp4"
+    subprocess.run([g.ffmpeg(), "-loglevel", "error", "-y", *ins, "-filter_complex", graph, "-map", "[v]", "-map", "[a]",
+                    "-c:v", "libx264", "-crf", "17", "-preset", "slow", "-pix_fmt", "yuv420p", "-c:a", "aac",
+                    "-b:a", "160k", "-ar", "48000", "-movflags", "+faststart", str(master)], check=True)
+    for height, scale in ((1080, "scale=1920:-2"), (720, "scale=1280:-2")):
+        subprocess.run([g.ffmpeg(), "-y", "-loglevel", "error", "-i", str(master), "-vf", scale, "-c:v", "libx264",
+                        "-crf", "23", "-preset", "slow", "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart",
+                        str(WORK / f"{base}-explainer-{height}.mp4")], check=True)
+    pk, pt = POSTER_AT
+    subprocess.run([g.ffmpeg(), "-y", "-loglevel", "error", "-ss", f"{starts[pk] + pt:.2f}", "-i", str(master),
+                    "-frames:v", "1", "-q:v", "3", str(WORK / f"{base}-poster.jpg")], check=True)
+    # captions timed to this version's voice: the spoken language, and the other one as its translation
+    cues = {"duration": round(total, 2), "en": [], "es": []}
+    for i, (key, at, voice) in enumerate(placed):
+        cap = placed[i + 1][1] - 0.05 if i + 1 < len(placed) else total
+        cues["es"] += timed_cues(VOICE_ES[key], at, voice, cap)
+        cues["en"] += timed_cues(VOICE["en"][key], at, voice, cap)
+    path = g.ROOT / f"apps/web/src/content/video-cues/{base}.json"
+    path.write_text(json.dumps(cues, indent=1, ensure_ascii=False) + chr(10), encoding="utf-8", newline=chr(10))
+    print(f"{base} -> {master.name} ({total:.1f}s), web encodes, poster, {len(cues['es'])} ES / {len(cues['en'])} EN cues")
+    return master
+
+
+def variant_shots(lang: str = "es", channel: str = "workana") -> None:
+    """Every shot with on-screen text, rebuilt in `lang`; the phone shot also for `channel`."""
+    global CHANNEL
+    CHANNEL = channel
+    for fn in (whiteboard, phone_shot, requests_shot, questions_shot, viewer_shot):
+        fn(lang)
+
+
 if __name__ == "__main__":
     cmd, args = sys.argv[1], sys.argv[2:]
-    {"coding": coding, "whiteboard": whiteboard, "logos": logos_shot, "phone": phone_shot, "requests": requests_shot, "questions": questions_shot, "viewer": viewer_shot, "sample": sample, "final": final, "cues": write_cues}[cmd](*args)
+    {"coding": coding, "whiteboard": whiteboard, "logos": logos_shot, "phone": phone_shot, "requests": requests_shot, "questions": questions_shot, "viewer": viewer_shot, "sample": sample, "final": final, "cues": write_cues,
+     "variant-shots": variant_shots, "final-variant": final_variant}[cmd](*args)

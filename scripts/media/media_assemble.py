@@ -162,9 +162,9 @@ def scene(name: str, preview: str = "") -> Path:
     return aa.scene(name, preview)
 
 
-def assemble(name: str = "sample") -> Path:
+def assemble(name: str = "sample", lang: str = "en", channel: str = "upwork") -> Path:
     point_aa()
-    return aa.assemble(name)
+    return aa.assemble(name, lang, channel)
 
 
 if __name__ == "__main__":

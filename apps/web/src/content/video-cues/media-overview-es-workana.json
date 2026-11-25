@@ -1,0 +1,382 @@
+{
+ "duration": 143.09,
+ "en": [
+  {
+   "start": 2.35,
+   "end": 5.52,
+   "text": "Every video in this portfolio was made with AI."
+  },
+  {
+   "start": 5.52,
+   "end": 7.72,
+   "text": "But a good video doesn't come from a prompt:"
+  },
+  {
+   "start": 7.72,
+   "end": 11.65,
+   "text": "it comes from deciding what you want to say, which part of the product to show,"
+  },
+  {
+   "start": 11.65,
+   "end": 14.67,
+   "text": "and how to tell it so it's understood the first time."
+  },
+  {
+   "start": 15.55,
+   "end": 20.0,
+   "text": "It all starts with the idea. In the automation video, the story was a contrast:"
+  },
+  {
+   "start": 20.0,
+   "end": 22.48,
+   "text": "a client worn out, copying prices by hand,"
+  },
+  {
+   "start": 22.48,
+   "end": 26.52,
+   "text": "and then that same client resting while the bots do the work."
+  },
+  {
+   "start": 26.52,
+   "end": 30.1,
+   "text": "Each shot carries a single message and one line that goes with it."
+  },
+  {
+   "start": 30.35,
+   "end": 35.52,
+   "text": "Consistency is designed: the same character and the same setting in every shot."
+  },
+  {
+   "start": 35.52,
+   "end": 38.42,
+   "text": "Each new image is generated from the previous one,"
+  },
+  {
+   "start": 38.42,
+   "end": 41.93,
+   "text": "so the viewer follows the story without getting distracted."
+  },
+  {
+   "start": 42.65,
+   "end": 46.25,
+   "text": "And then it gets corrected. The beard didn't match the real photo;"
+  },
+  {
+   "start": 46.25,
+   "end": 49.61,
+   "text": "from behind I wasn't recognizable, so I switched to a profile;"
+  },
+  {
+   "start": 49.61,
+   "end": 51.78,
+   "text": "the phone was out of his reach;"
+  },
+  {
+   "start": 51.78,
+   "end": 54.8,
+   "text": "and the AI couldn't draw believable circles on the whiteboard,"
+  },
+  {
+   "start": 54.8,
+   "end": 60.39,
+   "text": "so I drew them in code. Every fix is checked frame by frame before moving on."
+  },
+  {
+   "start": 63.85,
+   "end": 66.55,
+   "text": "What AI doesn't do well, code solves:"
+  },
+  {
+   "start": 66.55,
+   "end": 69.43,
+   "text": "the screens it invents are replaced with real content; text,"
+  },
+  {
+   "start": 69.43,
+   "end": 72.81,
+   "text": "speech bubbles and subtitles are drawn separately;"
+  },
+  {
+   "start": 72.81,
+   "end": 77.3,
+   "text": "and every voice line is transcribed to check it says exactly what it should."
+  },
+  {
+   "start": 77.44,
+   "end": 82.27,
+   "text": "That's how each section's video was born: each with its own story, its own pace,"
+  },
+  {
+   "start": 82.27,
+   "end": 84.43,
+   "text": "and the same visual identity."
+  },
+  {
+   "start": 86.94,
+   "end": 91.25,
+   "text": "The same goes for a store. In Ardea Skin, the demo store I built,"
+  },
+  {
+   "start": 91.25,
+   "end": 92.49,
+   "text": "the product photos,"
+  },
+  {
+   "start": 92.49,
+   "end": 97.95,
+   "text": "category covers and tutorial videos were made with AI under one art direction,"
+  },
+  {
+   "start": 97.95,
+   "end": 100.3,
+   "text": "and each one has a job on the page."
+  },
+  {
+   "start": 100.54,
+   "end": 103.27,
+   "text": "And all of this can be taken to your social media:"
+  },
+  {
+   "start": 103.27,
+   "end": 107.33,
+   "text": "with web scraping I spot trends and what your competitors post,"
+  },
+  {
+   "start": 107.33,
+   "end": 111.34,
+   "text": "I create the content with the same attention to detail, and I automate it all:"
+  },
+  {
+   "start": 111.34,
+   "end": 113.79,
+   "text": "scheduling, publishing and replying."
+  },
+  {
+   "start": 114.04,
+   "end": 115.08,
+   "text": "And the budget?"
+  },
+  {
+   "start": 115.08,
+   "end": 117.2,
+   "text": "All the multimedia content created"
+  },
+  {
+   "start": 117.2,
+   "end": 121.07,
+   "text": "and corrected with AI for this portfolio and for Ardea Skin,"
+  },
+  {
+   "start": 121.07,
+   "end": 126.11,
+   "text": "retakes included, cost less than 25 dollars. Nothing is made at random:"
+  },
+  {
+   "start": 126.11,
+   "end": 128.84,
+   "text": "every step is measured and costs are cut,"
+  },
+  {
+   "start": 128.84,
+   "end": 133.16,
+   "text": "for example by doing in code what AI charges a lot for and does badly."
+  },
+  {
+   "start": 135.24,
+   "end": 139.0,
+   "text": "Content with intent, not just with AI."
+  }
+ ],
+ "es": [
+  {
+   "start": 2.35,
+   "end": 5.52,
+   "text": "Todos los videos de este portafolio los creé con IA."
+  },
+  {
+   "start": 5.52,
+   "end": 9.89,
+   "text": "Pero un buen video no sale de un prompt: sale de decidir qué quieres decir,"
+  },
+  {
+   "start": 9.89,
+   "end": 14.67,
+   "text": "qué parte del producto mostrar y cómo contarlo para que se entienda a la primera."
+  },
+  {
+   "start": 15.55,
+   "end": 18.64,
+   "text": "Todo empieza por la idea. En el video de automatización,"
+  },
+  {
+   "start": 18.64,
+   "end": 23.34,
+   "text": "la historia era un contraste: un cliente agotado copiando precios a mano y, después,"
+  },
+  {
+   "start": 23.34,
+   "end": 26.52,
+   "text": "ese mismo cliente descansando mientras los bots trabajan."
+  },
+  {
+   "start": 26.52,
+   "end": 30.1,
+   "text": "Cada toma lleva un solo mensaje y una frase que lo acompaña."
+  },
+  {
+   "start": 30.35,
+   "end": 35.52,
+   "text": "La coherencia se diseña: el mismo personaje y el mismo ambiente en todas las tomas."
+  },
+  {
+   "start": 35.52,
+   "end": 38.42,
+   "text": "Cada imagen nueva se genera a partir de la anterior,"
+  },
+  {
+   "start": 38.42,
+   "end": 41.93,
+   "text": "para que quien la ve siga la historia sin distraerse."
+  },
+  {
+   "start": 42.65,
+   "end": 46.25,
+   "text": "Y luego se corrige. La barba no era la de la foto real;"
+  },
+  {
+   "start": 46.25,
+   "end": 49.61,
+   "text": "de espaldas no se me reconocía, así que pasé a un perfil;"
+  },
+  {
+   "start": 49.61,
+   "end": 51.78,
+   "text": "el celular quedaba lejos de su mano;"
+  },
+  {
+   "start": 51.78,
+   "end": 56.52,
+   "text": "y la IA no dibujaba círculos creíbles en la pizarra, así que los dibujé con código."
+  },
+  {
+   "start": 56.52,
+   "end": 60.39,
+   "text": "Cada corrección se revisa fotograma a fotograma antes de seguir."
+  },
+  {
+   "start": 63.85,
+   "end": 66.55,
+   "text": "Lo que la IA no hace bien lo resuelve el código:"
+  },
+  {
+   "start": 66.55,
+   "end": 69.43,
+   "text": "las pantallas que inventa se reemplazan por contenido real; los textos,"
+  },
+  {
+   "start": 69.43,
+   "end": 72.81,
+   "text": "los globos y los subtítulos se dibujan aparte;"
+  },
+  {
+   "start": 72.81,
+   "end": 75.21,
+   "text": "y cada frase de la voz se transcribe para comprobar"
+  },
+  {
+   "start": 75.21,
+   "end": 77.3,
+   "text": "que dice exactamente lo que debe."
+  },
+  {
+   "start": 77.44,
+   "end": 81.42,
+   "text": "Así nacieron los videos de cada sección: cada uno con su historia,"
+  },
+  {
+   "start": 81.42,
+   "end": 84.43,
+   "text": "su ritmo y la misma identidad visual."
+  },
+  {
+   "start": 86.94,
+   "end": 91.25,
+   "text": "Lo mismo aplica a una tienda. En Ardea Skin, la tienda de prueba que construí,"
+  },
+  {
+   "start": 91.25,
+   "end": 92.29,
+   "text": "las fotos de producto,"
+  },
+  {
+   "start": 92.29,
+   "end": 95.28,
+   "text": "las portadas de categoría y los videos tutoriales"
+  },
+  {
+   "start": 95.28,
+   "end": 97.95,
+   "text": "se crearon con IA bajo una misma dirección de arte,"
+  },
+  {
+   "start": 97.95,
+   "end": 100.3,
+   "text": "y cada uno cumple una función en la página."
+  },
+  {
+   "start": 100.54,
+   "end": 103.27,
+   "text": "Y todo esto se puede llevar a tus redes sociales:"
+  },
+  {
+   "start": 103.27,
+   "end": 107.33,
+   "text": "con web scraping detecto tendencias y lo que publica tu competencia,"
+  },
+  {
+   "start": 107.33,
+   "end": 111.34,
+   "text": "creo el contenido con esta misma atención al detalle y lo automatizo todo:"
+  },
+  {
+   "start": 111.34,
+   "end": 113.79,
+   "text": "programar, publicar y responder."
+  },
+  {
+   "start": 114.04,
+   "end": 115.08,
+   "text": "¿Y el presupuesto?"
+  },
+  {
+   "start": 115.08,
+   "end": 117.52,
+   "text": "Todo el contenido multimedia creado"
+  },
+  {
+   "start": 117.52,
+   "end": 121.06,
+   "text": "y corregido con IA de este portafolio y de Ardea Skin,"
+  },
+  {
+   "start": 121.06,
+   "end": 126.11,
+   "text": "incluidas las repeticiones, costó menos de 25 dólares. No se crea al azar:"
+  },
+  {
+   "start": 126.11,
+   "end": 128.84,
+   "text": "se mide cada paso y se reducen costos,"
+  },
+  {
+   "start": 128.84,
+   "end": 133.16,
+   "text": "por ejemplo haciendo con código lo que la IA cobra caro y hace mal."
+  },
+  {
+   "start": 135.24,
+   "end": 139.0,
+   "text": "Contenido con intención, no solo con IA."
+  }
+ ]
+}

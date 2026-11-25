@@ -562,12 +562,40 @@ def still_clip(png: Path, dur: float) -> Path:
     return out
 
 
-def assemble(name: str = "sample") -> Path:
-    """Intro + shots + end card with the voice lines; missing Omni composites are replaced by their stills."""
+TEMPO_MAX = 1.12   # a Spanish line is sped up at most this much; past it the shot holds its last frame instead
+
+
+def voice_for(key: str, lang: str, dur: float) -> tuple[Path, float]:
+    """The voice line in `lang` and how long the shot must hold its last frame so the line fits. Spanish lines run
+    ~10% longer than the English ones the shots were timed to: speed them up a little, then hold if still needed."""
+    path = WORK / f"v-{key}-{lang}.wav"
+    if not path.exists():
+        g.tts_line("portfolio", (VOICE if lang == "en" else VOICE_ES)[key], path, VOICE_NAME)
+    if lang == "en":
+        return path, 0.0
+    room = dur - VOICE_OFFSET - 0.15
+    d = g.media_seconds(path)
+    if d <= room:
+        return path, 0.0
+    tempo = min(d / room, TEMPO_MAX)
+    out = WORK / f"v-{key}-{lang}-fit.wav"
+    subprocess.run([g.ffmpeg(), "-y", "-loglevel", "error", "-i", str(path), "-filter:a", f"atempo={tempo:.4f}",
+                    str(out)], check=True)
+    hold = round(max(0.0, d / tempo - room), 2)
+    print(f"  {key}: voice {d:.2f}s in {room:.2f}s -> x{tempo:.3f}" + (f", shot holds +{hold:.2f}s" if hold else ""))
+    return out, hold
+
+
+def assemble(name: str = "sample", lang: str = "en", channel: str = "upwork") -> Path:
+    """Intro + shots + end card with the voice lines; missing Omni composites are replaced by their stills.
+    `lang` / `channel` build another version (2026-11-25: Spanish voice + Workana end card), files tagged -es-workana."""
     sys.path.insert(0, str(HERE))
     import explainer_assemble as ea
-    card = WORK / "end-card.png"
+    ea.LANG, ea.CHANNEL = lang, channel
+    tag = ("" if lang == "en" else f"-{lang}") + ("" if channel == "upwork" else f"-{channel}")
+    card = WORK / f"end-card{tag}.png"
     ea.end_card().save(card)
+    placed = []
     ins, vf, af, mix = ["-i", str(INTRO)], [f"[0:v]fps={FPS},scale={W}:{H},setsar=1[v0]"], ["[0:a]aresample=48000[a0]"], ["[a0]"]
     t0, k = 2.0, 1
     starts = {}
@@ -575,7 +603,7 @@ def assemble(name: str = "sample") -> Path:
         src = WORK / comp
         if not src.exists():
             src = still_clip(WORK / still, dur)
-        voice_ = WORK / f"v-{key}-en.wav"
+        voice_, hold = voice_for(key, lang, dur)
         ins += ["-i", str(src), "-i", str(voice_)]
         if key in ROOM and (WORK / comp).exists():
             ins += ["-i", str(ov_latest(ROOM[key]))]
@@ -583,13 +611,15 @@ def assemble(name: str = "sample") -> Path:
             af.append(f"[{k + 2}:a]aresample=48000,atrim=0:{dur},volume=0.30,afade=t=in:d=0.3,"
                       f"afade=t=out:st={dur - 0.5:.2f}:d=0.5,adelay={ms}|{ms}[r{n}]")
             mix.append(f"[r{n}]")
-        vf.append(f"[{k}:v]trim=0:{dur},setpts=PTS-STARTPTS,fps={FPS},scale={W}:{H},setsar=1,"
-                  f"fade=t=in:st=0:d=0.25,fade=t=out:st={dur - 0.3:.2f}:d=0.3[v{n}]")
+        pad = f"tpad=stop_mode=clone:stop_duration={hold},"  if hold else ""
+        vf.append(f"[{k}:v]trim=0:{dur},setpts=PTS-STARTPTS,fps={FPS},scale={W}:{H},setsar=1,{pad}"
+                  f"fade=t=in:st=0:d=0.25,fade=t=out:st={dur + hold - 0.3:.2f}:d=0.3[v{n}]")
         vs = int((t0 + VOICE_OFFSET) * 1000)
         af.append(f"[{k + 1}:a]aresample=48000,adelay={vs}|{vs}[s{n}]")
         mix.append(f"[s{n}]")
         starts[key] = t0
-        t0 += dur
+        placed.append((key, t0 + VOICE_OFFSET, voice_))
+        t0 += dur + hold
         k += 3 if key in ROOM and (WORK / comp).exists() else 2
     nc = len(SHOTS) + 1
     ins += ["-loop", "1", "-t", f"{CARD_DUR}", "-i", str(card)]
@@ -598,21 +628,21 @@ def assemble(name: str = "sample") -> Path:
     graph = ";".join(vf + ["".join(f"[v{i}]" for i in range(nc + 1)) + f"concat=n={nc + 1}:v=1:a=0[v]"] + af +
                      ["".join(mix) + f"amix=inputs={len(mix)}:normalize=0:duration=longest,apad,atrim=0:{total:.2f},"
                       "loudnorm=I=-16:TP=-1.5:LRA=11[a]"])
-    out = WORK / f"{SLUG}-{name}.mp4"
+    out = WORK / f"{SLUG}{tag}-{name}.mp4"
     subprocess.run([g.ffmpeg(), "-loglevel", "error", "-y", *ins, "-filter_complex", graph, "-map", "[v]", "-map", "[a]",
                     "-c:v", "libx264", "-crf", "18", "-preset", "medium", "-pix_fmt", "yuv420p", "-c:a", "aac",
                     "-b:a", "160k", "-ar", "48000", "-movflags", "+faststart", str(out)], check=True)
     print(f"{name} -> {out} ({total:.1f} s)")
-    (WORK / "starts.json").write_text(json.dumps(starts, indent=1), encoding="utf-8")
+    (WORK / f"starts{tag}.json").write_text(json.dumps(starts, indent=1), encoding="utf-8")
     if name == "explainer":                                 # the published files: web encodes, poster, captions
         for height, scale in ((1080, "scale=1920:-2"), (720, "scale=1280:-2")):
             subprocess.run([g.ffmpeg(), "-y", "-loglevel", "error", "-i", str(out), "-vf", scale, "-c:v", "libx264",
                             "-crf", "23", "-preset", "slow", "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart",
-                            str(WORK / f"{SLUG}-explainer-{height}.mp4")], check=True)
+                            str(WORK / f"{SLUG}{tag}-explainer-{height}.mp4")], check=True)
         pk, pt = POSTER_AT
         subprocess.run([g.ffmpeg(), "-y", "-loglevel", "error", "-ss", f"{starts[pk] + pt:.2f}", "-i", str(out),
-                        "-frames:v", "1", "-q:v", "3", str(WORK / f"{SLUG}-poster.jpg")], check=True)
-        cues = write_cues(starts, total)
+                        "-frames:v", "1", "-q:v", "3", str(WORK / f"{SLUG}{tag}-poster.jpg")], check=True)
+        cues = write_cues(starts, total, placed, tag)
         print(f"web encodes, poster, {len(cues['en'])} EN / {len(cues['es'])} ES cues")
     return out
 
@@ -620,15 +650,15 @@ def assemble(name: str = "sample") -> Path:
 POSTER_AT = ("ask", 5.6)                     # the bot's question over his phone
 
 
-def write_cues(starts: dict, total: float) -> dict:
-    """EN/ES captions timed to the voice lines (Spanish: the translation of the same lines)."""
-    placed = [(key, starts[key] + VOICE_OFFSET, WORK / f"v-{key}-en.wav") for key, *_ in SHOTS]
+def write_cues(starts: dict, total: float, placed: list | None = None, tag: str = "") -> dict:
+    """EN/ES captions timed to the voice lines of the version (the other language: the translation of the same lines)."""
+    placed = placed or [(key, starts[key] + VOICE_OFFSET, WORK / f"v-{key}-en.wav") for key, *_ in SHOTS]
     cues = {"duration": round(total, 2), "en": [], "es": []}
     for i, (key, at, wav) in enumerate(placed):
         cap = placed[i + 1][1] - 0.05 if i + 1 < len(placed) else total
         cues["en"] += ov.timed_cues(VOICE[key], at, wav, cap)
         cues["es"] += ov.timed_cues(VOICE_ES[key], at, wav, cap)
-    path = g.ROOT / f"apps/web/src/content/video-cues/{SLUG}.json"
+    path = g.ROOT / f"apps/web/src/content/video-cues/{SLUG}{tag}.json"
     path.write_text(json.dumps(cues, indent=1, ensure_ascii=False) + chr(10), encoding="utf-8", newline=chr(10))
     return cues
 

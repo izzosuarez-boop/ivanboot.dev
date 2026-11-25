@@ -34,8 +34,11 @@ RAW = WORK / "raw"
 LANG = "en"  # voice language of the version being built (--lang es builds the Spanish-voice version)
 
 
+CHANNEL = "upwork"  # hiring platform of the version (--channel workana: Workana end card, files end in -workana)
+
+
 def sfx() -> str:
-    return "" if LANG == "en" else f"-{LANG}"
+    return ("" if LANG == "en" else f"-{LANG}") + ("" if CHANNEL == "upwork" else f"-{CHANNEL}")
 
 
 def voice_dir() -> Path:
@@ -50,6 +53,9 @@ TITLES = {"Are you a customer?": {"es": "¿Eres cliente?"},
           "Are you the store owner?": {"es": "¿Eres el dueño de la tienda?"}}
 CARD = {"en": ("AI agents that work for you", "ivanboot.dev   ·   Hire me on Upwork"),
         "es": ("Agentes de IA que trabajan por ti", "ivanboot.dev   ·   Contrátame en Upwork")}
+# Workana versions (2026-11-25, user): no Upwork and no site address on the card
+CARD_BY_CHANNEL = {"workana": {"en": ("AI agents that work for you", "Hire me on Workana"),
+                               "es": ("Agentes de IA que trabajan por ti", "Contrátame en Workana")}}
 
 
 def spoken(key: str) -> str:
@@ -247,8 +253,9 @@ def end_card() -> Image.Image:
         return tw
     tw = center("Ivan Dev", big, 380, "#ffffff")
     d.rounded_rectangle([(W - tw) / 2, 528, (W - tw) / 2 + tw, 533], radius=2, fill=ic.GLOW)
-    center(CARD[LANG][0], mid, 572, ic.TEXT)
-    center(CARD[LANG][1], small, 650, ic.MUTED)
+    line1, line2 = CARD_BY_CHANNEL.get(CHANNEL, CARD)[LANG]
+    center(line1, mid, 572, ic.TEXT)
+    center(line2, small, 650, ic.MUTED)
     return img.convert("RGB")
 
 
@@ -355,6 +362,10 @@ if __name__ == "__main__":
     if "--lang" in args:
         i = args.index("--lang")
         LANG = args[i + 1]
+        del args[i:i + 2]
+    if "--channel" in args:
+        i = args.index("--channel")
+        CHANNEL = args[i + 1]
         del args[i:i + 2]
     cmd = args[0] if args else "all"
     if cmd in ("voice", "all"):
