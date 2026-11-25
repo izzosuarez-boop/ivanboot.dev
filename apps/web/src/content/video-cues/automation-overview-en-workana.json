@@ -1,0 +1,242 @@
+{
+ "duration": 85.8,
+ "en": [
+  {
+   "start": 2.35,
+   "end": 7.56,
+   "text": "Today, in the age of AI, automating a workflow from start to finish is a reality."
+  },
+  {
+   "start": 7.56,
+   "end": 10.21,
+   "text": "Let's look at a real case from one of my clients."
+  },
+  {
+   "start": 11.35,
+   "end": 14.95,
+   "text": "My client wanted to automate selling the virtual currency of"
+  },
+  {
+   "start": 14.95,
+   "end": 18.19,
+   "text": "a massive online game to one of the many sites that buy it."
+  },
+  {
+   "start": 18.19,
+   "end": 21.67,
+   "text": "Until then, the whole process was done by hand."
+  },
+  {
+   "start": 22.75,
+   "end": 23.76,
+   "text": "The proposal:"
+  },
+  {
+   "start": 23.76,
+   "end": 26.19,
+   "text": "software that scrapes the prices of the servers"
+  },
+  {
+   "start": 26.19,
+   "end": 28.9,
+   "text": "my client cares about on three of these sites."
+  },
+  {
+   "start": 28.9,
+   "end": 31.98,
+   "text": "With that data, the same software makes the decisions,"
+  },
+  {
+   "start": 31.98,
+   "end": 36.86,
+   "text": "following my client's own rules: a minimum selling price and the amount to sell."
+  },
+  {
+   "start": 37.95,
+   "end": 41.52,
+   "text": "Prices are monitored 24/7, checking every minute."
+  },
+  {
+   "start": 43.45,
+   "end": 47.97,
+   "text": "When it finds a match, it first asks my client on Telegram whether to go ahead,"
+  },
+  {
+   "start": 47.97,
+   "end": 49.53,
+   "text": "with a summary of the deal."
+  },
+  {
+   "start": 51.45,
+   "end": 54.53,
+   "text": "If the answer is yes, the script triggers the sale:"
+  },
+  {
+   "start": 54.53,
+   "end": 58.8,
+   "text": "a bot opens a browser in the background, logs in to the buyer's site,"
+  },
+  {
+   "start": 58.8,
+   "end": 61.79,
+   "text": "fills in the details and creates the sell order."
+  },
+  {
+   "start": 62.65,
+   "end": 66.59,
+   "text": "Once the order is created, a bot waits on standby with the order's details,"
+  },
+  {
+   "start": 66.59,
+   "end": 70.89,
+   "text": "server and amount, until the site's staff contacts it to take the delivery."
+  },
+  {
+   "start": 71.95,
+   "end": 76.24,
+   "text": "When the delivery is done, the bot tells my client the operation was successful,"
+  },
+  {
+   "start": 76.24,
+   "end": 78.04,
+   "text": "with a summary of the transaction."
+  },
+  {
+   "start": 78.04,
+   "end": 81.84,
+   "text": "All my client has to do is check that the site's payment arrived."
+  }
+ ],
+ "es": [
+  {
+   "start": 2.35,
+   "end": 4.11,
+   "text": "Hoy, en la era de la IA,"
+  },
+  {
+   "start": 4.11,
+   "end": 7.56,
+   "text": "automatizar un flujo de trabajo de principio a fin es una realidad."
+  },
+  {
+   "start": 7.56,
+   "end": 10.21,
+   "text": "Veamos un caso real de uno de mis clientes."
+  },
+  {
+   "start": 11.35,
+   "end": 14.99,
+   "text": "Mi cliente quería automatizar la venta de la moneda virtual de un"
+  },
+  {
+   "start": 14.99,
+   "end": 18.19,
+   "text": "juego masivo en línea a una de las muchas páginas que la compran."
+  },
+  {
+   "start": 18.19,
+   "end": 21.67,
+   "text": "Hasta entonces, todo el proceso se hacía a mano."
+  },
+  {
+   "start": 22.75,
+   "end": 23.76,
+   "text": "La propuesta:"
+  },
+  {
+   "start": 23.76,
+   "end": 26.67,
+   "text": "un software que hace scraping de los precios de los servidores"
+  },
+  {
+   "start": 26.67,
+   "end": 29.91,
+   "text": "que le interesan a mi cliente en tres de estas páginas."
+  },
+  {
+   "start": 29.91,
+   "end": 30.34,
+   "text": "Con esos datos,"
+  },
+  {
+   "start": 30.34,
+   "end": 34.08,
+   "text": "el mismo software toma las decisiones según las reglas de mi cliente:"
+  },
+  {
+   "start": 34.08,
+   "end": 36.86,
+   "text": "un precio mínimo de venta y la cantidad a vender."
+  },
+  {
+   "start": 37.95,
+   "end": 41.52,
+   "text": "Los precios se vigilan 24/7, revisando cada minuto."
+  },
+  {
+   "start": 43.45,
+   "end": 44.71,
+   "text": "Cuando encuentra una coincidencia,"
+  },
+  {
+   "start": 44.71,
+   "end": 47.97,
+   "text": "primero le pregunta a mi cliente por Telegram si quiere seguir adelante,"
+  },
+  {
+   "start": 47.97,
+   "end": 49.53,
+   "text": "con un resumen de la operación."
+  },
+  {
+   "start": 51.45,
+   "end": 54.53,
+   "text": "Si la respuesta es sí, el script dispara la venta:"
+  },
+  {
+   "start": 54.53,
+   "end": 58.8,
+   "text": "un bot abre un navegador en segundo plano, inicia sesión en la página compradora,"
+  },
+  {
+   "start": 58.8,
+   "end": 61.79,
+   "text": "llena los datos y crea la orden de venta."
+  },
+  {
+   "start": 62.65,
+   "end": 66.19,
+   "text": "Una vez creada la orden, un bot queda en espera con los datos de la orden,"
+  },
+  {
+   "start": 66.19,
+   "end": 67.14,
+   "text": "servidor y cantidad,"
+  },
+  {
+   "start": 67.14,
+   "end": 70.89,
+   "text": "hasta que el personal de la página lo contacta para recibir la entrega."
+  },
+  {
+   "start": 71.95,
+   "end": 73.33,
+   "text": "Cuando termina la entrega,"
+  },
+  {
+   "start": 73.33,
+   "end": 76.24,
+   "text": "el bot le informa a mi cliente que la operación fue un éxito,"
+  },
+  {
+   "start": 76.24,
+   "end": 78.04,
+   "text": "con un resumen de la transacción."
+  },
+  {
+   "start": 78.04,
+   "end": 81.84,
+   "text": "Mi cliente solo tiene que comprobar que llegó el pago de la página."
+  }
+ ]
+}

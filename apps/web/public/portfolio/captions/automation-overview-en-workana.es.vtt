@@ -1,0 +1,105 @@
+WEBVTT
+
+1
+00:00:02.350 --> 00:00:04.110 size:78% align:center
+Hoy, en la era de la IA,
+
+2
+00:00:04.110 --> 00:00:07.560 size:78% align:center
+automatizar un flujo de trabajo de principio a fin es una realidad.
+
+3
+00:00:07.560 --> 00:00:10.210 size:78% align:center
+Veamos un caso real de uno de mis clientes.
+
+4
+00:00:11.350 --> 00:00:14.990 size:78% align:center
+Mi cliente quería automatizar la venta de la moneda virtual de un
+
+5
+00:00:14.990 --> 00:00:18.190 size:78% align:center
+juego masivo en línea a una de las muchas páginas que la compran.
+
+6
+00:00:18.190 --> 00:00:21.670 size:78% align:center
+Hasta entonces, todo el proceso se hacía a mano.
+
+7
+00:00:22.750 --> 00:00:23.760 size:78% align:center
+La propuesta:
+
+8
+00:00:23.760 --> 00:00:26.670 size:78% align:center
+un software que hace scraping de los precios de los servidores
+
+9
+00:00:26.670 --> 00:00:29.910 size:78% align:center
+que le interesan a mi cliente en tres de estas páginas.
+
+10
+00:00:29.910 --> 00:00:30.340 size:78% align:center
+Con esos datos,
+
+11
+00:00:30.340 --> 00:00:34.080 size:78% align:center
+el mismo software toma las decisiones según las reglas de mi cliente:
+
+12
+00:00:34.080 --> 00:00:36.860 size:78% align:center
+un precio mínimo de venta y la cantidad a vender.
+
+13
+00:00:37.950 --> 00:00:41.520 size:78% align:center
+Los precios se vigilan 24/7, revisando cada minuto.
+
+14
+00:00:43.450 --> 00:00:44.710 size:78% align:center
+Cuando encuentra una coincidencia,
+
+15
+00:00:44.710 --> 00:00:47.970 size:78% align:center
+primero le pregunta a mi cliente por Telegram si quiere seguir adelante,
+
+16
+00:00:47.970 --> 00:00:49.530 size:78% align:center
+con un resumen de la operación.
+
+17
+00:00:51.450 --> 00:00:54.530 size:78% align:center
+Si la respuesta es sí, el script dispara la venta:
+
+18
+00:00:54.530 --> 00:00:58.800 size:78% align:center
+un bot abre un navegador en segundo plano, inicia sesión en la página compradora,
+
+19
+00:00:58.800 --> 00:01:01.790 size:78% align:center
+llena los datos y crea la orden de venta.
+
+20
+00:01:02.650 --> 00:01:06.190 size:78% align:center
+Una vez creada la orden, un bot queda en espera con los datos de la orden,
+
+21
+00:01:06.190 --> 00:01:07.140 size:78% align:center
+servidor y cantidad,
+
+22
+00:01:07.140 --> 00:01:10.890 size:78% align:center
+hasta que el personal de la página lo contacta para recibir la entrega.
+
+23
+00:01:11.950 --> 00:01:13.330 size:78% align:center
+Cuando termina la entrega,
+
+24
+00:01:13.330 --> 00:01:16.240 size:78% align:center
+el bot le informa a mi cliente que la operación fue un éxito,
+
+25
+00:01:16.240 --> 00:01:18.040 size:78% align:center
+con un resumen de la transacción.
+
+26
+00:01:18.040 --> 00:01:21.840 size:78% align:center
+Mi cliente solo tiene que comprobar que llegó el pago de la página.

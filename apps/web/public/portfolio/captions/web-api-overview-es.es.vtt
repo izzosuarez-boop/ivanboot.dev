@@ -1,0 +1,125 @@
+WEBVTT
+
+1
+00:00:02.350 --> 00:00:03.690 size:78% align:center
+Esta es KamasMarket,
+
+2
+00:00:03.690 --> 00:00:06.790 size:78% align:center
+un mercado que hace de intermediario seguro para comprar
+
+3
+00:00:06.790 --> 00:00:09.110 size:78% align:center
+y vender la moneda de un juego en línea.
+
+4
+00:00:09.110 --> 00:00:13.420 size:78% align:center
+Veamos cómo funciona de principio a fin y con qué servicios está conectada.
+
+5
+00:00:14.150 --> 00:00:17.520 size:78% align:center
+El vendedor publica su oferta y el comprador la acepta.
+
+6
+00:00:17.520 --> 00:00:20.960 size:78% align:center
+Un bot recibe la moneda del vendedor dentro del juego,
+
+7
+00:00:20.960 --> 00:00:22.770 size:78% align:center
+el comprador paga en USDT al contrato de su orden y,
+
+8
+00:00:22.770 --> 00:00:28.200 size:78% align:center
+cuando el pago se confirma en la blockchain, el bot le entrega lo que compró.
+
+9
+00:00:29.150 --> 00:00:31.670 size:78% align:center
+Cada orden tiene su propio contrato inteligente.
+
+10
+00:00:31.670 --> 00:00:35.900 size:78% align:center
+El dinero del comprador solo puede terminar en dos lugares: en el vendedor,
+
+11
+00:00:35.900 --> 00:00:37.290 size:78% align:center
+cuando se confirma la entrega,
+
+12
+00:00:37.290 --> 00:00:40.670 size:78% align:center
+o de vuelta en el comprador si la orden no se concreta. Nadie,
+
+13
+00:00:40.670 --> 00:00:44.670 size:78% align:center
+ni siquiera la plataforma, puede desviarlo. Al confirmarse la entrega,
+
+14
+00:00:44.670 --> 00:00:47.850 size:78% align:center
+el contrato paga al vendedor y envía la comisión a su billetera,
+
+15
+00:00:47.850 --> 00:00:49.730 size:78% align:center
+por unos centavos por orden.
+
+16
+00:00:50.350 --> 00:00:53.450 size:78% align:center
+Para los pagos: los contratos viven en BNB Chain;
+
+17
+00:00:53.450 --> 00:00:56.800 size:78% align:center
+Wompi paga en pesos a quien cobra por Nequi, Bancolombia o Bre-B;
+
+18
+00:00:56.800 --> 00:01:01.970 size:78% align:center
+y Binance y NOWPayments se encargan de los pagos a vendedores en el exterior.
+
+19
+00:01:04.550 --> 00:01:08.220 size:78% align:center
+Cada paso se avisa al instante: por WhatsApp a través de Zavu,
+
+20
+00:01:08.220 --> 00:01:13.120 size:78% align:center
+con botones como 'Confirmar disponibilidad' o 'Pagar ahora'; por Telegram y Discord;
+
+21
+00:01:13.120 --> 00:01:17.380 size:78% align:center
+y los correos de la cuenta, como la verificación y la recuperación de contraseña,
+
+22
+00:01:17.380 --> 00:01:18.690 size:78% align:center
+salen por Resend.
+
+23
+00:01:18.850 --> 00:01:21.410 size:78% align:center
+La inteligencia artificial trabaja en dos frentes:
+
+24
+00:01:21.410 --> 00:01:25.330 size:78% align:center
+DeepSeek impulsa el agente de la página, y Claude, de Anthropic,
+
+25
+00:01:25.330 --> 00:01:27.760 size:78% align:center
+revisa con visión cada intercambio del bot como
+
+26
+00:01:27.760 --> 00:01:30.900 size:78% align:center
+una segunda verificación de la cantidad y la clave.
+
+27
+00:01:31.050 --> 00:01:35.050 size:78% align:center
+Y el agente atiende a los usuarios: hace seguimiento de sus órdenes,
+
+28
+00:01:35.050 --> 00:01:39.080 size:78% align:center
+les dice cómo va un pago y explica cualquier sección de la página,
+
+29
+00:01:39.080 --> 00:01:43.470 size:78% align:center
+por ejemplo cómo registrar su dirección BEP-20 para recibir sus cobros.
+
+30
+00:01:43.850 --> 00:01:44.970 size:78% align:center
+Una sola página,
+
+31
+00:01:44.970 --> 00:01:49.600 size:78% align:center
+nueve integraciones y un contrato que garantiza que nadie se quede sin lo suyo.
